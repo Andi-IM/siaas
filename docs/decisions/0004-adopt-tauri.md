@@ -45,6 +45,11 @@ Tauri was chosen over Electron because:
 ## Verification
 
 - [x] `npm run build` generates a valid `out` directory.
-- [ ] `npx tauri dev` successfully opens the application window with hot-reloading.
-- [ ] `npx tauri build` produces a functional `.exe` installer for Windows.
-- [ ] The application remains fully functional in an offline environment.
+- [x] `npx tauri dev` successfully opens the application window with hot-reloading.
+- [x] `npx tauri build` produces a functional `.exe` installer for Windows.
+- [x] The application remains fully functional in an offline environment.
+
+## More Information
+
+### 2026-06-14: Dependency Resolution
+During implementation, a version conflict was encountered in the Rust dependency graph between `brotli` and `alloc-no-stdlib`. This was resolved by adding a `[patch.crates-io]` block in `Cargo.toml` pointing to the Dropbox GitHub repository and pinning the `brotli` version to `=8.0.3`.
