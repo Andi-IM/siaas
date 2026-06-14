@@ -1,6 +1,6 @@
 # ADR 0004: Adopt Tauri for Native Windows Distribution
 
-*   **Status**: proposed
+*   **Status**: accepted
 *   **Decider**: Gemini CLI, User
 *   **Date**: 2026-06-14
 
@@ -44,7 +44,7 @@ Tauri was chosen over Electron because:
 
 ## Verification
 
-- [ ] `npm run build` generates a valid `out` directory.
+- [x] `npm run build` generates a valid `out` directory.
 - [ ] `npx tauri dev` successfully opens the application window with hot-reloading.
 - [ ] `npx tauri build` produces a functional `.exe` installer for Windows.
 - [ ] The application remains fully functional in an offline environment.
