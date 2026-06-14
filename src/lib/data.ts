@@ -41,7 +41,7 @@ const allStudents: Student[] = [
     sekolahAsal: "SMP Negeri 2 Bandung",
     diterimaDiKelas: "XII TKJ 1",
     diterimaPadaTanggal: "2022-07-11",
-    kompetensi: "Teknik Komputer dan Jaringan",
+    kompetensi: "Teknik Pemesinan",
     nomorIjazah: "DN-01/M-SMA/13/0000002",
     tanggalKelulusan: "",
     status: "active",
@@ -56,6 +56,38 @@ const allStudents: Student[] = [
     pekerjaanWali: ""
   },
 ];
+
+// Generate more mock students to fill the table (total ~40)
+for (let i = 3; i <= 40; i++) {
+  const isP = i % 3 === 0;
+  allStudents.push({
+    nis: `24${String(i).padStart(3, '0')}`,
+    nisn: `007${Math.floor(Math.random() * 10000000)}`,
+    nama: `${isP ? "Siti" : "Ahmad"} ${["Pratama", "Hidayat", "Kusuma", "Putri", "Lestari"][i % 5]} ${i}`,
+    tempatLahir: "Sumatera Barat",
+    tanggalLahir: "2007-01-01",
+    jenisKelamin: isP ? "P" : "L",
+    agama: "Islam",
+    alamat: "Padang, Sumatera Barat",
+    telepon: "0751-xxxxx",
+    sekolahAsal: "SMP N 1 Padang",
+    diterimaDiKelas: "X TM 1",
+    diterimaPadaTanggal: "2024-07-01",
+    kompetensi: "Teknik Pemesinan",
+    nomorIjazah: "",
+    tanggalKelulusan: "",
+    status: "active",
+    namaAyah: "Ayah",
+    pekerjaanAyah: "Wiraswasta",
+    namaIbu: "Ibu",
+    pekerjaanIbu: "Ibu Rumah Tangga",
+    alamatOrangTua: "Padang",
+    namaWali: "",
+    alamatWali: "",
+    teleponWali: "",
+    pekerjaanWali: ""
+  });
+}
 
 export function getStudents(): Student[] {
   return [...allStudents];
