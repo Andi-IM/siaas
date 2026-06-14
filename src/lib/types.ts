@@ -51,5 +51,7 @@ export interface MataPelajaran {
   konsentrasiId: string;
   nama: string;
   kode: string;
-  kelompok: "A" | "B" | "C"; // Umum, Kejuruan, dll
+  kategori: "Kelompok Umum" | "Kelompok Kejuruan";
+  semester: number;
+  status: "active" | "inactive";
 }

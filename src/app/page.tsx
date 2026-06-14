@@ -53,7 +53,7 @@ export default function Dashboard() {
                 <tr>
                   <th className="label-md" scope="col">NIS</th>
                   <th className="label-md" scope="col">Nama Lengkap</th>
-                  <th className="label-md" scope="col">Kelas</th>
+                  <th className="label-md" scope="col">Kelompok Keahlian</th>
                   <th className="label-md" scope="col">Status</th>
                 </tr>
               </thead>
@@ -64,7 +64,7 @@ export default function Dashboard() {
                     <td className="table-data" style={{ fontWeight: 500 }}>
                       <Link href={`/siswa/${s.nis}`} className="table-link">{s.nama}</Link>
                     </td>
-                    <td className="table-data">{s.diterimaDiKelas}</td>
+                    <td className="table-data">{s.kompetensi}</td>
                     <td className="table-data">
                       <span className={`status-badge status-badge--${s.status}`}>
                         {s.status === "active" ? "Aktif" : "Nonaktif"}
