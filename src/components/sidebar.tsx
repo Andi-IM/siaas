@@ -8,9 +8,7 @@ const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/siswa", label: "Peserta Didik", icon: Users, exact: false },
   { href: "/kurikulum", label: "Kurikulum", icon: BookOpen, exact: false },
-  { href: "#", label: "Kelas", icon: GraduationCap, exact: false },
   { href: "#", label: "Nilai", icon: ClipboardCheck, exact: false },
-  { href: "#", label: "Absensi", icon: FileText, exact: false },
   { href: "#", label: "Pengaturan", icon: Settings, exact: false },
 ];
 
