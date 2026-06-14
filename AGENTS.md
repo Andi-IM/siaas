@@ -3,6 +3,8 @@
 ## Project Context
 SIAAS (Sistem Informasi Administrasi Akademik Siswa) replaces the traditional physical record book (Buku Induk) in Indonesian schools with an automated digital workflow. It is an offline-native application designed for reliability, precision, and institutional trust.
 
+**Primary Interface**: This project is managed via the **Gemini CLI**. AI agents should prioritize using command-line tools (PowerShell/Bash) and scripts for project tasks.
+
 ## Design Context
 This project uses the **Academic Administrative Core** design system.
 - **Register**: `product` (Admin Dashboard)
