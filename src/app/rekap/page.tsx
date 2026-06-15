@@ -6,6 +6,12 @@ import Link from "next/link";
 import { getStudents, getPrograms, getConcentrations, getSubjects } from "@/lib/data";
 import type { Student, ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran } from "@/lib/types";
 
+function getCategoryWeight(cat: string): number {
+  if (cat === "Kelompok Umum") return 1;
+  if (cat === "Kelompok Kejuruan") return 2;
+  return 99;
+}
+
 export default function RekapDataPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [programs, setPrograms] = useState<ProgramKeahlian[]>([]);
@@ -80,7 +86,14 @@ export default function RekapDataPage() {
     !selectedKonsentrasiId || s.kompetensi === concentrations.find(k => k.id === selectedKonsentrasiId)?.nama
   );
 
-  const filteredSubjects = subjects.filter(m => m.semester === selectedSemester || m.kategori === "Kelompok Umum");
+  const filteredSubjects = subjects
+    .filter(m => m.semesters.includes(selectedSemester))
+    .sort((a, b) => {
+      const wA = getCategoryWeight(a.kategori);
+      const wB = getCategoryWeight(b.kategori);
+      if (wA !== wB) return wA - wB;
+      return a.sequence - b.sequence;
+    });
 
   const handlePrint = () => {
     window.print();

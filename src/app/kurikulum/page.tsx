@@ -28,7 +28,7 @@ export default function CurriculumPage() {
   const [programForm, setProgramForm] = useState({ nama: "" });
   const [concentrationForm, setConcentrationForm] = useState({ nama: "" });
   const [subjectForm, setSubjectForm] = useState<Omit<MataPelajaran, "id" | "konsentrasiId">>({
-    nama: "", kode: "", kategori: "Kelompok Umum", semester: 1, status: "active"
+    nama: "", kode: "", kategori: "Kelompok Umum", sequence: 1, semesters: [1], status: "active"
   });
 
   const refreshPrograms = async () => {
@@ -103,9 +103,9 @@ export default function CurriculumPage() {
     } else if (type === "subject") {
       const s = id ? subjects.find(m => m.id === id) : null;
       setSubjectForm(s ? { 
-        nama: s.nama, kode: s.kode, kategori: s.kategori, semester: s.semester, status: s.status 
+        nama: s.nama, kode: s.kode, kategori: s.kategori, sequence: s.sequence, semesters: s.semesters, status: s.status 
       } : { 
-        nama: "", kode: "", kategori: "Kelompok Umum", semester: 1, status: "active" 
+        nama: "", kode: "", kategori: "Kelompok Umum", sequence: subjects.length + 1, semesters: [1], status: "active" 
       });
     }
     setModal({ type, editId: id });
@@ -265,6 +265,7 @@ export default function CurriculumPage() {
                 <table className="data-table">
                   <thead>
                     <tr>
+                      <th className="label-md" scope="col" style={{ width: 40, textAlign: "center" }}>#</th>
                       <th className="label-md" scope="col" style={{ width: 80 }}>Kode</th>
                       <th className="label-md" scope="col">Mata Pelajaran</th>
                       <th className="label-md" scope="col">Kategori</th>
@@ -277,12 +278,13 @@ export default function CurriculumPage() {
                     {subjects.length > 0 ? (
                       subjects.map(m => (
                         <tr key={m.id}>
+                          <td className="table-data" style={{ textAlign: "center", color: "var(--on-surface-variant)", fontSize: 12 }}>{m.sequence}</td>
                           <td className="table-data" style={{ fontWeight: 600, color: "var(--primary)" }}>{m.kode}</td>
                           <td className="table-data">{m.nama}</td>
                           <td className="table-data">
                             <span className="body-sm" style={{ color: "var(--on-surface-variant)" }}>{m.kategori}</span>
                           </td>
-                          <td className="table-data" style={{ textAlign: "center" }}>{m.semester}</td>
+                          <td className="table-data" style={{ textAlign: "center", fontSize: 12 }}>{m.semesters.join(", ")}</td>
                           <td className="table-data">
                             <span className={`status-badge status-badge--${m.status}`}>
                               {m.status === "active" ? "Aktif" : "Nonaktif"}
@@ -357,28 +359,56 @@ export default function CurriculumPage() {
 
           {modal.type === "subject" && (
             <form onSubmit={handleSubjectSubmit}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "100px 140px 1fr", gap: 16 }}>
+                <div className="form-field">
+                  <label className="form-field__label">No. Urut</label>
+                  <input type="number" className="form-input" value={subjectForm.sequence} onChange={e => setSubjectForm({ ...subjectForm, sequence: parseInt(e.target.value) || 0 })} required min={1} />
+                </div>
                 <div className="form-field">
                   <label className="form-field__label">Kode Mapel</label>
                   <input type="text" className="form-input" value={subjectForm.kode} onChange={e => setSubjectForm({ ...subjectForm, kode: e.target.value })} required placeholder="Contoh: PAI" />
                 </div>
                 <div className="form-field">
-                  <label className="form-field__label">Semester</label>
-                  <input type="number" className="form-input" min={1} max={6} value={subjectForm.semester} onChange={e => setSubjectForm({ ...subjectForm, semester: parseInt(e.target.value) })} required />
+                  <label className="form-field__label">Nama Mata Pelajaran</label>
+                  <input type="text" className="form-input" value={subjectForm.nama} onChange={e => setSubjectForm({ ...subjectForm, nama: e.target.value })} required placeholder="Nama lengkap mata pelajaran" />
                 </div>
               </div>
               
               <div className="form-field" style={{ marginTop: 16 }}>
-                <label className="form-field__label">Nama Mata Pelajaran</label>
-                <input type="text" className="form-input" value={subjectForm.nama} onChange={e => setSubjectForm({ ...subjectForm, nama: e.target.value })} required placeholder="Nama lengkap mata pelajaran" />
+                <label className="form-field__label" style={{ marginBottom: 8, display: "block" }}>Semester Terpeta</label>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {[1, 2, 3, 4, 5, 6].map(num => (
+                    <label key={num} style={{ 
+                      display: "flex", alignItems: "center", gap: 6, padding: "6px 12px", border: "1px solid var(--outline-variant)", 
+                      borderRadius: "var(--rounded-md)", cursor: "pointer",
+                      background: subjectForm.semesters.includes(num) ? "var(--primary-container)" : "transparent",
+                      borderColor: subjectForm.semesters.includes(num) ? "var(--primary)" : "var(--outline-variant)",
+                      color: subjectForm.semesters.includes(num) ? "var(--on-primary-container)" : "inherit",
+                    }}>
+                      <input 
+                        type="checkbox" 
+                        checked={subjectForm.semesters.includes(num)}
+                        style={{ width: 14, height: 14 }}
+                        onChange={(e) => {
+                          const val = num;
+                          const next = e.target.checked 
+                            ? [...subjectForm.semesters, val].sort()
+                            : subjectForm.semesters.filter(x => x !== val);
+                          setSubjectForm({ ...subjectForm, semesters: next });
+                        }}
+                      />
+                      <span className="label-md">S{num}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
                 <div className="form-field">
                   <label className="form-field__label">Kategori</label>
                   <select className="form-input" value={subjectForm.kategori} onChange={e => setSubjectForm({ ...subjectForm, kategori: e.target.value as any })}>
-                    <option value="Kelompok Umum">Umum</option>
-                    <option value="Kelompok Kejuruan">Kejuruan</option>
+                    <option value="Kelompok Umum">Kelompok Umum</option>
+                    <option value="Kelompok Kejuruan">Kelompok Kejuruan</option>
                   </select>
                 </div>
                 <div className="form-field">
@@ -392,7 +422,7 @@ export default function CurriculumPage() {
 
               <div className="form-actions" style={{ marginTop: 32 }}>
                 <button type="button" className="btn btn--secondary" onClick={closeModal}>Batal</button>
-                <button type="submit" className="btn btn--primary">Simpan Mapel</button>
+                <button type="submit" className="btn btn--primary" disabled={subjectForm.semesters.length === 0}>Simpan Mapel</button>
               </div>
             </form>
           )}

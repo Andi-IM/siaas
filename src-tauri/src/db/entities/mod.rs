@@ -1,3 +1,4 @@
+pub mod programs;
 pub mod majors;
 pub mod batches;
 pub mod semesters;

@@ -1,8 +1,75 @@
 use tauri::State;
 use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryOrder, ColumnTrait, QueryFilter};
 use crate::db::entities::{
-    majors, batches, semesters, subjects, students, curriculum_subjects, student_grades
+    programs, majors, batches, semesters, subjects, students, curriculum_subjects, student_grades
 };
+
+// ==========================================
+// PROGRAMS COMMANDS
+// ==========================================
+
+#[tauri::command]
+pub async fn create_program(
+    state: State<'_, DatabaseConnection>,
+    name: String,
+) -> Result<programs::Model, String> {
+    let db = state.inner();
+    let id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    let program = programs::ActiveModel {
+        id: Set(id),
+        name: Set(name),
+        created_at: Set(now.clone()),
+        updated_at: Set(now),
+    };
+
+    let result = program.insert(db).await.map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn get_programs(
+    state: State<'_, DatabaseConnection>,
+) -> Result<Vec<programs::Model>, String> {
+    let db = state.inner();
+    programs::Entity::find()
+        .all(db)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_program(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+    name: String,
+) -> Result<programs::Model, String> {
+    let db = state.inner();
+    let existing = programs::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Program not found".to_string())?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut active: programs::ActiveModel = existing.into();
+    active.name = Set(name);
+    active.updated_at = Set(now);
+
+    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    Ok(updated)
+}
+
+#[tauri::command]
+pub async fn delete_program(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+) -> Result<bool, String> {
+    let db = state.inner();
+    let res = programs::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+    Ok(res.rows_affected > 0)
+}
 
 // ==========================================
 // MAJORS COMMANDS
@@ -13,6 +80,7 @@ pub async fn create_major(
     state: State<'_, DatabaseConnection>,
     code: String,
     name: String,
+    program_id: Option<String>,
 ) -> Result<majors::Model, String> {
     let db = state.inner();
     let id = uuid::Uuid::new_v4().to_string();
@@ -22,6 +90,7 @@ pub async fn create_major(
         id: Set(id),
         code: Set(code),
         name: Set(name),
+        program_id: Set(program_id),
         created_at: Set(now.clone()),
         updated_at: Set(now),
     };
@@ -39,6 +108,42 @@ pub async fn get_majors(
         .all(db)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_major(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+    name: String,
+    code: String,
+    program_id: Option<String>,
+) -> Result<majors::Model, String> {
+    let db = state.inner();
+    let existing = majors::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Major not found".to_string())?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut active: majors::ActiveModel = existing.into();
+    active.name = Set(name);
+    active.code = Set(code);
+    active.program_id = Set(program_id);
+    active.updated_at = Set(now);
+
+    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    Ok(updated)
+}
+
+#[tauri::command]
+pub async fn delete_major(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+) -> Result<bool, String> {
+    let db = state.inner();
+    let res = majors::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+    Ok(res.rows_affected > 0)
 }
 
 // ==========================================
@@ -125,6 +230,9 @@ pub async fn create_subject(
     state: State<'_, DatabaseConnection>,
     code: String,
     name: String,
+    category: String,
+    status: String,
+    sequence: i32,
 ) -> Result<subjects::Model, String> {
     let db = state.inner();
     let id = uuid::Uuid::new_v4().to_string();
@@ -134,6 +242,9 @@ pub async fn create_subject(
         id: Set(id),
         code: Set(code),
         name: Set(name),
+        category: Set(category),
+        status: Set(status),
+        sequence: Set(sequence),
         created_at: Set(now.clone()),
         updated_at: Set(now),
     };
@@ -147,10 +258,63 @@ pub async fn get_subjects(
     state: State<'_, DatabaseConnection>,
 ) -> Result<Vec<subjects::Model>, String> {
     let db = state.inner();
-    subjects::Entity::find()
+    let list = subjects::Entity::find()
         .all(db)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+    
+    let mut sorted = list;
+    sorted.sort_by(|a, b| {
+        let w_a = get_category_weight(&a.category);
+        let w_b = get_category_weight(&b.category);
+        
+        match w_a.cmp(&w_b) {
+            std::cmp::Ordering::Equal => a.sequence.cmp(&b.sequence),
+            other => other,
+        }
+    });
+    
+    Ok(sorted)
+}
+
+#[tauri::command]
+pub async fn update_subject(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+    name: String,
+    code: String,
+    category: String,
+    status: String,
+    sequence: i32,
+) -> Result<subjects::Model, String> {
+    let db = state.inner();
+    let existing = subjects::Entity::find_by_id(id)
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Subject not found".to_string())?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut active: subjects::ActiveModel = existing.into();
+    active.name = Set(name);
+    active.code = Set(code);
+    active.category = Set(category);
+    active.status = Set(status);
+    active.sequence = Set(sequence);
+    active.updated_at = Set(now);
+
+    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    Ok(updated)
+}
+
+#[tauri::command]
+pub async fn delete_subject(
+    state: State<'_, DatabaseConnection>,
+    id: String,
+) -> Result<bool, String> {
+    let db = state.inner();
+    let res = subjects::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+    Ok(res.rows_affected > 0)
 }
 
 // ==========================================
@@ -258,6 +422,166 @@ pub async fn get_curriculum_subjects(
         .all(db)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub struct MataPelajaranData {
+    pub id: String,
+    pub name: String,
+    pub code: String,
+    pub kategori: String,
+    pub sequence: i32,
+    pub semesters: Vec<i32>,
+    pub status: String,
+}
+
+fn get_category_weight(cat: &str) -> i32 {
+    match cat {
+        "Kelompok Umum" => 1,
+        "Kelompok Kejuruan" => 2,
+        _ => 99,
+    }
+}
+
+#[tauri::command]
+pub async fn get_subjects_by_major(
+    state: State<'_, DatabaseConnection>,
+    major_id: String,
+) -> Result<Vec<MataPelajaranData>, String> {
+    let db = state.inner();
+    
+    // This is a simplified version. Ideally we'd join and group by subject.
+    // For now, let's fetch all curriculum_subjects for this major and then the subjects.
+    let mappings = curriculum_subjects::Entity::find()
+        .filter(curriculum_subjects::Column::MajorId.eq(major_id))
+        .all(db)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let mut result_map: std::collections::HashMap<String, MataPelajaranData> = std::collections::HashMap::new();
+
+    for m in mappings {
+        let subject = subjects::Entity::find_by_id(m.subject_id.clone())
+            .one(db)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("Subject {} not found", m.subject_id))?;
+
+        let semester = semesters::Entity::find_by_id(m.semester_id)
+            .one(db)
+            .await
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| "Semester not found".to_string())?;
+
+        let entry = result_map.entry(m.subject_id.clone()).or_insert(MataPelajaranData {
+            id: subject.id,
+            name: subject.name,
+            code: subject.code,
+            kategori: subject.category,
+            sequence: subject.sequence,
+            semesters: Vec::new(),
+            status: subject.status,
+        });
+        
+        if !entry.semesters.contains(&semester.sequence) {
+            entry.semesters.push(semester.sequence);
+            entry.semesters.sort();
+        }
+    }
+
+    let mut final_list: Vec<MataPelajaranData> = result_map.into_values().collect();
+    
+    // Sort by category weight first, then by sequence
+    final_list.sort_by(|a, b| {
+        let w_a = get_category_weight(&a.kategori);
+        let w_b = get_category_weight(&b.kategori);
+        
+        match w_a.cmp(&w_b) {
+            std::cmp::Ordering::Equal => a.sequence.cmp(&b.sequence),
+            other => other,
+        }
+    });
+
+    Ok(final_list)
+}
+
+#[tauri::command]
+pub async fn assign_subject_to_semesters(
+    state: State<'_, DatabaseConnection>,
+    major_id: String,
+    subject_id: String,
+    semester_sequences: Vec<i32>,
+) -> Result<(), String> {
+    let db = state.inner();
+    let now = chrono::Utc::now().to_rfc3339();
+
+    // 1. Get or Create a default Batch (needed for curriculum_subjects)
+    let batch = batches::Entity::find()
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    let batch_id = match batch {
+        Some(b) => b.id,
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            let new_batch = batches::ActiveModel {
+                id: Set(id.clone()),
+                year: Set(2024), // Default year
+                created_at: Set(now.clone()),
+                updated_at: Set(now.clone()),
+            };
+            new_batch.insert(db).await.map_err(|e| e.to_string())?;
+            id
+        }
+    };
+
+    // 2. Remove existing mappings for this subject and major
+    curriculum_subjects::Entity::delete_many()
+        .filter(curriculum_subjects::Column::MajorId.eq(major_id.clone()))
+        .filter(curriculum_subjects::Column::SubjectId.eq(subject_id.clone()))
+        .exec(db)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 3. Add new mappings
+    for seq in semester_sequences {
+        let semester = semesters::Entity::find()
+            .filter(semesters::Column::Sequence.eq(seq))
+            .one(db)
+            .await
+            .map_err(|e| e.to_string())?;
+        
+        let semester_id = match semester {
+            Some(s) => s.id,
+            None => {
+                let id = uuid::Uuid::new_v4().to_string();
+                let new_sem = semesters::ActiveModel {
+                    id: Set(id.clone()),
+                    code: Set(format!("S{}", seq)),
+                    name: Set(format!("Semester {}", seq)),
+                    sequence: Set(seq),
+                    created_at: Set(now.clone()),
+                    updated_at: Set(now.clone()),
+                };
+                new_sem.insert(db).await.map_err(|e| e.to_string())?;
+                id
+            }
+        };
+
+        let mapping = curriculum_subjects::ActiveModel {
+            id: Set(uuid::Uuid::new_v4().to_string()),
+            major_id: Set(major_id.clone()),
+            batch_id: Set(batch_id.clone()),
+            semester_id: Set(semester_id),
+            subject_id: Set(subject_id.clone()),
+            created_at: Set(now.clone()),
+            updated_at: Set(now.clone()),
+        };
+        mapping.insert(db).await.map_err(|e| e.to_string())?;
+    }
+
+    Ok(())
 }
 
 // ==========================================

@@ -19,6 +19,9 @@ pub struct Model {
     /// Descriptive name of the major (e.g., "Teknik Informatika").
     pub name: String,
 
+    /// Optional link to a parent Program Keahlian.
+    pub program_id: Option<String>,
+
     /// Timestamp of when the major was registered.
     pub created_at: String,
 
@@ -29,6 +32,16 @@ pub struct Model {
 /// Relations mapped for the `majors` entity.
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {
+    /// Many-to-one relationship linking a major back to its parent program.
+    #[sea_orm(
+        belongs_to = "super::programs::Entity",
+        from = "Column::ProgramId",
+        to = "super::programs::Column::Id",
+        on_update = "NoAction",
+        on_delete = "SetNull"
+    )]
+    Programs,
+
     /// One-to-many relationship linking a major to many students registered under it.
     #[sea_orm(has_many = "super::students::Entity")]
     Students,
@@ -36,6 +49,12 @@ pub enum Relation {
     /// One-to-many relationship linking a major to curriculum subject mappings.
     #[sea_orm(has_many = "super::curriculum_subjects::Entity")]
     CurriculumSubjects,
+}
+
+impl Related<super::programs::Entity> for Entity {
+    fn to() -> RelationDef {
+        Relation::Programs.def()
+    }
 }
 
 impl Related<super::students::Entity> for Entity {

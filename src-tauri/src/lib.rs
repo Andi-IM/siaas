@@ -41,20 +41,30 @@ pub fn run() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+        db::commands::create_program,
+        db::commands::get_programs,
+        db::commands::update_program,
+        db::commands::delete_program,
         db::commands::create_major,
         db::commands::get_majors,
+        db::commands::update_major,
+        db::commands::delete_major,
         db::commands::create_batch,
         db::commands::get_batches,
         db::commands::create_semester,
         db::commands::get_semesters,
         db::commands::create_subject,
         db::commands::get_subjects,
+        db::commands::update_subject,
+        db::commands::delete_subject,
         db::commands::create_student,
         db::commands::get_students,
         db::commands::update_student,
         db::commands::delete_student,
         db::commands::create_curriculum_subject,
         db::commands::get_curriculum_subjects,
+        db::commands::get_subjects_by_major,
+        db::commands::assign_subject_to_semesters,
         db::commands::create_student_grade,
         db::commands::get_student_grades
     ])

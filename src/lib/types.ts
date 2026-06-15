@@ -52,6 +52,7 @@ export interface MataPelajaran {
   nama: string;
   kode: string;
   kategori: "Kelompok Umum" | "Kelompok Kejuruan";
-  semester: number;
+  sequence: number;
+  semesters: number[];
   status: "active" | "inactive";
 }

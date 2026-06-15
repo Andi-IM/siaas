@@ -147,6 +147,33 @@ impl MigrationManager {
                            DROP INDEX IF EXISTS idx_student_grades_student_id;
                            DROP INDEX IF EXISTS idx_student_grades_curriculum_subject_id;",
                 },
+                Migration {
+                    version: 9,
+                    name: "create_programs_table",
+                    up: "CREATE TABLE programs (
+                        id TEXT PRIMARY KEY,
+                        name TEXT NOT NULL UNIQUE,
+                        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    );
+                    ALTER TABLE majors ADD COLUMN program_id TEXT REFERENCES programs(id) ON DELETE SET NULL;",
+                    down: "ALTER TABLE majors DROP COLUMN program_id;
+                           DROP TABLE IF EXISTS programs;",
+                },
+                Migration {
+                    version: 10,
+                    name: "add_category_and_status_to_subjects",
+                    up: "ALTER TABLE subjects ADD COLUMN category TEXT NOT NULL DEFAULT 'Kelompok Umum';
+                         ALTER TABLE subjects ADD COLUMN status TEXT NOT NULL DEFAULT 'active';",
+                    down: "ALTER TABLE subjects DROP COLUMN category;
+                           ALTER TABLE subjects DROP COLUMN status;",
+                },
+                Migration {
+                    version: 11,
+                    name: "add_sequence_to_subjects",
+                    up: "ALTER TABLE subjects ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;",
+                    down: "ALTER TABLE subjects DROP COLUMN sequence;",
+                },
             ],
         }
     }

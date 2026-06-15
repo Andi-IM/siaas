@@ -19,6 +19,15 @@ pub struct Model {
     /// Friendly name of the subject (e.g., "Matematika Wajib").
     pub name: String,
 
+    /// Category of the subject (e.g., "Kelompok Umum", "Kelompok Kejuruan").
+    pub category: String,
+
+    /// Status of the subject (e.g., "active", "inactive").
+    pub status: String,
+
+    /// Manual sort order/sequence for document formatting.
+    pub sequence: i32,
+
     /// Timestamp of when the subject record was created.
     pub created_at: String,
 
