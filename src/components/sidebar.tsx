@@ -2,16 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, FileSpreadsheet } from "lucide-react";
+import { navItems } from "@/lib/navigation";
 import { Logo } from "./logo";
-
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/siswa", label: "Peserta Didik", icon: Users, exact: false },
-  { href: "/kurikulum", label: "Kurikulum", icon: BookOpen, exact: false },
-  { href: "/rekap", label: "Rekap Data", icon: FileSpreadsheet, exact: false },
-  { href: "#", label: "Pengaturan", icon: Settings, exact: false },
-];
 
 export function Sidebar() {
   const pathname = usePathname();

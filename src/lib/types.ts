@@ -56,3 +56,9 @@ export interface MataPelajaran {
   semesters: number[];
   status: "active" | "inactive";
 }
+
+export interface StudentGrade {
+  studentId: string;
+  subjectId: string;
+  grade: number;
+}

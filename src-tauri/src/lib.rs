@@ -65,8 +65,13 @@ pub fn run() {
         db::commands::get_curriculum_subjects,
         db::commands::get_subjects_by_major,
         db::commands::assign_subject_to_semesters,
-        db::commands::create_student_grade,
-        db::commands::get_student_grades
+        db::commands::upsert_student_grade,
+        db::commands::batch_upsert_grades,
+        db::commands::get_grades_by_filter,
+        db::commands::get_grades_by_student,
+        db::commands::get_student_grades,
+        db::commands::import_grades_from_excel,
+        db::commands::export_grades_to_excel
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

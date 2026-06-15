@@ -91,7 +91,7 @@ export function Logo({ variant = "full", theme = "light", height = 32 }: LogoPro
 
       {/* ── LOGOTYPE (SIAAS Lockup) ── */}
       {variant === "full" && (
-        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        <div className="logo-text" style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
           <span
             style={{
               fontFamily: "var(--font-inter), sans-serif",
@@ -105,6 +105,7 @@ export function Logo({ variant = "full", theme = "light", height = 32 }: LogoPro
             SIAAS
           </span>
           <span
+            className="logo-subtitle"
             style={{
               fontFamily: "var(--font-inter), sans-serif",
               fontSize: `${height * 0.28}px`,

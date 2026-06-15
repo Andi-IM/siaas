@@ -9,3 +9,4 @@ This directory contains records of significant architecture decisions made in th
 *   [0003: Hierarchical Curriculum & Subject Management](0003-manajemen-kurikulum.md)
 *   [0004: Adoption of Tauri for Native Windows Distribution](0004-adopt-tauri.md)
 *   [0005: Adopt SeaORM for SQLite Database Management](0005-adopt-sea-orm.md)
+*   [0006: Native Excel (XLSX) Import & Export with Custom Styling](0006-excel-import-export-tauri.md)

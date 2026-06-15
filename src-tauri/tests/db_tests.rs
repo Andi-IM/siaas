@@ -56,6 +56,7 @@ async fn test_crud_operations() {
         id: Set(major_id.clone()),
         code: Set("TI".to_string()),
         name: Set("Teknik Informatika".to_string()),
+        program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();
@@ -94,6 +95,9 @@ async fn test_crud_operations() {
         id: Set(subject_id.clone()),
         code: Set("CS101".to_string()),
         name: Set("Introduction to Programming".to_string()),
+        category: Set("Kelompok Umum".to_string()),
+        status: Set("active".to_string()),
+        sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();
@@ -202,6 +206,7 @@ async fn test_foreign_key_constraints() {
         id: Set(major_id.clone()),
         code: Set("TI".to_string()),
         name: Set("Teknik Informatika".to_string()),
+        program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();
@@ -226,6 +231,9 @@ async fn test_foreign_key_constraints() {
         id: Set(subject_id.clone()),
         code: Set("CS101".to_string()),
         name: Set("Intro Programming".to_string()),
+        category: Set("Kelompok Umum".to_string()),
+        status: Set("active".to_string()),
+        sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();
@@ -308,6 +316,7 @@ async fn test_sql_injection_prevention() {
         id: Set(major_id.clone()),
         code: Set("TI".to_string()),
         name: Set("Teknik Informatika".to_string()),
+        program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();

@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, Download } from "lucide-react";
 import Link from "next/link";
-import type { Student } from "@/lib/types";
-import { getStudentByNis } from "@/lib/data";
+import type { Student, MataPelajaran } from "@/lib/types";
+import { getStudentByNis, getGradesByStudent, getConcentrations, getSubjects } from "@/lib/data";
 import React from "react";
 
 interface TranscriptSubject {
@@ -22,23 +22,43 @@ interface TranscriptCategory {
 
 export default function StudentTranscriptView({ nis }: { nis: string }) {
   const [student, setStudent] = useState<Student | null>(null);
+  const [subjects, setSubjects] = useState<MataPelajaran[]>([]);
+  const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    async function loadStudent() {
+    async function loadData() {
       try {
         const found = await getStudentByNis(nis);
-        if (active) {
-          setStudent(found ?? null);
+        if (active && found) {
+          setStudent(found);
+          
+          // Get concentration ID (need to find it from name or add it to Student model)
+          // For now, let's assume we can get subjects if we had the ID.
+          // I'll add a helper to find concentration by name.
+          const allCons = await getConcentrations();
+          const con = allCons.find(c => c.nama === found.kompetensi);
+          
+          const [subjs, allGrades] = await Promise.all([
+            con ? getSubjects(con.id) : Promise.resolve([]),
+            getGradesByStudent(nis)
+          ]);
+          
+          if (active) {
+            setSubjects(subjs);
+            setGrades(allGrades);
+            setLoading(false);
+          }
+        } else if (active) {
           setLoading(false);
         }
       } catch (e) {
-        console.error("Failed to load student:", e);
+        console.error("Failed to load transcript data:", e);
         if (active) setLoading(false);
       }
     }
-    loadStudent();
+    loadData();
     return () => { active = false; };
   }, [nis]);
 
@@ -62,40 +82,52 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
     );
   }
 
-  const categories: TranscriptCategory[] = [
-    {
-      nama: "A. Kelompok Umum",
-      subjects: [
-        { no: 1, nama: "Pendidikan Agama dan Budi Pekerti", scores: [78, 81, 77, 75, null, 90], average: 80.20 },
-        { no: 2, nama: "Pendidikan Pancasila", scores: [75, 74, 80, 71, null, 84], average: 76.80 },
-        { no: 3, nama: "Bahasa Indonesia", scores: [78, 76, 81, 83, null, 87], average: 81.00 },
-        { no: 4, nama: "Pendidikan Jasmani, Olahraga, dan Kesehatan", scores: [76, 65, 80, 73, null, null], average: 73.50 },
-        { no: 5, nama: "Sejarah", scores: [70, 61, 77, 74, null, null], average: 70.50 },
-        { no: 6, nama: "Seni Budaya", scores: [73, 73, null, null, null, null], average: 73.00 },
-        { no: 7, nama: "Muatan Lokal Keminangkabauan", scores: [72, 75, 80, 82, null, null], average: 77.25 },
-      ]
-    },
-    {
-      nama: "B. Kelompok Kejuruan",
-      subjects: [
-        { no: 1, nama: "Matematika", scores: [73, 74, 79, 81, null, 85], average: 78.40 },
-        { no: 2, nama: "Bahasa Inggris", scores: [65, 66, 77, 80, null, 86], average: 74.80 },
-        { no: 3, nama: "Informatika", scores: [83, 79, null, null, null, null], average: 81.00 },
-        { no: 4, nama: "Projek Ilmu Pengetahuan Alam dan Sosial", scores: [71, 70, null, null, null, null], average: 70.50 },
-        { no: 5, nama: "Dasar-dasar Keahlian Teknik Mesin", scores: [71, 73, null, null, null, null], average: 72.00 },
-        { no: 6, nama: "Gambar Teknik Manufaktur", scores: [null, null, 81, 81, null, 81], average: 81.00 },
-        { no: 7, nama: "Teknik Pemesinan Bubut", scores: [null, null, 81, 78, null, 83], average: 80.67 },
-        { no: 8, nama: "Teknik Pemesinan Gerinda", scores: [null, null, 75, 75, null, 83], average: 77.67 },
-        { no: 9, nama: "Teknik Pemesinan NC/CNC dan CAM", scores: [null, null, 85, 82, null, 92], average: 86.33 },
-        { no: 10, nama: "Teknik Pemesinan Frais", scores: [null, null, 80, 75, null, 80], average: 78.33 },
-        { no: 11, nama: "Mata Pelajaran Pilihan", scores: [null, null, 78, 79, null, 82], average: 79.67 },
-        { no: 12, nama: "Projek Kreatif dan Kewirausahaan", scores: [null, null, 78, 77, null, 82], average: 79.00 },
-        { no: 13, nama: "Praktik Kerja Lapangan", scores: [null, null, null, null, 88, null], average: 88.00 },
-      ]
-    }
-  ];
+  // --- Aggregate Data ---
+  
+  const categoryMap: Record<string, Record<string, TranscriptSubject>> = {
+    "Kelompok Umum": {},
+    "Kelompok Kejuruan": {}
+  };
 
-  const semesterAverages = [73.75, 72.25, 79.27, 77.73, 88.00, 84.58];
+  // 1. Initialize with all subjects
+  subjects.forEach(s => {
+    const cat = s.kategori === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
+    categoryMap[cat][s.id] = {
+      no: s.sequence,
+      nama: s.nama,
+      scores: [null, null, null, null, null, null],
+      average: 0
+    };
+  });
+
+  // 2. Overlay grades
+  grades.forEach(g => {
+    const cat = g.category === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
+    if (categoryMap[cat][g.subject_id]) {
+      categoryMap[cat][g.subject_id].scores[g.semester_sequence - 1] = g.grade;
+    }
+  });
+
+  const categories: TranscriptCategory[] = Object.entries(categoryMap).map(([name, subs], idx) => {
+    const sortedSubs = Object.values(subs).sort((a, b) => a.no - b.no).map((s, i) => {
+      const validScores = s.scores.filter(v => v !== null) as number[];
+      const avg = validScores.length > 0 
+        ? validScores.reduce((a, b) => a + b, 0) / validScores.length 
+        : 0;
+      return { ...s, no: i + 1, average: avg };
+    });
+    return {
+      nama: `${String.fromCharCode(65 + idx)}. ${name}`,
+      subjects: sortedSubs
+    };
+  });
+
+  const semesterAverages = [1, 2, 3, 4, 5, 6].map(sem => {
+    const semGrades = grades.filter(g => g.semester_sequence === sem);
+    return semGrades.length > 0 
+      ? semGrades.reduce((a, b) => a + b.grade, 0) / semGrades.length 
+      : 0;
+  });
 
   return (
     <div className="list-page">
@@ -241,8 +273,8 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
         <div style={{ marginTop: 16, display: "flex", justifyContent: "flex-end", textAlign: "center", fontSize: "10.5pt" }}>
           <div>
             <p style={{ marginBottom: 45 }}>Padang, 14 Juni 2026<br />Kepala Sekolah,</p>
-            <p style={{ fontWeight: "bold", textDecoration: "underline", margin: 0 }}>Drs. H. Zulkifli, M.Pd</p>
-            <p style={{ margin: 0 }}>NIP. 19700101 199501 1 001</p>
+            <p style={{ fontWeight: "bold", textDecoration: "underline", margin: 0 }}>Zulkifli, S.Pd</p>
+            <p style={{ margin: 0 }}>NIP. 19670430 199802 1 001</p>
           </div>
         </div>
       </div>
