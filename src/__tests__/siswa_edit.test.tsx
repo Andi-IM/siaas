@@ -2,7 +2,9 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
+import { useRouter, useSearchParams } from "next/navigation";
 import EditPage from "@/app/siswa/edit/page";
+import { EditFallback } from "@/app/siswa/edit/EditSiswaView";
 import { getStudentByNis, updateStudent } from "@/lib/data";
 
 // Mock router and search params
@@ -80,6 +82,22 @@ describe("Edit Student Page", () => {
 
   afterEach(() => {
     vi.restoreAllMocks();
+  });
+
+  it("renders EditPage correctly when nis is missing", async () => {
+    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams(""));
+    (getStudentByNis as any).mockResolvedValue(null);
+
+    render(<EditPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Siswa tidak ditemukan")).toBeInTheDocument();
+    });
+  });
+
+  it("renders EditFallback correctly", () => {
+    render(<EditFallback />);
+    expect(document.querySelector(".skeleton")).toBeInTheDocument();
   });
 
   it("renders loading skeletons initially", () => {

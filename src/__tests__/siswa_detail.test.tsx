@@ -2,7 +2,9 @@ import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import StudentDetailView from "@/app/siswa/detail/StudentDetailView";
+import { useRouter, useSearchParams } from "next/navigation";
+import DetailPage from "@/app/siswa/detail/page";
+import { DetailFallback } from "@/app/siswa/detail/StudentDetailView";
 import { getStudentByNis, deleteStudent } from "@/lib/data";
 
 // Mock router
@@ -11,6 +13,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: mockPush,
   }),
+  useSearchParams: vi.fn(() => new URLSearchParams("?nis=11111")),
 }));
 
 // Mock the data client
@@ -65,10 +68,27 @@ describe("Student Detail Page", () => {
     vi.restoreAllMocks();
   });
 
+  it("renders DetailPage correctly when nis is missing", async () => {
+    // This covers the default nis = "" in DetailPageContent
+    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams(""));
+    (getStudentByNis as any).mockResolvedValue(null);
+
+    render(<DetailPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Siswa tidak ditemukan")).toBeInTheDocument();
+    });
+  });
+
+  it("renders DetailFallback correctly", () => {
+    render(<DetailFallback />);
+    expect(document.querySelector(".skeleton")).toBeInTheDocument();
+  });
+
   it("renders loading skeletons initially", () => {
     (getStudentByNis as any).mockReturnValue(new Promise(() => {}));
 
-    const { container } = render(<StudentDetailView nis="11111" />);
+    const { container } = render(<DetailPage />);
 
     expect(screen.queryByText("Alice")).not.toBeInTheDocument();
     expect(container.getElementsByClassName("skeleton").length).toBeGreaterThan(0);
@@ -77,7 +97,7 @@ describe("Student Detail Page", () => {
   it("renders empty state when student is not found", async () => {
     (getStudentByNis as any).mockResolvedValue(null);
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Siswa tidak ditemukan")).toBeInTheDocument();
@@ -89,7 +109,7 @@ describe("Student Detail Page", () => {
   it("renders all student details fields correctly", async () => {
     (getStudentByNis as any).mockResolvedValue(mockStudent);
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Alice" })).toBeInTheDocument();
@@ -108,7 +128,7 @@ describe("Student Detail Page", () => {
     (getStudentByNis as any).mockResolvedValue(mockStudent);
     (deleteStudent as any).mockResolvedValue(undefined);
 
-    const { container } = render(<StudentDetailView nis="11111" />);
+    const { container } = render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Alice" })).toBeInTheDocument();
@@ -156,7 +176,7 @@ describe("Student Detail Page", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     (getStudentByNis as any).mockRejectedValue(new Error("Database error"));
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.queryByRole("heading", { name: "Alice" })).not.toBeInTheDocument();
@@ -171,7 +191,7 @@ describe("Student Detail Page", () => {
     (getStudentByNis as any).mockResolvedValue(mockStudent);
     (deleteStudent as any).mockRejectedValue(new Error("Database delete error"));
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Alice" })).toBeInTheDocument();
@@ -197,7 +217,7 @@ describe("Student Detail Page", () => {
       status: "inactive",
     });
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByText("Laki-laki")).toBeInTheDocument();
@@ -214,7 +234,7 @@ describe("Student Detail Page", () => {
       tanggalKelulusan: "",
     });
 
-    render(<StudentDetailView nis="11111" />);
+    render(<DetailPage />);
 
     await waitFor(() => {
       expect(screen.getByRole("heading", { name: "Alice" })).toBeInTheDocument();
@@ -236,7 +256,7 @@ describe("Student Detail Page", () => {
     });
     (getStudentByNis as any).mockReturnValue(promise);
 
-    const { unmount } = render(<StudentDetailView nis="11111" />);
+    const { unmount } = render(<DetailPage />);
     unmount();
 
     resolvePromise(mockStudent);
@@ -250,7 +270,7 @@ describe("Student Detail Page", () => {
     });
     (getStudentByNis as any).mockReturnValue(promise);
 
-    const { unmount } = render(<StudentDetailView nis="11111" />);
+    const { unmount } = render(<DetailPage />);
     unmount();
 
     rejectPromise(new Error("Database error"));

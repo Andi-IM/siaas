@@ -85,7 +85,7 @@ export async function addStudent(student: Student): Promise<void> {
         father_occupation: student.pekerjaanAyah || null,
         mother_occupation: student.pekerjaanIbu || null,
         guardian_name: student.namaWali || null,
-        guardian_address: student.guardian_address || null,
+        guardian_address: student.alamatWali || null,
         guardian_phone_number: student.teleponWali || null,
         guardian_occupation: student.pekerjaanWali || null,
         diploma_number: student.nomorIjazah || null,

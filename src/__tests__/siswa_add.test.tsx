@@ -2,7 +2,9 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import TambahSiswaPage from "@/app/siswa/tambah/page";
+import { useRouter } from "next/navigation";
+import TambahPage from "@/app/siswa/tambah/page";
+import { TambahFallback } from "@/app/siswa/tambah/fallback";
 import { addStudent } from "@/lib/data";
 
 // Mock router
@@ -53,7 +55,7 @@ describe("Add Student Page", () => {
   });
 
   it("renders form sections and input fields", () => {
-    render(<TambahSiswaPage />);
+    render(<TambahPage />);
 
     expect(screen.getByText("Tambah Siswa")).toBeInTheDocument();
     expect(screen.getByText("DATA PRIBADI")).toBeInTheDocument();
@@ -68,7 +70,7 @@ describe("Add Student Page", () => {
   });
 
   it("shows validation errors on empty submission", async () => {
-    render(<TambahSiswaPage />);
+    render(<TambahPage />);
 
     const submitBtn = screen.getByRole("button", { name: /simpan/i });
     await userEvent.click(submitBtn);
@@ -81,7 +83,7 @@ describe("Add Student Page", () => {
   });
 
   it("clears validation errors when field values are corrected", async () => {
-    const { container } = render(<TambahSiswaPage />);
+    const { container } = render(<TambahPage />);
 
     const submitBtn = screen.getByRole("button", { name: /simpan/i });
     await userEvent.click(submitBtn);
@@ -109,7 +111,7 @@ describe("Add Student Page", () => {
   it("submits successfully and redirects on valid data", async () => {
     (addStudent as any).mockResolvedValue(undefined);
 
-    const { container } = render(<TambahSiswaPage />);
+    const { container } = render(<TambahPage />);
 
     // Fill all form fields using fireEvent for high-speed execution
     fireEvent.change(getFieldInput(container, "Nama Peserta Didik (Lengkap)"), { target: { value: "David" } });
@@ -179,7 +181,7 @@ describe("Add Student Page", () => {
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     (addStudent as any).mockRejectedValue(new Error("Database write error"));
 
-    const { container } = render(<TambahSiswaPage />);
+    const { container } = render(<TambahPage />);
 
     // Fill required form fields
     fireEvent.change(getFieldInput(container, "Nama Peserta Didik (Lengkap)"), { target: { value: "David" } });
@@ -197,5 +199,10 @@ describe("Add Student Page", () => {
     // Should not show success state
     expect(screen.queryByText("Siswa berhasil ditambahkan")).not.toBeInTheDocument();
     consoleSpy.mockRestore();
+  });
+
+  it("renders TambahFallback correctly", () => {
+    const { container } = render(<TambahFallback />);
+    expect(container.querySelector(".skeleton")).toBeInTheDocument();
   });
 });

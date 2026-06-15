@@ -1,36 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getStudentByNis, updateStudent } from "@/lib/data";
-import type { Student } from "@/lib/types";
+import { addStudent } from "@/lib/data";
+import { Student } from "@/lib/types";
 
-export function EditFallback() {
-  return (
-    <div className="form-page">
-      <div className="form-page__inner">
-        <div className="skeleton" style={{ height: 24, width: 200, marginBottom: 24 }} />
-        <div className="skeleton" style={{ height: 16, width: "60%", marginBottom: 12 }} />
-        <div className="skeleton" style={{ height: 16, width: "40%", marginBottom: 12 }} />
-        <div className="skeleton" style={{ height: 16, width: "50%" }} />
-      </div>
-    </div>
-  );
-}
-
-export function EditPageContent() {
-  const searchParams = useSearchParams();
-  const nis = searchParams.get("nis") || "";
-  return <EditSiswaView nis={nis} />;
-}
-
-export default function EditSiswaView({ nis }: { nis: string }) {
+export default function TambahSiswaView() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const [form, setForm] = useState<Student>({
     nis: "",
@@ -59,32 +37,9 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     teleponWali: "",
     pekerjaanWali: "",
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    let active = true;
-    async function loadStudent() {
-      try {
-        const student = await getStudentByNis(nis);
-        if (active) {
-          if (student) {
-            setForm({ ...student });
-          } else {
-            setNotFound(true);
-          }
-          setLoading(false);
-        }
-      } catch (e) {
-        console.error("Failed to load student:", e);
-        if (active) {
-          setNotFound(true);
-          setLoading(false);
-        }
-      }
-    }
-    loadStudent();
-    return () => { active = false; };
-  }, [nis]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitted, setSubmitted] = useState(false);
 
   function validate() {
     const errs: Record<string, string> = {};
@@ -100,11 +55,11 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     e.preventDefault();
     if (!validate()) return;
     try {
-      await updateStudent(nis, { ...form });
+      await addStudent({ ...form });
       setSubmitted(true);
-      setTimeout(() => router.push(`/siswa/detail?nis=${nis}`), 1200);
+      setTimeout(() => router.push("/siswa"), 1200);
     } catch (e) {
-      console.error("Failed to update student:", e);
+      console.error("Failed to add student:", e);
     }
   }
 
@@ -113,40 +68,13 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     if (errors[key]) setErrors((prev) => { const { [key]: _, ...rest } = prev; return rest; });
   }
 
-  if (loading) {
-    return (
-      <div className="form-page">
-        <div className="form-page__inner">
-          <div className="skeleton" style={{ height: 24, width: 200, marginBottom: 24 }} />
-          <div className="skeleton" style={{ height: 16, width: "100%", marginBottom: 12 }} />
-          <div className="skeleton" style={{ height: 16, width: "100%", marginBottom: 12 }} />
-          <div className="skeleton" style={{ height: 16, width: "60%" }} />
-        </div>
-      </div>
-    );
-  }
-
-  if (notFound) {
-    return (
-      <div className="form-page">
-        <div className="form-page__inner">
-          <div className="empty-state" style={{ padding: "calc(var(--spacing-base) * 16) calc(var(--spacing-base) * 4)" }}>
-            <p className="headline-sm" style={{ marginBottom: "var(--gutter)" }}>Siswa tidak ditemukan</p>
-            <p className="body-md" style={{ color: "var(--on-surface-variant)" }}>Data siswa tidak dapat diedit karena tidak ditemukan.</p>
-            <Link href="/siswa" className="btn btn--primary" style={{ marginTop: "var(--gutter)" }}>Kembali ke Daftar Siswa</Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (submitted) {
     return (
       <div className="form-page">
         <div className="form-page__inner">
           <div className="empty-state" style={{ padding: "calc(var(--spacing-base) * 16) calc(var(--spacing-base) * 4)" }}>
-            <p className="headline-sm" style={{ marginBottom: "var(--gutter)" }}>Data siswa berhasil diperbarui</p>
-            <p className="body-md" style={{ color: "var(--on-surface-variant)" }}>Mengalihkan ke detail siswa...</p>
+            <p className="headline-sm" style={{ marginBottom: "var(--gutter)" }}>Siswa berhasil ditambahkan</p>
+            <p className="body-md" style={{ color: "var(--on-surface-variant)" }}>Mengalihkan ke daftar siswa...</p>
           </div>
         </div>
       </div>
@@ -157,13 +85,13 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     <div className="form-page">
       <div className="form-page__inner">
         <div className="form-page__header">
-          <Link href={`/siswa/detail?nis=${nis}`} className="back-link" aria-label="Kembali ke detail siswa">
+          <Link href="/siswa" className="back-link" aria-label="Kembali ke daftar siswa">
             <ArrowLeft size={20} />
           </Link>
           <div>
-            <h1 className="headline-sm" style={{ margin: 0 }}>Edit Siswa</h1>
+            <h1 className="headline-sm" style={{ margin: 0 }}>Tambah Siswa</h1>
             <p className="body-sm" style={{ color: "var(--on-surface-variant)", marginTop: 4 }}>
-              {form.nama} — {form.nis}
+              Masukkan data lengkap peserta didik baru
             </p>
           </div>
         </div>
@@ -179,6 +107,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className={`form-input${errors.nama ? " form-input--error" : ""}`}
                   value={form.nama}
                   onChange={(e) => setField("nama", e.target.value)}
+                  placeholder="Nama lengkap sesuai ijazah"
                 />
               </FormField>
 
@@ -188,6 +117,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className={`form-input${errors.nis ? " form-input--error" : ""}`}
                   value={form.nis}
                   onChange={(e) => setField("nis", e.target.value)}
+                  placeholder="Contoh: 24001"
                 />
               </FormField>
 
@@ -197,6 +127,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className={`form-input${errors.nisn ? " form-input--error" : ""}`}
                   value={form.nisn}
                   onChange={(e) => setField("nisn", e.target.value)}
+                  placeholder="Contoh: 0071234561"
                 />
               </FormField>
 
@@ -206,6 +137,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input"
                   value={form.tempatLahir}
                   onChange={(e) => setField("tempatLahir", e.target.value)}
+                  placeholder="Kota kelahiran"
                 />
               </FormField>
 
@@ -235,6 +167,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input"
                   value={form.agama}
                   onChange={(e) => setField("agama", e.target.value)}
+                  placeholder="Agama"
                 />
               </FormField>
 
@@ -244,6 +177,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input"
                   value={form.telepon}
                   onChange={(e) => setField("telepon", e.target.value)}
+                  placeholder="Contoh: 021-xxxxxx"
                 />
               </FormField>
 
@@ -252,6 +186,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input form-input--textarea"
                   value={form.alamat}
                   onChange={(e) => setField("alamat", e.target.value)}
+                  placeholder="Alamat lengkap tempat tinggal"
                   rows={2}
                 />
               </FormField>
@@ -268,6 +203,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input"
                   value={form.sekolahAsal}
                   onChange={(e) => setField("sekolahAsal", e.target.value)}
+                  placeholder="Nama SMP/MTs asal"
                 />
               </FormField>
 
@@ -277,6 +213,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className={`form-input${errors.diterimaDiKelas ? " form-input--error" : ""}`}
                   value={form.diterimaDiKelas}
                   onChange={(e) => setField("diterimaDiKelas", e.target.value)}
+                  placeholder="Contoh: X TKJ 1"
                 />
               </FormField>
 
@@ -295,6 +232,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input"
                   value={form.kompetensi}
                   onChange={(e) => setField("kompetensi", e.target.value)}
+                  placeholder="Contoh: Teknik Komputer dan Jaringan"
                 />
               </FormField>
 
@@ -315,17 +253,6 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   value={form.tanggalKelulusan}
                   onChange={(e) => setField("tanggalKelulusan", e.target.value)}
                 />
-              </FormField>
-
-              <FormField label="Status">
-                <select
-                  className="form-input"
-                  value={form.status}
-                  onChange={(e) => setField("status", e.target.value as "active" | "inactive")}
-                >
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Nonaktif</option>
-                </select>
               </FormField>
             </div>
           </section>
@@ -375,6 +302,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                   className="form-input form-input--textarea"
                   value={form.alamatOrangTua}
                   onChange={(e) => setField("alamatOrangTua", e.target.value)}
+                  placeholder="Kosongkan jika sama dengan alamat siswa"
                   rows={2}
                 />
               </FormField>
@@ -424,8 +352,8 @@ export default function EditSiswaView({ nis }: { nis: string }) {
           </section>
 
           <div className="form-actions">
-            <Link href={`/siswa/detail?nis=${nis}`} className="btn btn--secondary">Batal</Link>
-            <button type="submit" className="btn btn--primary">Simpan Perubahan</button>
+            <Link href="/siswa" className="btn btn--secondary">Batal</Link>
+            <button type="submit" className="btn btn--primary">Simpan Siswa</button>
           </div>
         </form>
       </div>
