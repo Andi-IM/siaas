@@ -1,5 +1,7 @@
 # SIAAS: Academic Administrative Core
 
+[![codecov](https://codecov.io/gh/Andi-IM/siaas/branch/main/graph/badge.svg)](https://codecov.io/gh/Andi-IM/siaas)
+
 Sistem Informasi Administrasi Akademik Siswa (SIAAS) is an offline-native administrative platform designed to digitalize and automate the management of student records in Indonesian schools (Buku Induk). Built for speed, precision, and institutional trust.
 
 ## 🚀 Features
@@ -36,6 +38,27 @@ Sistem Informasi Administrasi Akademik Siswa (SIAAS) is an offline-native admini
 ### Production Build
 1. Export static assets: `npm run build`
 2. Generate Windows installer: `npx tauri build`
+
+## 🧪 Testing & Coverage
+
+We maintain high testing standards across our core application features. The project uses **Vitest** for testing, **Istanbul** for code coverage, and **Codecov** for tracking coverage history.
+
+[![codecov](https://codecov.io/gh/Andi-IM/siaas/branch/main/graph/badge.svg)](https://codecov.io/gh/Andi-IM/siaas)
+
+### Run Commands
+- Run all tests: `npm run test`
+- Run tests without coverage (fast): `npm run test:fast`
+- Run coverage report: `npm run test:coverage`
+
+### Current Coverage of Core Modules
+All core student administration and curriculum modules are fully tested and have achieved **100% line coverage**:
+
+| Fitur / Modul | Stmts % | Branch % | Funcs % | Lines % |
+| :--- | :---: | :---: | :---: | :---: |
+| **Kurikulum (`app/kurikulum`)** | 100% | 100% | 100% | 100% |
+| **Tambah Siswa (`app/siswa/tambah`)** | 100% | 100% | 100% | 100% |
+| **Edit Siswa (`app/siswa/edit`)** | 100% | 100% | 100% | 100% |
+| **Detail Siswa (`app/siswa/detail`)** | 100% | 100% | 100% | 100% |
 
 ## 📖 Architecture & Documentation
 
