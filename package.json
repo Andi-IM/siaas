@@ -9,8 +9,11 @@
     "lint": "eslint .",
     "tauri": "tauri",
     "test": "vitest run",
+    "test:fast": "vitest run --no-coverage",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:coverage:full": "vitest run --coverage.include=src/**/*",
+    "prepare": "husky"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.0",
@@ -33,9 +36,10 @@
     "@vitest/coverage-v8": "^4.1.9",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.9",
+    "happy-dom": "^20.10.3",
+    "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "typescript": "^5.7.0",
-    "vite-tsconfig-paths": "^6.1.1",
     "vitest": "^4.1.9"
   }
 }

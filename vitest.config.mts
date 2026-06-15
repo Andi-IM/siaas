@@ -1,18 +1,29 @@
 import react from "@vitejs/plugin-react";
-import tsconfigPaths from "vite-tsconfig-paths";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [tsconfigPaths(), react()],
+  resolve: {
+    tsconfigPaths: true,
+  },
+  plugins: [react()],
+  cacheDir: "./node_modules/.vite-cache",
   test: {
-    environment: "jsdom",
+    environment: "happy-dom",
     globals: true,
     clearMocks: true,
     setupFiles: ["./vitest.setup.ts"],
+    deps: {
+      optimizer: {
+        web: {
+          enabled: true,
+          include: ["@testing-library/react", "@testing-library/user-event", "lucide-react"],
+        },
+      },
+    },
     coverage: {
       provider: "istanbul",
       reporter: ["text", "json", "html"],
-      include: ["src/**/*"],
+      include: ["src/app/**/*", "src/components/**/*"],
       exclude: [
         "src/**/*.d.ts",
         "src/**/types.ts",

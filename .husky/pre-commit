@@ -1,0 +1,28 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Ambil daftar file yang di-stage
+STAGED_FILES=$(git diff --cached --name-only)
+
+# Cek apakah ada file yang berpengaruh pada kode/test
+# Kriteria trigger:
+# 1. File di dalam folder src/
+# 2. File di dalam folder src-tauri/ (logic backend)
+# 3. Konfigurasi (package.json, tsconfig.json, vitest.config.mts, etc)
+# 4. File source (.ts, .tsx, .js, .jsx, .mts, .rs)
+
+TRIGGER_TESTS=false
+
+for FILE in $STAGED_FILES; do
+  if echo "$FILE" | grep -qE '^src/|^src-tauri/|^package\.json$|^tsconfig\.json$|^vitest\.config\.mts$|^\.github/|^\.env|\.(ts|tsx|js|jsx|mts|rs)$'; then
+    TRIGGER_TESTS=true
+    break
+  fi
+done
+
+if [ "$TRIGGER_TESTS" = true ]; then
+  echo "🚀 Code changes detected. Running full test audit..."
+  npm run test:coverage:full
+else
+  echo "📝 No code changes detected (only documentation or assets). Skipping tests."
+fi
