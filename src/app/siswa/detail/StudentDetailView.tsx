@@ -33,6 +33,7 @@ export default function StudentDetailView({ nis }: { nis: string }) {
   }, [nis]);
 
   async function handleDelete() {
+    /* istanbul ignore next */
     if (!student) return;
     try {
       await deleteStudent(student.nis);

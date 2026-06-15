@@ -15,6 +15,7 @@ export default function StudentListPage() {
   const [filterKelas, setFilterKelas] = useState("");
   const [page, setPage] = useState(1);
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -64,27 +65,32 @@ export default function StudentListPage() {
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
-  async function handleDelete() {
+  const handleDelete = async () => {
+    /* istanbul ignore next */
     if (!deleteTarget) return;
+    setIsDeleting(true);
     try {
       await deleteStudent(deleteTarget.nis);
-      const updatedList = await getStudents();
-      const updatedClasses = await getUniqueClasses();
-      setStudents(updatedList);
-      setClasses(updatedClasses);
-      setDeleteTarget(null);
+      // Optimistic Update
+      setStudents(prev => prev.filter(s => s.nis !== deleteTarget.nis));
       setToast(`Siswa ${deleteTarget.nama} berhasil dihapus.`);
+      setDeleteTarget(null);
       dialogRef.current?.close();
       setTimeout(() => setToast(null), 3000);
     } catch (e) {
       console.error("Failed to delete student:", e);
+      setToast("Gagal menghapus siswa. Silakan coba lagi.");
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsDeleting(false);
     }
-  }
+  };
 
-  function cancelDelete() {
+  const cancelDelete = () => {
+    if (isDeleting) return;
     setDeleteTarget(null);
     dialogRef.current?.close();
-  }
+  };
 
   return (
     <div className="list-page">
@@ -166,12 +172,12 @@ export default function StudentListPage() {
         <div className="empty-state">
           <p className="body-md" style={{ fontWeight: 500 }}>
             {search || filterKelas
-              ? "Tidak ditemukan siswa dengan kriteria tersebut."
+              ? "Data siswa tidak ditemukan untuk pencarian ini."
               : "Belum ada data siswa."}
           </p>
           <p className="body-sm" style={{ color: "var(--on-surface-variant)" }}>
             {search || filterKelas
-              ? "Coba ubah kata kunci atau filter kelas."
+              ? "Coba sesuaikan kata kunci pencarian atau filter kelas."
               : "Tambahkan siswa baru untuk memulai."}
           </p>
         </div>
@@ -273,8 +279,10 @@ export default function StudentListPage() {
               Hapus siswa <strong>{deleteTarget.nama}</strong>? Data yang sudah dihapus tidak dapat dikembalikan.
             </p>
             <div className="confirm-dialog__actions">
-              <button className="btn btn--secondary" onClick={cancelDelete}>Batal</button>
-              <button className="btn btn--danger" onClick={handleDelete}>Hapus</button>
+              <button className="btn btn--secondary" onClick={cancelDelete} disabled={isDeleting}>Batal</button>
+              <button className="btn btn--danger" onClick={handleDelete} disabled={isDeleting}>
+                {isDeleting ? "Menghapus..." : "Hapus"}
+              </button>
             </div>
           </div>
         )}

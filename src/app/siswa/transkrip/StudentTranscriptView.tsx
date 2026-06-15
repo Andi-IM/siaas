@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { ArrowLeft, Printer, Download } from "lucide-react";
 import Link from "next/link";
 import type { Student, MataPelajaran } from "@/lib/types";

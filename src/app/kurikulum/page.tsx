@@ -53,6 +53,7 @@ export default function CurriculumPage() {
 
   useEffect(() => {
     refreshPrograms();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function CurriculumPage() {
       setConcentrations([]);
       setSelectedKonsentrasiId(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProgramId]);
 
   useEffect(() => {

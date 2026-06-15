@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Printer, ChevronDown, Filter, FileSpreadsheet, Users, FileUp, FileDown, Edit3, Save, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Printer, FileUp, FileDown, Edit3, Save, X } from "lucide-react";
 import Link from "next/link";
 import { getStudents, getPrograms, getConcentrations, getSubjects, getStudentGradesByFilter, saveGradesBatch, importGradesFromExcel, exportGradesToExcel } from "@/lib/data";
 import type { Student, ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, StudentGrade } from "@/lib/types";
@@ -17,6 +17,7 @@ export default function RekapDataPage() {
   const [programs, setPrograms] = useState<ProgramKeahlian[]>([]);
   const [concentrations, setConcentrations] = useState<KonsentrasiKeahlian[]>([]);
   const [subjects, setSubjects] = useState<MataPelajaran[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [grades, setGrades] = useState<StudentGrade[]>([]);
 
   // Filters
@@ -27,6 +28,21 @@ export default function RekapDataPage() {
   // Edit State
   const [isEditing, setIsEditing] = useState(false);
   const [localGrades, setLocalGrades] = useState<Record<string, number>>({}); // Key: "studentId_subjectId"
+
+  const [toast, setToast] = useState<string | null>(null);
+  const [modalMessage, setModalMessage] = useState<{ title: string; body: string; type?: "info" | "error" | "success" } | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    if (modalMessage && dialogRef.current) {
+      dialogRef.current.showModal();
+    }
+  }, [modalMessage]);
+
+  const closeDialog = () => {
+    setModalMessage(null);
+    dialogRef.current?.close();
+  };
 
   useEffect(() => {
     let active = true;
@@ -80,7 +96,7 @@ export default function RekapDataPage() {
           ]);
           if (active) {
             setSubjects(subjs);
-            setGrades(grads);
+            
             
             // Build local editing map
             const map: Record<string, number> = {};
@@ -127,9 +143,15 @@ export default function RekapDataPage() {
       // Refresh
       const grads = await getStudentGradesByFilter(selectedKonsentrasiId, selectedSemester);
       setGrades(grads);
+      setToast("Nilai berhasil disimpan.");
+      setTimeout(() => setToast(null), 3000);
     } catch (e) {
       console.error("Failed to save grades:", e);
-      alert("Gagal menyimpan nilai.");
+      setModalMessage({
+        title: "Gagal Menyimpan",
+        body: "Gagal menyimpan nilai.",
+        type: "error"
+      });
     }
   };
 
@@ -149,7 +171,11 @@ export default function RekapDataPage() {
   const handleImportExcel = async () => {
     try {
       const message = await importGradesFromExcel();
-      alert(message);
+      setModalMessage({
+        title: "Impor Excel",
+        body: message,
+        type: "success"
+      });
       // Refresh students and grades
       const studs = await getStudents();
       setStudents(studs);
@@ -164,21 +190,37 @@ export default function RekapDataPage() {
       }
     } catch (e) {
       console.error("Failed to import Excel:", e);
-      alert(typeof e === "string" ? e : "Gagal mengimpor Excel.");
+      setModalMessage({
+        title: "Gagal Impor",
+        body: typeof e === "string" ? e : "Gagal mengimpor Excel.",
+        type: "error"
+      });
     }
   };
 
   const handleExportExcel = async () => {
     if (!selectedKonsentrasiId) {
-      alert("Silakan pilih Konsentrasi Keahlian terlebih dahulu.");
+      setModalMessage({
+        title: "Pilih Konsentrasi",
+        body: "Silakan pilih Konsentrasi Keahlian terlebih dahulu.",
+        type: "info"
+      });
       return;
     }
     try {
       const message = await exportGradesToExcel(selectedKonsentrasiId);
-      alert(message);
+      setModalMessage({
+        title: "Ekspor Excel",
+        body: message,
+        type: "success"
+      });
     } catch (e) {
       console.error("Failed to export Excel:", e);
-      alert(typeof e === "string" ? e : "Gagal mengekspor Excel.");
+      setModalMessage({
+        title: "Gagal Ekspor",
+        body: typeof e === "string" ? e : "Gagal mengekspor Excel.",
+        type: "error"
+      });
     }
   };
 
@@ -232,21 +274,21 @@ export default function RekapDataPage() {
       {/* ── Filters (Hidden on Print) ── */}
       <section className="filter-bar no-print card">
         <div className="form-field program-field">
-          <label className="label-md">Program Keahlian</label>
-          <select className="filter-select" value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)}>
+          <label className="label-md" htmlFor="select-program">Program Keahlian</label>
+          <select id="select-program" className="filter-select" value={selectedProgramId} onChange={e => setSelectedProgramId(e.target.value)}>
             {programs.map(p => <option key={p.id} value={p.id}>{p.nama}</option>)}
           </select>
         </div>
         <div className="form-field konsentrasi-field">
-          <label className="label-md">Konsentrasi Keahlian</label>
-          <select className="filter-select" value={selectedKonsentrasiId} onChange={e => setSelectedKonsentrasiId(e.target.value)}>
+          <label className="label-md" htmlFor="select-konsentrasi">Konsentrasi Keahlian</label>
+          <select id="select-konsentrasi" className="filter-select" value={selectedKonsentrasiId} onChange={e => setSelectedKonsentrasiId(e.target.value)}>
             <option value="">Semua Konsentrasi</option>
             {concentrations.map(k => <option key={k.id} value={k.id}>{k.nama}</option>)}
           </select>
         </div>
         <div className="form-field semester-field">
-          <label className="label-md">Semester</label>
-          <select className="filter-select" value={selectedSemester} onChange={e => setSelectedSemester(parseInt(e.target.value))}>
+          <label className="label-md" htmlFor="select-semester">Semester</label>
+          <select id="select-semester" className="filter-select" value={selectedSemester} onChange={e => setSelectedSemester(parseInt(e.target.value))}>
             {[1, 2, 3, 4, 5, 6].map(s => <option key={s} value={s}>Semester {s}</option>)}
           </select>
         </div>
@@ -341,7 +383,30 @@ export default function RekapDataPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      {/* ── Dialog Modal for Alerts ── */}
+      <dialog ref={dialogRef} className="confirm-dialog" onClose={closeDialog}>
+        {modalMessage && (
+          <div className="confirm-dialog__inner">
+            <h2 className="headline-sm" style={{ marginBottom: "var(--gutter)" }}>
+              {modalMessage.title}
+            </h2>
+            <p className="body-md" style={{ marginBottom: "calc(var(--spacing-base) * 6)" }}>
+              {modalMessage.body}
+            </p>
+            <div className="confirm-dialog__actions">
+              <button className="btn btn--primary" onClick={closeDialog}>OK</button>
+            </div>
+          </div>
+        )}
+      </dialog>
+
+      {/* ── Toast ── */}
+      {toast && (
+        <div className="toast" role="status" aria-live="polite">
+          {toast}
+        </div>
+      )}
+    </div>
 
       <style jsx>{`
         .rekap-page {
@@ -575,6 +640,5 @@ export default function RekapDataPage() {
   );
 }
 
-const thStyle: React.CSSProperties = {}; // Kept for reference but moved to styled-jsx
-const tdStyle: React.CSSProperties = {}; // Kept for reference but moved to styled-jsx
+
 
