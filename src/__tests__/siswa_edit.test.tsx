@@ -85,7 +85,7 @@ describe("Edit Student Page", () => {
   });
 
   it("renders EditPage correctly when nis is missing", async () => {
-    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams(""));
+    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams("") as any);
     (getStudentByNis as any).mockResolvedValue(null);
 
     render(<EditPage />);

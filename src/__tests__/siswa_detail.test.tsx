@@ -70,7 +70,7 @@ describe("Student Detail Page", () => {
 
   it("renders DetailPage correctly when nis is missing", async () => {
     // This covers the default nis = "" in DetailPageContent
-    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams(""));
+    vi.mocked(useSearchParams).mockReturnValueOnce(new URLSearchParams("") as any);
     (getStudentByNis as any).mockResolvedValue(null);
 
     render(<DetailPage />);
