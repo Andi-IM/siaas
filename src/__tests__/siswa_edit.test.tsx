@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import EditPage from "@/app/siswa/edit/page";
 import { EditFallback } from "@/app/siswa/edit/EditSiswaView";
 import { getStudentByNis, updateStudent } from "@/lib/data";

@@ -2,7 +2,6 @@ import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
-import { useRouter } from "next/navigation";
 import TambahPage from "@/app/siswa/tambah/page";
 import { TambahFallback } from "@/app/siswa/tambah/fallback";
 import { addStudent } from "@/lib/data";
