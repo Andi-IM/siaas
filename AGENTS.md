@@ -33,3 +33,13 @@ This project is equipped with the `impeccable` design skill. AI agents should us
 | `/impeccable animate [target]` | Add purposeful animations and motion. |
 
 To use these, invoke the `impeccable` skill or run the scripts in `.opencode/skills/impeccable/`.
+
+## Agent Mandates
+
+### Pre-Commit Verification
+To maintain codebase integrity, all agents **MUST** execute and pass the following verification checks before proposing or performing any `git commit`:
+
+1. **Linting**: Run `npm run lint` and ensure no errors or warnings are reported.
+2. **Type-Checking**: Run `npx tsc --noEmit` and ensure no TypeScript errors are found.
+
+Failure to verify these checks is considered a violation of the project's engineering standards.
