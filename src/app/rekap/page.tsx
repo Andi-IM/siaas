@@ -18,25 +18,62 @@ export default function RekapDataPage() {
   const [selectedSemester, setSelectedSemester] = useState(1);
 
   useEffect(() => {
-    setStudents(getStudents());
-    const progs = getPrograms();
-    setPrograms(progs);
-    if (progs.length > 0) setSelectedProgramId(progs[0].id);
+    let active = true;
+    async function loadInitial() {
+      try {
+        const [studs, progs] = await Promise.all([
+          getStudents(),
+          getPrograms()
+        ]);
+        if (active) {
+          setStudents(studs);
+          setPrograms(progs);
+          if (progs.length > 0) setSelectedProgramId(progs[0].id);
+        }
+      } catch (e) {
+        console.error("Failed to load initial rekap data:", e);
+      }
+    }
+    loadInitial();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
-    if (selectedProgramId) {
-      const cons = getConcentrations(selectedProgramId);
-      setConcentrations(cons);
-      if (cons.length > 0) setSelectedKonsentrasiId(cons[0].id);
-      else setSelectedKonsentrasiId("");
+    let active = true;
+    async function loadCons() {
+      if (selectedProgramId) {
+        try {
+          const cons = await getConcentrations(selectedProgramId);
+          if (active) {
+            setConcentrations(cons);
+            if (cons.length > 0) setSelectedKonsentrasiId(cons[0].id);
+            else setSelectedKonsentrasiId("");
+          }
+        } catch (e) {
+          console.error("Failed to load concentrations:", e);
+        }
+      }
     }
+    loadCons();
+    return () => { active = false; };
   }, [selectedProgramId]);
 
   useEffect(() => {
-    if (selectedKonsentrasiId) {
-      setSubjects(getSubjects(selectedKonsentrasiId));
+    let active = true;
+    async function loadSubjects() {
+      if (selectedKonsentrasiId) {
+        try {
+          const subjs = await getSubjects(selectedKonsentrasiId);
+          if (active) {
+            setSubjects(subjs);
+          }
+        } catch (e) {
+          console.error("Failed to load subjects:", e);
+        }
+      }
     }
+    loadSubjects();
+    return () => { active = false; };
   }, [selectedKonsentrasiId]);
 
   const filteredStudents = students.filter(s => 
@@ -142,7 +179,7 @@ export default function RekapDataPage() {
                 <tr key={s.nis}>
                   <td style={tdStyle}>{idx + 1}</td>
                   <td style={{ ...tdStyle, textAlign: "left", fontWeight: 500 }}>
-                    <Link href={`/siswa/${s.nis}/transkrip`} className="table-link">
+                    <Link href={`/siswa/transkrip?nis=${s.nis}`} className="table-link">
                       {s.nama}
                     </Link>
                   </td>

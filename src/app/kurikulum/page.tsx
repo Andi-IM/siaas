@@ -31,6 +31,26 @@ export default function CurriculumPage() {
     nama: "", kode: "", kategori: "Kelompok Umum", semester: 1, status: "active"
   });
 
+  const refreshPrograms = async () => {
+    try {
+      const progs = await getPrograms();
+      setPrograms(progs);
+      if (progs.length > 0 && !selectedProgramId) setSelectedProgramId(progs[0].id);
+    } catch (e) {
+      console.error("Failed to refresh programs:", e);
+    }
+  };
+
+  const refreshConcentrations = async (pId: string) => {
+    try {
+      const cons = await getConcentrations(pId);
+      setConcentrations(cons);
+      if (cons.length > 0 && !selectedKonsentrasiId) setSelectedKonsentrasiId(cons[0].id);
+    } catch (e) {
+      console.error("Failed to refresh concentrations:", e);
+    }
+  };
+
   useEffect(() => {
     refreshPrograms();
   }, []);
@@ -45,11 +65,21 @@ export default function CurriculumPage() {
   }, [selectedProgramId]);
 
   useEffect(() => {
-    if (selectedKonsentrasiId) {
-      setSubjects(getSubjects(selectedKonsentrasiId));
-    } else {
-      setSubjects([]);
+    let active = true;
+    async function loadSubjects() {
+      if (selectedKonsentrasiId) {
+        try {
+          const subjs = await getSubjects(selectedKonsentrasiId);
+          if (active) setSubjects(subjs);
+        } catch (e) {
+          console.error("Failed to load subjects:", e);
+        }
+      } else {
+        if (active) setSubjects([]);
+      }
     }
+    loadSubjects();
+    return () => { active = false; };
   }, [selectedKonsentrasiId]);
 
   useEffect(() => {
@@ -59,18 +89,6 @@ export default function CurriculumPage() {
       dialogRef.current?.close();
     }
   }, [modal.type]);
-
-  const refreshPrograms = () => {
-    const progs = getPrograms();
-    setPrograms(progs);
-    if (progs.length > 0 && !selectedProgramId) setSelectedProgramId(progs[0].id);
-  };
-
-  const refreshConcentrations = (pId: string) => {
-    const cons = getConcentrations(pId);
-    setConcentrations(cons);
-    if (cons.length > 0 && !selectedKonsentrasiId) setSelectedKonsentrasiId(cons[0].id);
-  };
 
   const activeProgram = programs.find(p => p.id === selectedProgramId);
   const activeKonsentrasi = concentrations.find(k => k.id === selectedKonsentrasiId);
@@ -95,36 +113,56 @@ export default function CurriculumPage() {
 
   const closeModal = () => setModal({ type: null, editId: null });
 
-  const handleProgramSubmit = (e: React.FormEvent) => {
+  const handleProgramSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (modal.editId) updateProgram(modal.editId, programForm.nama);
-    else addProgram(programForm.nama);
-    refreshPrograms();
+    try {
+      if (modal.editId) await updateProgram(modal.editId, programForm.nama);
+      else await addProgram(programForm.nama);
+      await refreshPrograms();
+    } catch (e) {
+      console.error("Failed to submit program:", e);
+    }
     closeModal();
   };
 
-  const handleConcentrationSubmit = (e: React.FormEvent) => {
+  const handleConcentrationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProgramId) return;
-    if (modal.editId) updateConcentration(modal.editId, concentrationForm.nama);
-    else addConcentration(selectedProgramId, concentrationForm.nama);
-    refreshConcentrations(selectedProgramId);
+    try {
+      if (modal.editId) await updateConcentration(modal.editId, concentrationForm.nama);
+      else await addConcentration(selectedProgramId, concentrationForm.nama);
+      await refreshConcentrations(selectedProgramId);
+    } catch (e) {
+      console.error("Failed to submit concentration:", e);
+    }
     closeModal();
   };
 
-  const handleSubjectSubmit = (e: React.FormEvent) => {
+  const handleSubjectSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedKonsentrasiId) return;
-    if (modal.editId) updateSubject(modal.editId, subjectForm);
-    else addSubject({ ...subjectForm, konsentrasiId: selectedKonsentrasiId });
-    setSubjects(getSubjects(selectedKonsentrasiId));
+    try {
+      if (modal.editId) await updateSubject(modal.editId, subjectForm);
+      else await addSubject({ ...subjectForm, konsentrasiId: selectedKonsentrasiId });
+      const subjs = await getSubjects(selectedKonsentrasiId);
+      setSubjects(subjs);
+    } catch (e) {
+      console.error("Failed to submit subject:", e);
+    }
     closeModal();
   };
 
-  const handleDeleteSubject = (id: string) => {
+  const handleDeleteSubject = async (id: string) => {
     if (confirm("Hapus mata pelajaran ini?")) {
-      deleteSubject(id);
-      if (selectedKonsentrasiId) setSubjects(getSubjects(selectedKonsentrasiId));
+      try {
+        await deleteSubject(id);
+        if (selectedKonsentrasiId) {
+          const subjs = await getSubjects(selectedKonsentrasiId);
+          setSubjects(subjs);
+        }
+      } catch (e) {
+        console.error("Failed to delete subject:", e);
+      }
     }
   };
 

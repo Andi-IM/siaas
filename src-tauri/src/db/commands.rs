@@ -1,5 +1,5 @@
 use tauri::State;
-use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryOrder};
+use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryOrder, ColumnTrait, QueryFilter};
 use crate::db::entities::{
     majors, batches, semesters, subjects, students, curriculum_subjects, student_grades
 };
@@ -297,4 +297,75 @@ pub async fn get_student_grades(
         .all(db)
         .await
         .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn update_student(
+    state: State<'_, DatabaseConnection>,
+    nis: String,
+    student: students::Model,
+) -> Result<students::Model, String> {
+    let db = state.inner();
+
+    let existing = students::Entity::find()
+        .filter(students::Column::Nis.eq(nis))
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Student not found".to_string())?;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let mut active: students::ActiveModel = existing.into();
+    
+    active.major_id = Set(student.major_id);
+    active.full_name = Set(student.full_name);
+    active.nisn = Set(student.nisn);
+    active.place_of_birth = Set(student.place_of_birth);
+    active.date_of_birth = Set(student.date_of_birth);
+    active.gender = Set(student.gender);
+    active.religion = Set(student.religion);
+    active.family_status = Set(student.family_status);
+    active.child_order = Set(student.child_order);
+    active.home_address = Set(student.home_address);
+    active.telephone = Set(student.telephone);
+    active.previous_school = Set(student.previous_school);
+    active.admission_grade = Set(student.admission_grade);
+    active.admission_date = Set(student.admission_date);
+    active.father_name = Set(student.father_name);
+    active.mother_name = Set(student.mother_name);
+    active.parent_address = Set(student.parent_address);
+    active.father_occupation = Set(student.father_occupation);
+    active.mother_occupation = Set(student.mother_occupation);
+    active.guardian_name = Set(student.guardian_name);
+    active.guardian_address = Set(student.guardian_address);
+    active.guardian_phone_number = Set(student.guardian_phone_number);
+    active.guardian_occupation = Set(student.guardian_occupation);
+    active.diploma_number = Set(student.diploma_number);
+    active.graduation_date = Set(student.graduation_date);
+    active.updated_at = Set(now);
+
+    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    Ok(updated)
+}
+
+#[tauri::command]
+pub async fn delete_student(
+    state: State<'_, DatabaseConnection>,
+    nis: String,
+) -> Result<bool, String> {
+    let db = state.inner();
+    
+    let student = students::Entity::find()
+        .filter(students::Column::Nis.eq(nis))
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    match student {
+        Some(s) => {
+            let res = students::Entity::delete_by_id(s.id).exec(db).await.map_err(|e| e.to_string())?;
+            Ok(res.rows_affected > 0)
+        }
+        None => Ok(false)
+    }
 }

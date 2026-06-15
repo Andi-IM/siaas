@@ -1,13 +1,112 @@
-import type { Student } from "./types";
+import { invoke } from "@tauri-apps/api/core";
+import type { Student, ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran } from "./types";
 
-const allStudents: Student[] = [
-  { 
-    nis: "24001", 
+// ==========================================
+// TAURI CHECK AND HELPER MAPPINGS
+// ==========================================
+
+const isTauri = (): boolean => {
+  return typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__ !== undefined;
+};
+
+interface DbStudent {
+  id: string;
+  major_id: string;
+  full_name: string;
+  nis: string;
+  nisn: string;
+  place_of_birth: string | null;
+  date_of_birth: string | null;
+  gender: string | null;
+  religion: string | null;
+  family_status: string | null;
+  child_order: number | null;
+  home_address: string | null;
+  telephone: string | null;
+  previous_school: string | null;
+  admission_grade: string | null;
+  admission_date: string | null;
+  father_name: string | null;
+  mother_name: string | null;
+  parent_address: string | null;
+  father_occupation: string | null;
+  mother_occupation: string | null;
+  guardian_name: string | null;
+  guardian_address: string | null;
+  guardian_phone_number: string | null;
+  guardian_occupation: string | null;
+  diploma_number: string | null;
+  graduation_date: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/// Resolves major_id from major name or creates a new Major entry in SQLite.
+async function resolveMajorId(name: string): Promise<string> {
+  const majors = await invoke<{ id: string; name: string }[]>("get_majors");
+  const found = majors.find(m => m.name.toLowerCase() === name.toLowerCase());
+  if (found) return found.id;
+
+  const code = name.split(" ").map(w => w[0]).join("").toUpperCase() || "MAJ";
+  const newMajor = await invoke<{ id: string }>("create_major", { code, name });
+  return newMajor.id;
+}
+
+async function getMajorsMap(): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const majors = await invoke<{ id: string; name: string }[]>("get_majors");
+    for (const m of majors) {
+      map.set(m.id, m.name);
+    }
+  } catch (e) {
+    console.error("Failed to fetch majors map:", e);
+  }
+  return map;
+}
+
+function mapDbToFrontend(db: DbStudent, majorsMap: Map<string, string>): Student {
+  return {
+    nis: db.nis,
+    nisn: db.nisn,
+    nama: db.full_name,
+    tempatLahir: db.place_of_birth ?? "",
+    tanggalLahir: db.date_of_birth ?? "",
+    jenisKelamin: (db.gender as "L" | "P") ?? "L",
+    agama: db.religion ?? "",
+    alamat: db.home_address ?? "",
+    telepon: db.telephone ?? "",
+    sekolahAsal: db.previous_school ?? "",
+    diterimaDiKelas: db.admission_grade ?? "",
+    diterimaPadaTanggal: db.admission_date ?? "",
+    kompetensi: majorsMap.get(db.major_id) ?? db.major_id,
+    nomorIjazah: db.diploma_number ?? "",
+    tanggalKelulusan: db.graduation_date ?? "",
+    status: "active",
+    namaAyah: db.father_name ?? "",
+    pekerjaanAyah: db.father_occupation ?? "",
+    namaIbu: db.mother_name ?? "",
+    pekerjaanIbu: db.mother_occupation ?? "",
+    alamatOrangTua: db.parent_address ?? "",
+    namaWali: db.guardian_name ?? "",
+    alamatWali: db.guardian_address ?? "",
+    teleponWali: db.guardian_phone_number ?? "",
+    pekerjaanWali: db.guardian_occupation ?? "",
+  };
+}
+
+// ==========================================
+// BROWSER LOCALSTORAGE FALLBACK DATA
+// ==========================================
+
+const defaultMockStudents: Student[] = [
+  {
+    nis: "24001",
     nisn: "0071234561",
-    nama: "Ani Wijaya", 
-    tempatLahir: "Jakarta", 
-    tanggalLahir: "2007-03-15", 
-    jenisKelamin: "P", 
+    nama: "Ani Wijaya",
+    tempatLahir: "Jakarta",
+    tanggalLahir: "2007-03-15",
+    jenisKelamin: "P",
     agama: "Islam",
     alamat: "Jl. Merdeka No. 45, Jakarta",
     telepon: "021-5551234",
@@ -28,13 +127,13 @@ const allStudents: Student[] = [
     teleponWali: "",
     pekerjaanWali: ""
   },
-  { 
-    nis: "24002", 
+  {
+    nis: "24002",
     nisn: "0069876543",
-    nama: "Budi Santoso", 
-    tempatLahir: "Bandung", 
-    tanggalLahir: "2006-11-22", 
-    jenisKelamin: "L", 
+    nama: "Budi Santoso",
+    tempatLahir: "Bandung",
+    tanggalLahir: "2006-11-22",
+    jenisKelamin: "L",
     agama: "Kristen",
     alamat: "Jl. Diponegoro No. 12, Bandung",
     telepon: "022-4445678",
@@ -54,82 +153,227 @@ const allStudents: Student[] = [
     alamatWali: "",
     teleponWali: "",
     pekerjaanWali: ""
-  },
+  }
 ];
 
-// Generate more mock students to fill the table (total ~40)
-for (let i = 3; i <= 40; i++) {
-  const isP = i % 3 === 0;
-  allStudents.push({
-    nis: `24${String(i).padStart(3, '0')}`,
-    nisn: `007${Math.floor(Math.random() * 10000000)}`,
-    nama: `${isP ? "Siti" : "Ahmad"} ${["Pratama", "Hidayat", "Kusuma", "Putri", "Lestari"][i % 5]} ${i}`,
-    tempatLahir: "Sumatera Barat",
-    tanggalLahir: "2007-01-01",
-    jenisKelamin: isP ? "P" : "L",
-    agama: "Islam",
-    alamat: "Padang, Sumatera Barat",
-    telepon: "0751-xxxxx",
-    sekolahAsal: "SMP N 1 Padang",
-    diterimaDiKelas: "X TM 1",
-    diterimaPadaTanggal: "2024-07-01",
-    kompetensi: "Teknik Pemesinan",
-    nomorIjazah: "",
-    tanggalKelulusan: "",
-    status: "active",
-    namaAyah: "Ayah",
-    pekerjaanAyah: "Wiraswasta",
-    namaIbu: "Ibu",
-    pekerjaanIbu: "Ibu Rumah Tangga",
-    alamatOrangTua: "Padang",
-    namaWali: "",
-    alamatWali: "",
-    teleponWali: "",
-    pekerjaanWali: ""
-  });
+// Seed fallback data for paginated viewing
+if (typeof window !== "undefined" && !localStorage.getItem("sias_students")) {
+  const list = [...defaultMockStudents];
+  for (let i = 3; i <= 40; i++) {
+    const isP = i % 3 === 0;
+    list.push({
+      nis: `24${String(i).padStart(3, '0')}`,
+      nisn: `007${Math.floor(Math.random() * 10000000)}`,
+      nama: `${isP ? "Siti" : "Ahmad"} ${["Pratama", "Hidayat", "Kusuma", "Putri", "Lestari"][i % 5]} ${i}`,
+      tempatLahir: "Sumatera Barat",
+      tanggalLahir: "2007-01-01",
+      jenisKelamin: isP ? "P" : "L",
+      agama: "Islam",
+      alamat: "Padang, Sumatera Barat",
+      telepon: "0751-xxxxx",
+      sekolahAsal: "SMP N 1 Padang",
+      diterimaDiKelas: "X TM 1",
+      diterimaPadaTanggal: "2024-07-01",
+      kompetensi: "Teknik Pemesinan",
+      nomorIjazah: "",
+      tanggalKelulusan: "",
+      status: "active",
+      namaAyah: "Ayah",
+      pekerjaanAyah: "Wiraswasta",
+      namaIbu: "Ibu",
+      pekerjaanIbu: "Ibu Rumah Tangga",
+      alamatOrangTua: "Padang",
+      namaWali: "",
+      alamatWali: "",
+      teleponWali: "",
+      pekerjaanWali: ""
+    });
+  }
+  localStorage.setItem("sias_students", JSON.stringify(list));
 }
 
-export function getStudents(): Student[] {
-  return [...allStudents];
+function getLocalStudents(): Student[] {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem("sias_students");
+  return stored ? JSON.parse(stored) : defaultMockStudents;
 }
 
-export function getStudentByNis(nis: string): Student | undefined {
-  return allStudents.find((s) => s.nis === nis);
+function saveLocalStudents(students: Student[]): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem("sias_students", JSON.stringify(students));
+  }
 }
 
-export function getUniqueClasses(): string[] {
-  return [...new Set(allStudents.map((s) => s.diterimaDiKelas))].sort();
+// ==========================================
+// EXPOSED ASYNC STUDENT APIS
+// ==========================================
+
+export async function getStudents(): Promise<Student[]> {
+  if (isTauri()) {
+    try {
+      const dbStudents = await invoke<DbStudent[]>("get_students");
+      const majorsMap = await getMajorsMap();
+      return dbStudents.map(s => mapDbToFrontend(s, majorsMap));
+    } catch (e) {
+      console.error("Tauri get_students failed, falling back to local:", e);
+    }
+  }
+  return getLocalStudents();
 }
 
-export function addStudent(student: Student): void {
-  allStudents.push(student);
+export async function getStudentByNis(nis: string): Promise<Student | undefined> {
+  if (isTauri()) {
+    try {
+      const list = await getStudents();
+      return list.find(s => s.nis === nis);
+    } catch (e) {
+      console.error("Tauri getStudentByNis failed:", e);
+    }
+  }
+  return getLocalStudents().find(s => s.nis === nis);
 }
 
-export function updateStudent(nis: string, data: Partial<Student>): boolean {
-  const idx = allStudents.findIndex((s) => s.nis === nis);
+export async function getUniqueClasses(): Promise<string[]> {
+  const list = await getStudents();
+  return [...new Set(list.map(s => s.diterimaDiKelas))].sort();
+}
+
+export async function addStudent(student: Student): Promise<void> {
+  if (isTauri()) {
+    try {
+      const majorId = await resolveMajorId(student.kompetensi);
+      
+      const dbPayload = {
+        id: "",
+        major_id: majorId,
+        full_name: student.nama,
+        nis: student.nis,
+        nisn: student.nisn,
+        place_of_birth: student.tempatLahir || null,
+        date_of_birth: student.tanggalLahir || null,
+        gender: student.jenisKelamin || null,
+        religion: student.agama || null,
+        family_status: null,
+        child_order: null,
+        home_address: student.alamat || null,
+        telephone: student.telepon || null,
+        previous_school: student.sekolahAsal || null,
+        admission_grade: student.diterimaDiKelas || null,
+        admission_date: student.diterimaPadaTanggal || null,
+        father_name: student.namaAyah || null,
+        mother_name: student.namaIbu || null,
+        parent_address: student.alamatOrangTua || null,
+        father_occupation: student.pekerjaanAyah || null,
+        mother_occupation: student.pekerjaanIbu || null,
+        guardian_name: student.namaWali || null,
+        guardian_address: student.alamatWali || null,
+        guardian_phone_number: student.teleponWali || null,
+        guardian_occupation: student.pekerjaanWali || null,
+        diploma_number: student.nomorIjazah || null,
+        graduation_date: student.tanggalKelulusan || null,
+        created_at: "",
+        updated_at: ""
+      };
+
+      await invoke("create_student", { student: dbPayload });
+      return;
+    } catch (e) {
+      console.error("Tauri create_student failed, running local fallback:", e);
+    }
+  }
+
+  const list = getLocalStudents();
+  list.push(student);
+  saveLocalStudents(list);
+}
+
+export async function updateStudent(nis: string, data: Partial<Student>): Promise<boolean> {
+  if (isTauri()) {
+    try {
+      const current = await getStudentByNis(nis);
+      if (!current) return false;
+      const merged = { ...current, ...data };
+      
+      const majorId = await resolveMajorId(merged.kompetensi);
+      const dbPayload = {
+        id: "",
+        major_id: majorId,
+        full_name: merged.nama,
+        nis: merged.nis,
+        nisn: merged.nisn,
+        place_of_birth: merged.tempatLahir || null,
+        date_of_birth: merged.tanggalLahir || null,
+        gender: merged.jenisKelamin || null,
+        religion: merged.agama || null,
+        family_status: null,
+        child_order: null,
+        home_address: merged.alamat || null,
+        telephone: merged.telepon || null,
+        previous_school: merged.sekolahAsal || null,
+        admission_grade: merged.diterimaDiKelas || null,
+        admission_date: merged.diterimaPadaTanggal || null,
+        father_name: merged.namaAyah || null,
+        mother_name: merged.namaIbu || null,
+        parent_address: merged.alamatOrangTua || null,
+        father_occupation: merged.pekerjaanAyah || null,
+        mother_occupation: merged.pekerjaanIbu || null,
+        guardian_name: merged.namaWali || null,
+        guardian_address: merged.alamatWali || null,
+        guardian_phone_number: merged.teleponWali || null,
+        guardian_occupation: merged.pekerjaanWali || null,
+        diploma_number: merged.nomorIjazah || null,
+        graduation_date: merged.tanggalKelulusan || null,
+        created_at: "",
+        updated_at: ""
+      };
+
+      await invoke("update_student", { nis, student: dbPayload });
+      return true;
+    } catch (e) {
+      console.error("Tauri update_student failed, running local fallback:", e);
+    }
+  }
+
+  const list = getLocalStudents();
+  const idx = list.findIndex(s => s.nis === nis);
   if (idx === -1) return false;
-  allStudents[idx] = { ...allStudents[idx], ...data };
+  list[idx] = { ...list[idx], ...data };
+  saveLocalStudents(list);
   return true;
 }
 
-export function deleteStudent(nis: string): boolean {
-  const idx = allStudents.findIndex((s) => s.nis === nis);
+export async function deleteStudent(nis: string): Promise<boolean> {
+  if (isTauri()) {
+    try {
+      const deleted = await invoke<boolean>("delete_student", { nis });
+      return deleted;
+    } catch (e) {
+      console.error("Tauri deleteStudent failed:", e);
+    }
+  }
+
+  const list = getLocalStudents();
+  const idx = list.findIndex(s => s.nis === nis);
   if (idx === -1) return false;
-  allStudents.splice(idx, 1);
+  list.splice(idx, 1);
+  saveLocalStudents(list);
   return true;
 }
 
-// Curriculum Data
-const programs: import("./types").ProgramKeahlian[] = [
+// ==========================================
+// CURRICULUM FALLBACK DATA
+// ==========================================
+
+const programs: ProgramKeahlian[] = [
   { id: "p1", nama: "Teknik Mesin" },
 ];
 
-const concentrations: import("./types").KonsentrasiKeahlian[] = [
+const concentrations: KonsentrasiKeahlian[] = [
   { id: "k1", programId: "p1", nama: "Teknik Pemesinan" },
   { id: "k2", programId: "p1", nama: "Teknik Pengelasan" },
 ];
 
-const subjects: import("./types").MataPelajaran[] = [
+const subjects: MataPelajaran[] = [
   { id: "m1", konsentrasiId: "k1", nama: "Pendidikan Agama dan Budi Pekerti", kode: "PAI", kategori: "Kelompok Umum", semester: 1, status: "active" },
   { id: "m2", konsentrasiId: "k1", nama: "Pendidikan Pancasila", kode: "PP", kategori: "Kelompok Umum", semester: 1, status: "active" },
   { id: "m3", konsentrasiId: "k1", nama: "Bahasa Indonesia", kode: "BIN", kategori: "Kelompok Umum", semester: 1, status: "active" },
@@ -145,51 +389,50 @@ const subjects: import("./types").MataPelajaran[] = [
   { id: "m13", konsentrasiId: "k1", nama: "Dasar Perancangan Teknik Mesin", kode: "DPTM", kategori: "Kelompok Kejuruan", semester: 1, status: "active" },
 ];
 
-export function getPrograms() { return [...programs]; }
-export function getConcentrations(programId?: string) {
+export async function getPrograms(): Promise<ProgramKeahlian[]> { return [...programs]; }
+export async function getConcentrations(programId?: string): Promise<KonsentrasiKeahlian[]> {
   if (!programId) return [...concentrations];
   return concentrations.filter(k => k.programId === programId);
 }
-export function getSubjects(konsentrasiId?: string) {
+export async function getSubjects(konsentrasiId?: string): Promise<MataPelajaran[]> {
   if (!konsentrasiId) return [...subjects];
   return subjects.filter(m => m.konsentrasiId === konsentrasiId);
 }
 
-// CRUD for Curriculum
-export function addProgram(name: string) {
+export async function addProgram(name: string): Promise<ProgramKeahlian> {
   const newProg = { id: `p${programs.length + 1}`, nama: name };
   programs.push(newProg);
   return newProg;
 }
 
-export function updateProgram(id: string, name: string) {
+export async function updateProgram(id: string, name: string): Promise<void> {
   const p = programs.find(x => x.id === id);
   if (p) p.nama = name;
 }
 
-export function addConcentration(programId: string, name: string) {
+export async function addConcentration(programId: string, name: string): Promise<KonsentrasiKeahlian> {
   const newK = { id: `k${concentrations.length + 1}`, programId, nama: name };
   concentrations.push(newK);
   return newK;
 }
 
-export function updateConcentration(id: string, name: string) {
+export async function updateConcentration(id: string, name: string): Promise<void> {
   const k = concentrations.find(x => x.id === id);
   if (k) k.nama = name;
 }
 
-export function addSubject(subject: Omit<import("./types").MataPelajaran, "id">) {
+export async function addSubject(subject: Omit<MataPelajaran, "id">): Promise<MataPelajaran> {
   const newM = { ...subject, id: `m${subjects.length + 1}` };
   subjects.push(newM);
   return newM;
 }
 
-export function updateSubject(id: string, data: Partial<import("./types").MataPelajaran>) {
+export async function updateSubject(id: string, data: Partial<MataPelajaran>): Promise<void> {
   const idx = subjects.findIndex(m => m.id === id);
   if (idx !== -1) subjects[idx] = { ...subjects[idx], ...data };
 }
 
-export function deleteSubject(id: string) {
+export async function deleteSubject(id: string): Promise<void> {
   const idx = subjects.findIndex(m => m.id === id);
   if (idx !== -1) subjects.splice(idx, 1);
 }

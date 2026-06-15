@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Users, GraduationCap, BookOpen, ClipboardCheck, FileText, Settings, FileSpreadsheet } from "lucide-react";
+import { Logo } from "./logo";
 
 const navItems = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard, exact: true },
@@ -17,10 +18,8 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar no-print">
-      <div className="sidebar-header">
-        <span className="label-md" style={{ color: "var(--on-tertiary)" }}>
-          SIAAS
-        </span>
+      <div className="sidebar-header" style={{ padding: "0 var(--gutter)" }}>
+        <Logo variant="full" theme="dark" height={32} />
       </div>
       <nav className="sidebar-nav" aria-label="Navigasi utama">
         {navItems.map((item) => {

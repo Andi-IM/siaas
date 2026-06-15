@@ -1,11 +1,35 @@
+"use client";
+
 import { Plus, Pencil, Printer } from "lucide-react";
 import Link from "next/link";
 import { getStudents } from "@/lib/data";
+import { useState, useEffect } from "react";
+import type { Student } from "@/lib/types";
 
 export default function Dashboard() {
-  const allStudents = getStudents();
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function loadData() {
+      try {
+        const list = await getStudents();
+        if (active) {
+          setStudents(list);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load dashboard data:", e);
+        if (active) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { active = false; };
+  }, []);
+
   // Ambil 5 siswa terakhir (yang baru ditambahkan)
-  const recentStudents = [...allStudents].reverse().slice(0, 5);
+  const recentStudents = [...students].reverse().slice(0, 5);
 
   return (
     <div className="dashboard-page" style={{ padding: "calc(var(--spacing-base) * 6)" }}>
@@ -19,9 +43,9 @@ export default function Dashboard() {
       <section aria-labelledby="stats-heading" className="stats-section" style={{ marginBottom: "var(--margin-desktop)" }}>
         <h2 id="stats-heading" className="sr-only">Ringkasan</h2>
         <div className="stats-grid">
-          <StatCard label="Total Siswa" value={String(allStudents.length)} />
-          <StatCard label="Total Kelas" value={String(new Set(allStudents.map(s => s.diterimaDiKelas)).size)} />
-          <StatCard label="Siswa Aktif" value={String(allStudents.filter(s => s.status === "active").length)} />
+          <StatCard label="Total Siswa" value={loading ? "—" : String(students.length)} />
+          <StatCard label="Total Kelas" value={loading ? "—" : String(new Set(students.map(s => s.diterimaDiKelas)).size)} />
+          <StatCard label="Siswa Aktif" value={loading ? "—" : String(students.filter(s => s.status === "active").length)} />
         </div>
       </section>
 
@@ -46,7 +70,29 @@ export default function Dashboard() {
         <h2 id="recent-heading" className="headline-sm" style={{ fontSize: "var(--body-lg)", fontWeight: 600, marginBottom: "var(--gutter)" }}>
           Siswa Terbaru
         </h2>
-        {recentStudents.length > 0 ? (
+        {loading ? (
+          <div className="table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th className="label-md" scope="col">NIS</th>
+                  <th className="label-md" scope="col">Nama Lengkap</th>
+                  <th className="label-md" scope="col">Kelompok Keahlian</th>
+                  <th className="label-md" scope="col">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <tr key={i}>
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <td key={j}><div className="skeleton" style={{ height: 16, width: j === 1 ? 120 : 60 }} /></td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : recentStudents.length > 0 ? (
           <div className="table-container">
             <table className="data-table">
               <thead>
@@ -62,7 +108,7 @@ export default function Dashboard() {
                   <tr key={s.nis}>
                     <td className="table-data">{s.nis}</td>
                     <td className="table-data" style={{ fontWeight: 500 }}>
-                      <Link href={`/siswa/${s.nis}`} className="table-link">{s.nama}</Link>
+                      <Link href={`/siswa/detail?nis=${s.nis}`} className="table-link">{s.nama}</Link>
                     </td>
                     <td className="table-data">{s.kompetensi}</td>
                     <td className="table-data">

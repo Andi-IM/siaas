@@ -43,16 +43,28 @@ export default function EditSiswaView({ nis }: { nis: string }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const student = getStudentByNis(nis);
-      if (student) {
-        setForm({ ...student });
-      } else {
-        setNotFound(true);
+    let active = true;
+    async function loadStudent() {
+      try {
+        const student = await getStudentByNis(nis);
+        if (active) {
+          if (student) {
+            setForm({ ...student });
+          } else {
+            setNotFound(true);
+          }
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load student:", e);
+        if (active) {
+          setNotFound(true);
+          setLoading(false);
+        }
       }
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    }
+    loadStudent();
+    return () => { active = false; };
   }, [nis]);
 
   function validate() {
@@ -65,12 +77,16 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    updateStudent(nis, { ...form });
-    setSubmitted(true);
-    setTimeout(() => router.push(`/siswa/${nis}`), 1200);
+    try {
+      await updateStudent(nis, { ...form });
+      setSubmitted(true);
+      setTimeout(() => router.push(`/siswa/detail?nis=${nis}`), 1200);
+    } catch (e) {
+      console.error("Failed to update student:", e);
+    }
   }
 
   function setField<K extends keyof Student>(key: K, value: Student[K]) {
@@ -122,7 +138,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     <div className="form-page">
       <div className="form-page__inner">
         <div className="form-page__header">
-          <Link href={`/siswa/${nis}`} className="back-link" aria-label="Kembali ke detail siswa">
+          <Link href={`/siswa/detail?nis=${nis}`} className="back-link" aria-label="Kembali ke detail siswa">
             <ArrowLeft size={20} />
           </Link>
           <div>
@@ -389,7 +405,7 @@ export default function EditSiswaView({ nis }: { nis: string }) {
           </section>
 
           <div className="form-actions">
-            <Link href={`/siswa/${nis}`} className="btn btn--secondary">Batal</Link>
+            <Link href={`/siswa/detail?nis=${nis}`} className="btn btn--secondary">Batal</Link>
             <button type="submit" className="btn btn--primary">Simpan Perubahan</button>
           </div>
         </form>

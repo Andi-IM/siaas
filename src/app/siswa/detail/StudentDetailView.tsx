@@ -15,19 +15,32 @@ export default function StudentDetailView({ nis }: { nis: string }) {
   const [deleted, setDeleted] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const found = getStudentByNis(nis);
-      setStudent(found ?? null);
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    let active = true;
+    async function loadStudent() {
+      try {
+        const found = await getStudentByNis(nis);
+        if (active) {
+          setStudent(found ?? null);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load student:", e);
+        if (active) setLoading(false);
+      }
+    }
+    loadStudent();
+    return () => { active = false; };
   }, [nis]);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!student) return;
-    deleteStudent(student.nis);
-    setDeleted(true);
-    setTimeout(() => router.push("/siswa"), 1200);
+    try {
+      await deleteStudent(student.nis);
+      setDeleted(true);
+      setTimeout(() => router.push("/siswa"), 1200);
+    } catch (e) {
+      console.error("Failed to delete student:", e);
+    }
   }
 
   if (loading) {
@@ -84,7 +97,7 @@ export default function StudentDetailView({ nis }: { nis: string }) {
             <p className="body-sm" style={{ color: "var(--on-surface-variant)", marginTop: 4 }}>NIS/NISN: {student.nis} / {student.nisn}</p>
           </div>
           <div style={{ display: "flex", gap: "calc(var(--spacing-base) * 2)" }}>
-            <Link href={`/siswa/${student.nis}/edit`} className="btn btn--secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+            <Link href={`/siswa/edit?nis=${student.nis}`} className="btn btn--secondary" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
               <Pencil size={16} />
               Edit Data
             </Link>

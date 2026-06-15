@@ -51,12 +51,16 @@ export default function TambahSiswaPage() {
     return Object.keys(errs).length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
-    addStudent({ ...form });
-    setSubmitted(true);
-    setTimeout(() => router.push("/siswa"), 1200);
+    try {
+      await addStudent({ ...form });
+      setSubmitted(true);
+      setTimeout(() => router.push("/siswa"), 1200);
+    } catch (e) {
+      console.error("Failed to add student:", e);
+    }
   }
 
   function setField<K extends keyof Student>(key: K, value: Student[K]) {

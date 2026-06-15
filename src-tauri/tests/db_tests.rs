@@ -170,6 +170,19 @@ async fn test_crud_operations() {
     let grade = student_grades::Entity::find_by_id(grade_id.clone()).one(&db).await.unwrap().unwrap();
     assert_eq!(grade.grade, 95.5);
     assert_eq!(grade.student_id, student_id);
+
+    // 8. Update Student via SeaORM
+    let mut active_student: students::ActiveModel = student.into();
+    active_student.full_name = Set("John Doe Updated".to_string());
+    active_student.update(&db).await.unwrap();
+
+    let updated_student = students::Entity::find_by_id(student_id.clone()).one(&db).await.unwrap().unwrap();
+    assert_eq!(updated_student.full_name, "John Doe Updated");
+
+    // 9. Delete Student via SeaORM
+    students::Entity::delete_by_id(student_id.clone()).exec(&db).await.unwrap();
+    let deleted_student = students::Entity::find_by_id(student_id.clone()).one(&db).await.unwrap();
+    assert!(deleted_student.is_none());
 }
 
 #[tokio::test]

@@ -19,6 +19,9 @@ pub fn run() {
       let app_data_dir = app.path().app_data_dir()?;
       std::fs::create_dir_all(&app_data_dir)?;
       let db_path = app_data_dir.join("sias.db");
+      if !db_path.exists() {
+        std::fs::File::create(&db_path)?;
+      }
       
       // Initialize database connection and run migrations using Tauri's async runtime
       let db_conn = tauri::async_runtime::block_on(async {
@@ -48,6 +51,8 @@ pub fn run() {
         db::commands::get_subjects,
         db::commands::create_student,
         db::commands::get_students,
+        db::commands::update_student,
+        db::commands::delete_student,
         db::commands::create_curriculum_subject,
         db::commands::get_curriculum_subjects,
         db::commands::create_student_grade,

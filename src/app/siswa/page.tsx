@@ -19,12 +19,28 @@ export default function StudentListPage() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const [classes, setClasses] = useState<string[]>([]);
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setStudents(getStudents());
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(timer);
+    let active = true;
+    async function loadData() {
+      try {
+        const [studentList, classList] = await Promise.all([
+          getStudents(),
+          getUniqueClasses()
+        ]);
+        if (active) {
+          setStudents(studentList);
+          setClasses(classList);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load students data:", e);
+        if (active) setLoading(false);
+      }
+    }
+    loadData();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -32,8 +48,6 @@ export default function StudentListPage() {
       dialogRef.current.showModal();
     }
   }, [deleteTarget]);
-
-  const classes = getUniqueClasses();
 
   const filtered = students.filter((s) => {
     const q = search.toLowerCase();
@@ -50,14 +64,21 @@ export default function StudentListPage() {
   const safePage = Math.min(page, totalPages);
   const paginated = filtered.slice((safePage - 1) * PER_PAGE, safePage * PER_PAGE);
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!deleteTarget) return;
-    deleteStudent(deleteTarget.nis);
-    setStudents(getStudents());
-    setDeleteTarget(null);
-    setToast(`Siswa ${deleteTarget.nama} berhasil dihapus.`);
-    dialogRef.current?.close();
-    setTimeout(() => setToast(null), 3000);
+    try {
+      await deleteStudent(deleteTarget.nis);
+      const updatedList = await getStudents();
+      const updatedClasses = await getUniqueClasses();
+      setStudents(updatedList);
+      setClasses(updatedClasses);
+      setDeleteTarget(null);
+      setToast(`Siswa ${deleteTarget.nama} berhasil dihapus.`);
+      dialogRef.current?.close();
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      console.error("Failed to delete student:", e);
+    }
   }
 
   function cancelDelete() {
@@ -173,7 +194,7 @@ export default function StudentListPage() {
                   <tr key={s.nis}>
                     <td className="table-data">{(safePage - 1) * PER_PAGE + index + 1}</td>
                     <td className="table-data" style={{ fontWeight: 500 }}>
-                      <Link href={`/siswa/${s.nis}`} className="table-link">{s.nama}</Link>
+                      <Link href={`/siswa/detail?nis=${s.nis}`} className="table-link">{s.nama}</Link>
                     </td>
                     <td className="table-data">{s.nis}</td>
                     <td className="table-data">{s.nisn}</td>
@@ -181,14 +202,14 @@ export default function StudentListPage() {
                     <td className="table-data">
                       <div className="action-cell">
                         <Link
-                          href={`/siswa/${s.nis}`}
+                          href={`/siswa/detail?nis=${s.nis}`}
                           className="icon-btn"
                           aria-label={`Lihat detail ${s.nama}`}
                         >
                           <Eye size={16} />
                         </Link>
                         <Link
-                          href={`/siswa/${s.nis}/edit`}
+                          href={`/siswa/edit?nis=${s.nis}`}
                           className="icon-btn"
                           aria-label={`Edit ${s.nama}`}
                         >

@@ -25,12 +25,21 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      const found = getStudentByNis(nis);
-      setStudent(found ?? null);
-      setLoading(false);
-    }, 300);
-    return () => clearTimeout(timer);
+    let active = true;
+    async function loadStudent() {
+      try {
+        const found = await getStudentByNis(nis);
+        if (active) {
+          setStudent(found ?? null);
+          setLoading(false);
+        }
+      } catch (e) {
+        console.error("Failed to load student:", e);
+        if (active) setLoading(false);
+      }
+    }
+    loadStudent();
+    return () => { active = false; };
   }, [nis]);
 
   if (loading) {
