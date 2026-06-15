@@ -8,3 +8,4 @@ This directory contains records of significant architecture decisions made in th
 *   [0002: 23-Field Student Data Schema](0002-skema-data-23-bidang.md)
 *   [0003: Hierarchical Curriculum & Subject Management](0003-manajemen-kurikulum.md)
 *   [0004: Adoption of Tauri for Native Windows Distribution](0004-adopt-tauri.md)
+*   [0005: Adopt SeaORM for SQLite Database Management](0005-adopt-sea-orm.md)

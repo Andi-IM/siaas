@@ -24,9 +24,8 @@ log = "0.4"
 tauri = { version = "2.11.2", features = [] }
 tauri-plugin-log = "2"
 brotli = "=8.0.3"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
-r2d2 = "0.8.10"
-r2d2_sqlite = "0.24.0"
+sea-orm = { version = "1.1.0", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros"] }
+tokio = { version = "1.38.0", features = ["full"] }
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.38", features = ["serde"] }
 

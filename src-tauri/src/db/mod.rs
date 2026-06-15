@@ -1,81 +1,43 @@
+use sea_orm::{Database, DatabaseConnection, ConnectOptions, ConnectionTrait, Statement, DbBackend};
 use std::path::Path;
-use std::sync::Arc;
-use r2d2::{Pool, PooledConnection};
-use r2d2_sqlite::SqliteConnectionManager;
-use rusqlite::OpenFlags;
+use std::time::Duration;
 
+pub mod entities;
 pub mod migrations;
-pub mod models;
 pub mod commands;
 
-pub type DbConnection = PooledConnection<SqliteConnectionManager>;
+/// Establishes an async connection to the SQLite database file and executes PRAGMAs to enable WAL mode, foreign keys, and normal synchronous writes.
+pub async fn establish_connection(path: &Path) -> Result<DatabaseConnection, sea_orm::DbErr> {
+    let path_str = path.to_string_lossy().replace("\\", "/");
+    let url = format!("sqlite:{}", path_str);
 
-#[derive(Clone)]
-pub struct DatabasePool {
-    pub pool: Arc<Pool<SqliteConnectionManager>>,
+    let mut opt = ConnectOptions::new(url);
+    opt.max_connections(10)
+        .min_connections(2)
+        .connect_timeout(Duration::from_secs(5))
+        .acquire_timeout(Duration::from_secs(5))
+        .idle_timeout(Duration::from_secs(5))
+        .max_lifetime(Duration::from_secs(5));
+
+    let db = Database::connect(opt).await?;
+    
+    // Execute SQLite configuration pragmas
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA foreign_keys = ON;".to_string())).await?;
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA journal_mode = WAL;".to_string())).await?;
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA synchronous = NORMAL;".to_string())).await?;
+
+    Ok(db)
 }
 
-impl DatabasePool {
-    /// Initializes a new SQLite database connection pool at the specified path.
-    pub fn new(path: &Path) -> Result<Self, r2d2::Error> {
-        let manager = SqliteConnectionManager::file(path)
-            .with_flags(
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX
-            )
-            .with_init(|conn| {
-                conn.execute_batch("
-                    PRAGMA foreign_keys = ON;
-                    PRAGMA journal_mode = WAL;
-                    PRAGMA synchronous = NORMAL;
-                    PRAGMA busy_timeout = 5000;
-                    PRAGMA temp_store = MEMORY;
-                    PRAGMA cache_size = -64000;
-                ")
-            });
+/// Establishes an in-memory SQLite connection for testing and runs PRAGMAs.
+pub async fn establish_in_memory_connection() -> Result<DatabaseConnection, sea_orm::DbErr> {
+    let url = "sqlite::memory:";
+    let db = Database::connect(url).await?;
+    
+    // Execute SQLite configuration pragmas
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA foreign_keys = ON;".to_string())).await?;
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA journal_mode = WAL;".to_string())).await?;
+    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA synchronous = NORMAL;".to_string())).await?;
 
-        let pool = Pool::builder()
-            .max_size(10)
-            .min_idle(Some(2))
-            .build(manager)?;
-
-        Ok(Self {
-            pool: Arc::new(pool),
-        })
-    }
-
-    /// Initializes a new in-memory SQLite database connection pool, primarily for unit/integration testing.
-    pub fn new_in_memory() -> Result<Self, r2d2::Error> {
-        let manager = SqliteConnectionManager::memory()
-            .with_flags(
-                OpenFlags::SQLITE_OPEN_READ_WRITE
-                | OpenFlags::SQLITE_OPEN_CREATE
-                | OpenFlags::SQLITE_OPEN_NO_MUTEX
-            )
-            .with_init(|conn| {
-                conn.execute_batch("
-                    PRAGMA foreign_keys = ON;
-                    PRAGMA journal_mode = WAL;
-                    PRAGMA synchronous = NORMAL;
-                    PRAGMA busy_timeout = 5000;
-                    PRAGMA temp_store = MEMORY;
-                    PRAGMA cache_size = -64000;
-                ")
-            });
-
-        let pool = Pool::builder()
-            .max_size(10)
-            .min_idle(Some(2))
-            .build(manager)?;
-
-        Ok(Self {
-            pool: Arc::new(pool),
-        })
-    }
-
-    /// Retrieves a connection from the pool.
-    pub fn get_conn(&self) -> Result<DbConnection, r2d2::Error> {
-        self.pool.get()
-    }
+    Ok(db)
 }
