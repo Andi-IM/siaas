@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import EditPage from "@/app/siswa/edit/page";
 import { EditFallback } from "@/app/siswa/edit/EditSiswaView";
 import { getStudentByNis, updateStudent } from "@/lib/data";
+import { getConcentrations } from "@/lib/curriculum-data";
 
 // Mock router and search params
 const mockPush = vi.fn();
@@ -16,10 +17,17 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(() => new URLSearchParams("?nis=11111")),
 }));
 
-// Mock the data client
+// Mock the data clients
 vi.mock("@/lib/data", () => ({
   getStudentByNis: vi.fn(),
   updateStudent: vi.fn(),
+}));
+
+vi.mock("@/lib/curriculum-data", () => ({
+  getConcentrations: vi.fn(() => Promise.resolve([
+    { id: "k1", nama: "Teknik Pemesinan", programId: "p1" },
+    { id: "k2", nama: "Teknik Pengelasan", programId: "p1" }
+  ])),
 }));
 
 const originalSetTimeout = global.setTimeout;
@@ -219,7 +227,7 @@ describe("Edit Student Page", () => {
     fireEvent.change(getFieldInput(container, "Sekolah Asal"), { target: { value: "SMP 2" } });
     fireEvent.change(getFieldInput(container, "Diterima di Kelas"), { target: { value: "X-2" } });
     fireEvent.change(getFieldInput(container, "Diterima pada Tanggal"), { target: { value: "2025-08-08" } });
-    fireEvent.change(getFieldInput(container, "Kompetensi Keahlian"), { target: { value: "Teknik Pengelasan" } });
+    fireEvent.change(getFieldInput(container, "Konsentrasi Keahlian"), { target: { value: "Teknik Pengelasan" } });
     fireEvent.change(getFieldInput(container, "Nomor Ijazah (Alumni)"), { target: { value: "IJZ-999" } });
     fireEvent.change(getFieldInput(container, "Tanggal Kelulusan (Alumni)"), { target: { value: "2028-12-12" } });
     fireEvent.change(getFieldInput(container, "Status"), { target: { value: "inactive" } });

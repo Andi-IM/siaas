@@ -213,7 +213,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
           <div style={{ display: "flex" }}><span style={{ width: 180 }}>Tempat / Tanggal Lahir</span>: <span style={{ marginLeft: 8 }}>{student.tempatLahir}, {student.tanggalLahir}</span></div>
           <div style={{ display: "flex" }}><span style={{ width: 180 }}>NIS / NISN</span>: <span style={{ marginLeft: 8 }}>{student.nis} / {student.nisn}</span></div>
           <div style={{ display: "flex" }}><span style={{ width: 180 }}>Nama Sekolah</span>: <span style={{ marginLeft: 8 }}>SMK NEGERI 1 SUMATERA BARAT</span></div>
-          <div style={{ display: "flex" }}><span style={{ width: 180 }}>Kompetensi Keahlian</span>: <span style={{ marginLeft: 8 }}>{student.kompetensi}</span></div>
+          <div style={{ display: "flex" }}><span style={{ width: 180 }}>Konsentrasi Keahlian</span>: <span style={{ marginLeft: 8 }}>{student.kompetensi}</span></div>
         </div>
 
         <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid black", fontSize: "11pt", fontFamily: "'Times New Roman', Times, serif" }}>

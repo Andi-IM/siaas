@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { getStudentByNis, updateStudent } from "@/lib/data";
-import type { Student } from "@/lib/types";
+import { getConcentrations } from "@/lib/curriculum-data";
+import type { Student, KonsentrasiKeahlian } from "@/lib/types";
 
 export function EditFallback() {
   return (
@@ -31,6 +32,8 @@ export default function EditSiswaView({ nis }: { nis: string }) {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [concentrations, setConcentrations] = useState<KonsentrasiKeahlian[]>([]);
+  const [loadingCons, setLoadingCons] = useState(true);
 
   const [form, setForm] = useState<Student>({
     nis: "",
@@ -60,6 +63,20 @@ export default function EditSiswaView({ nis }: { nis: string }) {
     pekerjaanWali: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    async function loadCons() {
+      try {
+        const list = await getConcentrations();
+        setConcentrations(list);
+      } catch (e) {
+        console.error("Failed to load concentrations:", e);
+      } finally {
+        setLoadingCons(false);
+      }
+    }
+    loadCons();
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -289,13 +306,37 @@ export default function EditSiswaView({ nis }: { nis: string }) {
                 />
               </FormField>
 
-              <FormField label="Kompetensi Keahlian">
-                <input
-                  type="text"
-                  className="form-input"
-                  value={form.kompetensi}
-                  onChange={(e) => setField("kompetensi", e.target.value)}
-                />
+              <FormField label="Konsentrasi Keahlian" error={errors.kompetensi}>
+                {loadingCons ? (
+                  <div className="skeleton" style={{ height: 38, width: "100%" }} />
+                ) : concentrations.length > 0 ? (
+                  <select
+                    className="form-input"
+                    value={form.kompetensi}
+                    onChange={(e) => setField("kompetensi", e.target.value)}
+                  >
+                    {concentrations.map((c) => (
+                      <option key={c.id} value={c.nama}>
+                        {c.nama}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ 
+                    display: "flex", 
+                    alignItems: "center", 
+                    gap: 8, 
+                    padding: "8px 12px", 
+                    backgroundColor: "#fef2f2", 
+                    color: "#991b1b",
+                    borderRadius: 4,
+                    fontSize: 13,
+                    border: "1px solid #fecaca"
+                  }}>
+                    <AlertCircle size={16} />
+                    <span>Belum ada data Konsentrasi. <Link href="/kurikulum" style={{ fontWeight: 600, textDecoration: "underline" }}>Tambah di Manajemen Kurikulum</Link> dahulu.</span>
+                  </div>
+                )}
               </FormField>
 
               <FormField label="Nomor Ijazah (Alumni)">
