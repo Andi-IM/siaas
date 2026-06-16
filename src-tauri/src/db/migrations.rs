@@ -180,6 +180,21 @@ impl MigrationManager {
                     up: "ALTER TABLE subjects ADD COLUMN sequence INTEGER NOT NULL DEFAULT 0;",
                     down: "ALTER TABLE subjects DROP COLUMN sequence;",
                 },
+                Migration {
+                    version: 12,
+                    name: "add_transcript_group_to_subjects",
+                    up: "ALTER TABLE subjects ADD COLUMN transcript_group TEXT NOT NULL DEFAULT 'UMUM';",
+                    down: "ALTER TABLE subjects DROP COLUMN transcript_group;",
+                },
+                Migration {
+                    version: 13,
+                    name: "backfill_transcript_group",
+                    up: "UPDATE subjects SET transcript_group = 'KEJURUAN_UMUM' WHERE code IN ('MTK', 'B.ING', 'TI', 'IPAS', 'MAPIL', 'PKWU', 'PKL');
+                         UPDATE subjects SET transcript_group = 'KEJURUAN_DASAR' WHERE code = 'DDK';
+                         UPDATE subjects SET transcript_group = 'KEJURUAN_KONSENTRASI' WHERE code IN ('GTM', 'BUBUT', 'CNC', 'GRD', 'FRAIS', 'S.ELKA', 'S.KELST', 'S.KONTROL', 'SHP', 'MMI', 'PPMI');
+                         UPDATE subjects SET transcript_group = 'UKK' WHERE code = 'UKK';",
+                    down: "UPDATE subjects SET transcript_group = 'UMUM';",
+                },
             ],
         }
     }

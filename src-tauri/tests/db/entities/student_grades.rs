@@ -31,7 +31,7 @@ async fn test_student_grades_crud() {
 
     subjects::ActiveModel {
         id: Set(subject_id.clone()), code: Set("C1".to_string()), name: Set("C1".to_string()), category: Set("G".to_string()),
-        status: Set("active".to_string()), sequence: Set(1), created_at: Set(now.clone()), updated_at: Set(now.clone()),
+        status: Set("active".to_string()), transcript_group: Set("UMUM".to_string()), sequence: Set(1), created_at: Set(now.clone()), updated_at: Set(now.clone()),
     }.insert(&db).await.unwrap();
 
     curriculum_subjects::ActiveModel {
