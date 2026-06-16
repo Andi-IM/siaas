@@ -30,10 +30,11 @@ async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 async fn reset_database(
   app_handle: tauri::AppHandle,
-  db_conn: tauri::State<'_, DatabaseConnection>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
 ) -> Result<(), String> {
   // Close the database connection to release the lock on sias.db
-  db_conn.inner().close_by_ref().await
+  let mut db_conn = db_conn_state.write().await;
+  db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
   // Resolve database path
@@ -63,7 +64,7 @@ async fn reset_database(
     .map_err(|e| e.to_string())?;
 
   // Re-manage the database connection in Tauri
-  app_handle.manage(new_conn);
+  *db_conn = new_conn;
 
   Ok(())
 }
@@ -97,7 +98,7 @@ async fn export_database(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn import_database(
   app_handle: tauri::AppHandle,
-  db_conn: tauri::State<'_, DatabaseConnection>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
 ) -> Result<(), String> {
   let file_path = rfd::FileDialog::new()
     .add_filter("SQLite Database", &["db"])
@@ -109,7 +110,8 @@ async fn import_database(
   };
 
   // Close the database connection to release the lock on sias.db
-  db_conn.inner().close_by_ref().await
+  let mut db_conn = db_conn_state.write().await;
+  db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
   // Resolve database path
@@ -138,7 +140,7 @@ async fn import_database(
     .map_err(|e| e.to_string())?;
 
   // Re-manage the database connection in Tauri
-  app_handle.manage(new_conn);
+  *db_conn = new_conn;
 
   Ok(())
 }
@@ -186,7 +188,7 @@ pub fn run() {
       })?;
 
       // Manage database connection in Tauri state
-      app.manage(db_conn);
+      app.manage(tokio::sync::RwLock::new(db_conn));
 
       Ok(())
     })
