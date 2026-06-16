@@ -67,19 +67,19 @@ export const concentrations: KonsentrasiKeahlian[] = [
 ];
 
 export const subjects: MataPelajaran[] = [
-  { id: "m1", konsentrasiId: "k1", nama: "Pendidikan Agama dan Budi Pekerti", kode: "PAI", kategori: "Kelompok Umum", sequence: 1, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
-  { id: "m2", konsentrasiId: "k1", nama: "Pendidikan Pancasila", kode: "PP", kategori: "Kelompok Umum", sequence: 2, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
-  { id: "m3", konsentrasiId: "k1", nama: "Bahasa Indonesia", kode: "BIN", kategori: "Kelompok Umum", sequence: 3, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
-  { id: "m4", konsentrasiId: "k1", nama: "Matematika", kode: "MAT", kategori: "Kelompok Umum", sequence: 4, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
-  { id: "m5", konsentrasiId: "k1", nama: "Bahasa Inggris", kode: "BIG", kategori: "Kelompok Umum", sequence: 5, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
-  { id: "m6", konsentrasiId: "k1", nama: "Sejarah", kode: "SEJ", kategori: "Kelompok Umum", sequence: 6, semesters: [1, 2, 3, 4], status: "active" },
-  { id: "m7", konsentrasiId: "k1", nama: "Seni Budaya", kode: "SNB", kategori: "Kelompok Umum", sequence: 7, semesters: [1, 2], status: "active" },
-  { id: "m8", konsentrasiId: "k1", nama: "Pendidikan Jasmani, Olahraga, dan Kesehatan", kode: "PJOK", kategori: "Kelompok Umum", sequence: 8, semesters: [1, 2, 3, 4], status: "active" },
-  { id: "m9", konsentrasiId: "k1", nama: "Informatika", kode: "INF", kategori: "Kelompok Kejuruan", sequence: 1, semesters: [1, 2], status: "active" },
-  { id: "m10", konsentrasiId: "k1", nama: "Proyek IPAS", kode: "IPAS", kategori: "Kelompok Kejuruan", sequence: 2, semesters: [1, 2], status: "active" },
-  { id: "m11", konsentrasiId: "k1", nama: "Gambar Teknik Mesin", kode: "GTM", kategori: "Kelompok Kejuruan", sequence: 3, semesters: [1, 2], status: "active" },
-  { id: "m12", konsentrasiId: "k1", nama: "Pekerjaan Dasar Teknik Mesin", kode: "PDTM", kategori: "Kelompok Kejuruan", sequence: 4, semesters: [1, 2], status: "active" },
-  { id: "m13", konsentrasiId: "k1", nama: "Dasar Perancangan Teknik Mesin", kode: "DPTM", kategori: "Kelompok Kejuruan", sequence: 5, semesters: [1, 2], status: "active" },
+  { id: "m1", konsentrasiId: "k1", nama: "Pendidikan Agama dan Budi Pekerti", kode: "PAI", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
+  { id: "m2", konsentrasiId: "k1", nama: "Pendidikan Pancasila", kode: "PP", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 2, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
+  { id: "m3", konsentrasiId: "k1", nama: "Bahasa Indonesia", kode: "BIN", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 3, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
+  { id: "m4", konsentrasiId: "k1", nama: "Matematika", kode: "MAT", kategori: "Kelompok Umum", transcriptGroup: "KEJURUAN_UMUM", sequence: 4, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
+  { id: "m5", konsentrasiId: "k1", nama: "Bahasa Inggris", kode: "BIG", kategori: "Kelompok Umum", transcriptGroup: "KEJURUAN_UMUM", sequence: 5, semesters: [1, 2, 3, 4, 5, 6], status: "active" },
+  { id: "m6", konsentrasiId: "k1", nama: "Sejarah", kode: "SEJ", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 6, semesters: [1, 2, 3, 4], status: "active" },
+  { id: "m7", konsentrasiId: "k1", nama: "Seni Budaya", kode: "SNB", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 7, semesters: [1, 2], status: "active" },
+  { id: "m8", konsentrasiId: "k1", nama: "Pendidikan Jasmani, Olahraga, dan Kesehatan", kode: "PJOK", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 8, semesters: [1, 2, 3, 4], status: "active" },
+  { id: "m9", konsentrasiId: "k1", nama: "Informatika", kode: "INF", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_UMUM", sequence: 1, semesters: [1, 2], status: "active" },
+  { id: "m10", konsentrasiId: "k1", nama: "Proyek IPAS", kode: "IPAS", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_UMUM", sequence: 2, semesters: [1, 2], status: "active" },
+  { id: "m11", konsentrasiId: "k1", nama: "Gambar Teknik Mesin", kode: "GTM", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_KONSENTRASI", sequence: 3, semesters: [1, 2], status: "active" },
+  { id: "m12", konsentrasiId: "k1", nama: "Pekerjaan Dasar Teknik Mesin", kode: "PDTM", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_DASAR", sequence: 4, semesters: [1, 2], status: "active" },
+  { id: "m13", konsentrasiId: "k1", nama: "Dasar Perancangan Teknik Mesin", kode: "DPTM", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_KONSENTRASI", sequence: 5, semesters: [1, 2], status: "active" },
 ];
 
 export function initializeMockData() {

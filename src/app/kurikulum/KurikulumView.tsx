@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { ChevronRight, Plus, Pencil, Trash2, LayoutGrid, BookOpen, GraduationCap, X } from "lucide-react";
-import { 
+import {
   getPrograms, getConcentrations, getSubjects,
   addProgram, updateProgram,
   addConcentration, updateConcentration,
-  addSubject, updateSubject, deleteSubject 
+  addSubject, updateSubject, deleteSubject
 } from "@/lib/data";
-import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran } from "@/lib/types";
+import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, TranscriptGroup } from "@/lib/types";
 
 type ModalType = "program" | "concentration" | "subject" | null;
 
@@ -28,7 +28,7 @@ export default function CurriculumPage() {
   const [programForm, setProgramForm] = useState({ nama: "" });
   const [concentrationForm, setConcentrationForm] = useState({ nama: "" });
   const [subjectForm, setSubjectForm] = useState<Omit<MataPelajaran, "id" | "konsentrasiId">>({
-    nama: "", kode: "", kategori: "Kelompok Umum", sequence: 1, semesters: [1], status: "active"
+    nama: "", kode: "", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, semesters: [1], status: "active"
   });
 
   const refreshPrograms = async () => {
@@ -109,12 +109,12 @@ export default function CurriculumPage() {
     } else {
       const s = id ? subjects.find(m => m.id === id) : null;
       if (s) {
-        setSubjectForm({ 
-          nama: s.nama, kode: s.kode, kategori: s.kategori, sequence: s.sequence, semesters: s.semesters, status: s.status 
+        setSubjectForm({
+          nama: s.nama, kode: s.kode, kategori: s.kategori, transcriptGroup: s.transcriptGroup, sequence: s.sequence, semesters: s.semesters, status: s.status
         });
       } else {
-        setSubjectForm({ 
-          nama: "", kode: "", kategori: "Kelompok Umum", sequence: subjects.length + 1, semesters: [1], status: "active" 
+        setSubjectForm({
+          nama: "", kode: "", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: subjects.length + 1, semesters: [1], status: "active"
         });
       }
     }
@@ -279,6 +279,7 @@ export default function CurriculumPage() {
                       <th className="label-md" scope="col" style={{ width: 80 }}>Kode</th>
                       <th className="label-md" scope="col">Mata Pelajaran</th>
                       <th className="label-md" scope="col">Kategori</th>
+                      <th className="label-md" scope="col">Kelompok Ijazah</th>
                       <th className="label-md" scope="col" style={{ width: 80 }}>Smtr</th>
                       <th className="label-md" scope="col" style={{ width: 100 }}>Status</th>
                       <th className="label-md" scope="col" style={{ width: 80, textAlign: "right" }}>Aksi</th>
@@ -293,6 +294,9 @@ export default function CurriculumPage() {
                           <td className="table-data">{m.nama}</td>
                           <td className="table-data">
                             <span className="body-sm" style={{ color: "var(--on-surface-variant)" }}>{m.kategori}</span>
+                          </td>
+                          <td className="table-data">
+                            <span className="body-sm" style={{ color: "var(--on-surface-variant)" }}>{m.transcriptGroup}</span>
                           </td>
                           <td className="table-data" style={{ textAlign: "center", fontSize: 12 }}>{m.semesters.join(", ")}</td>
                           <td className="table-data">
@@ -310,7 +314,7 @@ export default function CurriculumPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={6} style={{ padding: "48px 0", textAlign: "center" }}>
+                        <td colSpan={7} style={{ padding: "48px 0", textAlign: "center" }}>
                           <BookOpen size={32} style={{ color: "var(--outline-variant)", marginBottom: 12 }} />
                           <p className="body-md">Belum ada mata pelajaran untuk konsentrasi ini.</p>
                         </td>
@@ -413,12 +417,22 @@ export default function CurriculumPage() {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 16 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginTop: 16 }}>
                 <div className="form-field">
                   <label className="form-field__label">Kategori</label>
                   <select className="form-input" value={subjectForm.kategori} onChange={e => setSubjectForm({ ...subjectForm, kategori: e.target.value as any })}>
                     <option value="Kelompok Umum">Kelompok Umum</option>
                     <option value="Kelompok Kejuruan">Kelompok Kejuruan</option>
+                  </select>
+                </div>
+                <div className="form-field">
+                  <label className="form-field__label">Kelompok Ijazah</label>
+                  <select className="form-input" value={subjectForm.transcriptGroup} onChange={e => setSubjectForm({ ...subjectForm, transcriptGroup: e.target.value as TranscriptGroup })}>
+                    <option value="UMUM">Umum</option>
+                    <option value="KEJURUAN_UMUM">Kejuruan Umum</option>
+                    <option value="KEJURUAN_DASAR">Dasar Kejuruan</option>
+                    <option value="KEJURUAN_KONSENTRASI">Konsentrasi Keahlian</option>
+                    <option value="UKK">UKK</option>
                   </select>
                 </div>
                 <div className="form-field">

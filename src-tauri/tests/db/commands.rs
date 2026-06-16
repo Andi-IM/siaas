@@ -130,11 +130,13 @@ async fn subject_lifecycle_should_work() {
         "Matematika Dasar",
         "Kelompok A",
         "active",
+        "UMUM",
         1,
     )
     .await
     .expect("Failed to create subject");
     assert_eq!(subject.code, "MAT01");
+    assert_eq!(subject.transcript_group, "UMUM");
 
     // Update
     let updated_subject = update_subject_core(
@@ -144,11 +146,13 @@ async fn subject_lifecycle_should_work() {
         "MAT01-U",
         "Kelompok A",
         "active",
+        "KEJURUAN_UMUM",
         2,
     )
     .await
     .expect("Failed to update subject");
     assert_eq!(updated_subject.name, "Matematika Dasar Lanjut");
+    assert_eq!(updated_subject.transcript_group, "KEJURUAN_UMUM");
 
     // Delete
     let delete_res = delete_subject_core(&db, &subject.id)
@@ -262,7 +266,7 @@ async fn setup_curriculum_and_grade_test_env(db: &sea_orm::DatabaseConnection) -
     let major = create_major_core(db, "M1", "Major 1", Some(prog.id)).await.unwrap();
     let batch = create_batch_core(db, 2024).await.unwrap();
     let semester = create_semester_core(db, "S1", "Sem 1", 1).await.unwrap();
-    let subject = create_subject_core(db, "SUB1", "Subj 1", "A", "active", 1).await.unwrap();
+    let subject = create_subject_core(db, "SUB1", "Subj 1", "A", "active", "UMUM", 1).await.unwrap();
     let student = create_student_core(db, students::Model {
         id: "".into(),
         nis: "S001".into(),
@@ -396,7 +400,7 @@ async fn setup_excel_test_env(db: &sea_orm::DatabaseConnection) -> app_lib::db::
 
     let codes = vec!["PAPB", "PPKn", "B.IND", "PJOK", "SEJ", "SENBUD", "MULOK", "MTK", "B.ING", "TI", "IPAS", "DDK", "GTM", "BUBUT", "GRD", "FRAIS", "CNC", "MAPIL", "PKWU", "PKL"];
     for code in codes {
-        create_subject_core(db, code, code, "A", "active", 1).await.unwrap();
+        create_subject_core(db, code, code, "A", "active", "UMUM", 1).await.unwrap();
     }
     major
 }
@@ -602,10 +606,10 @@ async fn get_students_should_return_all_students() {
 async fn get_subjects_should_return_sorted_by_category_weight_then_sequence() {
     let db = setup_test_db().await;
     // Create subjects in random order
-    create_subject_core(&db, "KJ1", "Kejuruan 1", "Kelompok Kejuruan", "active", 1).await.unwrap();
-    create_subject_core(&db, "UM2", "Umum 2", "Kelompok Umum", "active", 2).await.unwrap();
-    create_subject_core(&db, "UM1", "Umum 1", "Kelompok Umum", "active", 1).await.unwrap();
-    create_subject_core(&db, "KJ2", "Kejuruan 2", "Kelompok Kejuruan", "active", 2).await.unwrap();
+    create_subject_core(&db, "KJ1", "Kejuruan 1", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 1).await.unwrap();
+    create_subject_core(&db, "UM2", "Umum 2", "Kelompok Umum", "active", "UMUM", 2).await.unwrap();
+    create_subject_core(&db, "UM1", "Umum 1", "Kelompok Umum", "active", "UMUM", 1).await.unwrap();
+    create_subject_core(&db, "KJ2", "Kejuruan 2", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 2).await.unwrap();
 
     let subjects = get_subjects_core(&db).await.unwrap();
     assert_eq!(subjects.len(), 4);
@@ -640,8 +644,8 @@ async fn get_subjects_by_major_should_group_semesters_and_sort() {
     create_semester_core(&db, "S2", "Semester 2", 2).await.unwrap();
     
     // Create 2 subjects: one mapped to 2 semesters, one to 1
-    let subj_a = create_subject_core(&db, "A", "Subject A", "Kelompok Umum", "active", 1).await.unwrap();
-    let subj_b = create_subject_core(&db, "B", "Subject B", "Kelompok Kejuruan", "active", 1).await.unwrap();
+    let subj_a = create_subject_core(&db, "A", "Subject A", "Kelompok Umum", "active", "UMUM", 1).await.unwrap();
+    let subj_b = create_subject_core(&db, "B", "Subject B", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 1).await.unwrap();
     
     // Assign subj_a to semesters 1 and 2, subj_b to semester 1
     assign_subject_to_semesters_core(&db, &major.id, &subj_a.id, vec![1, 2]).await.unwrap();
@@ -652,8 +656,10 @@ async fn get_subjects_by_major_should_group_semesters_and_sort() {
     assert_eq!(result.len(), 2);
     // Sorted: Umum (A) before Kejuruan (B)
     assert_eq!(result[0].code, "A");
+    assert_eq!(result[0].transcript_group, "UMUM");
     assert_eq!(result[0].semesters, vec![1, 2]);
     assert_eq!(result[1].code, "B");
+    assert_eq!(result[1].transcript_group, "KEJURUAN_UMUM");
     assert_eq!(result[1].semesters, vec![1]);
 }
 
@@ -716,7 +722,7 @@ async fn update_major_nonexistent_should_return_not_found() {
 #[tokio::test]
 async fn update_subject_nonexistent_should_return_not_found() {
     let db = setup_test_db().await;
-    let result = update_subject_core(&db, "nonexistent-id", "N", "N", "N", "active", 1).await;
+    let result = update_subject_core(&db, "nonexistent-id", "N", "N", "N", "active", "UMUM", 1).await;
     assert!(matches!(result, Err(AppError::NotFound { entity: "Subject", .. })));
 }
 
@@ -727,4 +733,3 @@ async fn update_student_nonexistent_should_return_not_found() {
     let result = update_student_core(&db, "nonexistent-nis", dummy).await;
     assert!(matches!(result, Err(AppError::NotFound { entity: "Student", .. })));
 }
-

@@ -13,39 +13,39 @@ VALUES
 ('7f0cbd3b-0dbd-4a52-85a4-aff5db36f794', 'TMI', 'Teknik Mekanik Industri', '751b4503-5553-43bf-bed0-b1dc3f35e923');
 
 -- 3. Memasukkan data Mata Pelajaran (subjects)
-INSERT OR IGNORE INTO subjects (id, code, name, category, status, sequence)
-VALUES 
+INSERT OR IGNORE INTO subjects (id, code, name, category, status, transcript_group, sequence)
+VALUES
 -- Kelompok Umum
-('18e69d47-2bb6-45a9-a947-e2c39a085292', 'PAPB', 'Pendidikan Agama dan Budi Pekerti', 'Kelompok Umum', 'active', 1),
-('d0079de4-3ed1-4d0b-ae6d-b914bb8ab6f6', 'PPKn', 'Pendidikan Pancasila dan Kewarganegaraan', 'Kelompok Umum', 'active', 2),
-('26cdab87-b34b-498f-a8aa-69f52c335ceb', 'B.IND', 'Bahasa Indonesia', 'Kelompok Umum', 'active', 3),
-('a37200ed-bff3-444d-a337-17cf752e88e3', 'PJOK', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 'Kelompok Umum', 'active', 4),
-('1e80fc80-a411-4012-80cc-4885802f1037', 'SEJ', 'Sejarah', 'Kelompok Umum', 'active', 5),
-('e86acd7b-a3d8-41f4-8150-ddfc895c6420', 'SENBUD', 'Seni Budaya', 'Kelompok Umum', 'active', 6),
-('5b047618-9c0e-4be1-b290-cfdca98528fc', 'MULOK', 'Muatan Lokal Keminangkabauan', 'Kelompok Umum', 'active', 7),
+('18e69d47-2bb6-45a9-a947-e2c39a085292', 'PAPB', 'Pendidikan Agama dan Budi Pekerti', 'Kelompok Umum', 'active', 'UMUM', 1),
+('d0079de4-3ed1-4d0b-ae6d-b914bb8ab6f6', 'PPKn', 'Pendidikan Pancasila dan Kewarganegaraan', 'Kelompok Umum', 'active', 'UMUM', 2),
+('26cdab87-b34b-498f-a8aa-69f52c335ceb', 'B.IND', 'Bahasa Indonesia', 'Kelompok Umum', 'active', 'UMUM', 3),
+('a37200ed-bff3-444d-a337-17cf752e88e3', 'PJOK', 'Pendidikan Jasmani, Olahraga, dan Kesehatan', 'Kelompok Umum', 'active', 'UMUM', 4),
+('1e80fc80-a411-4012-80cc-4885802f1037', 'SEJ', 'Sejarah', 'Kelompok Umum', 'active', 'UMUM', 5),
+('e86acd7b-a3d8-41f4-8150-ddfc895c6420', 'SENBUD', 'Seni Budaya', 'Kelompok Umum', 'active', 'UMUM', 6),
+('5b047618-9c0e-4be1-b290-cfdca98528fc', 'MULOK', 'Muatan Lokal Keminangkabauan', 'Kelompok Umum', 'active', 'UMUM', 7),
 
 -- Kelompok Kejuruan
-('c07c298f-d5d7-42d9-953e-fba76ca3e327', 'MTK', 'Matematika', 'Kelompok Kejuruan', 'active', 8),
-('8baf1674-4bbe-4850-a2cb-7126f6b2c8e4', 'B.ING', 'Bahasa Inggris', 'Kelompok Kejuruan', 'active', 9),
-('138d235e-59a2-48eb-bb50-f0dd1734df3a', 'TI', 'Informatika', 'Kelompok Kejuruan', 'active', 10),
-('298c12c4-b1df-42b7-bc3e-fb4fc64dec18', 'IPAS', 'Projek Ilmu Pengetahuan Alam dan Sosial', 'Kelompok Kejuruan', 'active', 11),
-('3563e317-1d6a-4952-8a64-d0622bcae0ce', 'DDK', 'Dasar-dasar Keahlian Teknik Mesin', 'Kelompok Kejuruan', 'active', 12),
-('57573106-28ce-4c1b-ad6a-d9101126b4a3', 'GTM', 'Gambar Teknik Manufaktur', 'Kelompok Kejuruan', 'active', 13),
-('584d0638-44d0-4532-b3cc-de0a6be881c9', 'BUBUT', 'Teknik Pemesinan Bubut', 'Kelompok Kejuruan', 'active', 14),
-('0b445f06-7b45-4bbb-b179-8bd7d4765ce4', 'GRD', 'Teknik Pemesinan Gerinda', 'Kelompok Kejuruan', 'active', 15),
-('ee44354b-2aca-4ba1-8bef-2f2fe7a10759', 'CNC', 'Teknik Pemesinan NC/CNC dan CAM', 'Kelompok Kejuruan', 'active', 16),
-('c3e6e379-9117-4403-a650-a64ca898857e', 'FRAIS', 'Teknik Pemesinan Frais', 'Kelompok Kejuruan', 'active', 17),
-('8905187d-ccdb-4689-978f-304ca478e61f', 'MAPIL', 'Mata Pelajaran Pilihan', 'Kelompok Kejuruan', 'active', 18),
-('fb35e104-c0d7-404f-9f38-fd14b7ad9473', 'PKWU', 'Projek Kreatif dan Kewirausahaan', 'Kelompok Kejuruan', 'active', 19),
-('3f8bf210-3d6c-4d81-bc17-247004c0fa18', 'PKL', 'Praktik Kerja Lapangan', 'Kelompok Kejuruan', 'active', 20),
+('c07c298f-d5d7-42d9-953e-fba76ca3e327', 'MTK', 'Matematika', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 8),
+('8baf1674-4bbe-4850-a2cb-7126f6b2c8e4', 'B.ING', 'Bahasa Inggris', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 9),
+('138d235e-59a2-48eb-bb50-f0dd1734df3a', 'TI', 'Informatika', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 10),
+('298c12c4-b1df-42b7-bc3e-fb4fc64dec18', 'IPAS', 'Projek Ilmu Pengetahuan Alam dan Sosial', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 11),
+('3563e317-1d6a-4952-8a64-d0622bcae0ce', 'DDK', 'Dasar-dasar Keahlian Teknik Mesin', 'Kelompok Kejuruan', 'active', 'KEJURUAN_DASAR', 12),
+('57573106-28ce-4c1b-ad6a-d9101126b4a3', 'GTM', 'Gambar Teknik Manufaktur', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 13),
+('584d0638-44d0-4532-b3cc-de0a6be881c9', 'BUBUT', 'Teknik Pemesinan Bubut', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 14),
+('0b445f06-7b45-4bbb-b179-8bd7d4765ce4', 'GRD', 'Teknik Pemesinan Gerinda', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 15),
+('ee44354b-2aca-4ba1-8bef-2f2fe7a10759', 'CNC', 'Teknik Pemesinan NC/CNC dan CAM', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 16),
+('c3e6e379-9117-4403-a650-a64ca898857e', 'FRAIS', 'Teknik Pemesinan Frais', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 17),
+('8905187d-ccdb-4689-978f-304ca478e61f', 'MAPIL', 'Mata Pelajaran Pilihan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 18),
+('fb35e104-c0d7-404f-9f38-fd14b7ad9473', 'PKWU', 'Projek Kreatif dan Kewirausahaan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 19),
+('3f8bf210-3d6c-4d81-bc17-247004c0fa18', 'PKL', 'Praktik Kerja Lapangan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 20),
 
 -- Kelompok Kejuruan (Khusus Teknik Mekanik Industri / TMI)
-('b6f2b48e-f11a-4c20-a681-37f2a1b9e281', 'S.ELKA', 'Sistem Elektronika', 'Kelompok Kejuruan', 'active', 21),
-('9a51d8b2-e1d5-455b-864a-2e6308a3d132', 'S.KELST', 'Sistem Kelistrikan', 'Kelompok Kejuruan', 'active', 22),
-('d01f14b6-71f0-4107-b1db-f2f2e519e52f', 'S.KONTROL', 'Sistem Kontrol', 'Kelompok Kejuruan', 'active', 23),
-('71d87fbe-d45e-49b4-b4a1-098e9ab2f31a', 'SHP', 'Sistem Hidrolik dan Pneumatik', 'Kelompok Kejuruan', 'active', 24),
-('06f1cc0f-155e-4c07-afb9-b84534f3c051', 'MMI', 'Mekanik Mesin Industri', 'Kelompok Kejuruan', 'active', 25),
-('87a917bd-319c-4f74-8789-53b92319c5c2', 'PPMI', 'Perawatan dan Perbaikan Mesin Industri', 'Kelompok Kejuruan', 'active', 26);
+('b6f2b48e-f11a-4c20-a681-37f2a1b9e281', 'S.ELKA', 'Sistem Elektronika', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 21),
+('9a51d8b2-e1d5-455b-864a-2e6308a3d132', 'S.KELST', 'Sistem Kelistrikan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 22),
+('d01f14b6-71f0-4107-b1db-f2f2e519e52f', 'S.KONTROL', 'Sistem Kontrol', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 23),
+('71d87fbe-d45e-49b4-b4a1-098e9ab2f31a', 'SHP', 'Sistem Hidrolik dan Pneumatik', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 24),
+('06f1cc0f-155e-4c07-afb9-b84534f3c051', 'MMI', 'Mekanik Mesin Industri', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 25),
+('87a917bd-319c-4f74-8789-53b92319c5c2', 'PPMI', 'Perawatan dan Perbaikan Mesin Industri', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 26);
 
 -- =========================================================================
 -- KONFIGURASI KHUSUS: Uji Kompetensi Keahlian (UKK) & Pemetaan Kurikulum
@@ -67,8 +67,8 @@ VALUES
 ('ebc58d04-1b3c-4e55-8889-f54497a7a372', 'UKK', 'Uji Kompetensi Keahlian', 99);
 
 -- 6. Memasukkan data Mata Pelajaran Khusus UKK
-INSERT OR IGNORE INTO subjects (id, code, name, category, status, sequence)
-VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 21);
+INSERT OR IGNORE INTO subjects (id, code, name, category, status, transcript_group, sequence)
+VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 'UKK', 27);
 
 -- 7. Memetakan Mata Pelajaran ke Kurikulum Angkatan 2024
 INSERT OR IGNORE INTO curriculum_subjects (id, major_id, batch_id, semester_id, subject_id)

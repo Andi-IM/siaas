@@ -36,8 +36,8 @@ const mockConcentrations = [
 ];
 
 const mockSubjects = [
-  { id: "sub-1", konsentrasiId: "con-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum" as const, sequence: 1, semesters: [1], status: "active" as const },
-  { id: "sub-2", konsentrasiId: "con-1", nama: "Fisika", kode: "FSK", kategori: "Kelompok Kejuruan" as const, sequence: 2, semesters: [1, 2], status: "inactive" as const },
+  { id: "sub-1", konsentrasiId: "con-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum" as const, transcriptGroup: "UMUM" as const, sequence: 1, semesters: [1], status: "active" as const },
+  { id: "sub-2", konsentrasiId: "con-1", nama: "Fisika", kode: "FSK", kategori: "Kelompok Kejuruan" as const, transcriptGroup: "KEJURUAN_UMUM" as const, sequence: 2, semesters: [1, 2], status: "inactive" as const },
 ];
 
 describe("CurriculumPage - Unit Tests", () => {
@@ -408,9 +408,11 @@ describe("CurriculumPage - Unit Tests", () => {
 
     const selects = container.querySelectorAll("select");
     const kategoriSelect = selects[0];
-    const statusSelect = selects[1];
+    const transcriptGroupSelect = selects[1];
+    const statusSelect = selects[2];
 
     fireEvent.change(kategoriSelect, { target: { value: "Kelompok Kejuruan" } });
+    fireEvent.change(transcriptGroupSelect, { target: { value: "UMUM" } });
     fireEvent.change(statusSelect, { target: { value: "active" } });
 
     const submitBtn = screen.getByRole("button", { name: "Simpan Mapel" });
@@ -420,6 +422,7 @@ describe("CurriculumPage - Unit Tests", () => {
       nama: "Kimia",
       kode: "KIM",
       kategori: "Kelompok Kejuruan",
+      transcriptGroup: "UMUM",
       sequence: 3,
       semesters: [2],
       status: "active",
@@ -481,6 +484,7 @@ describe("CurriculumPage - Unit Tests", () => {
       nama: "Matematika Lanjut",
       kode: "MTK",
       kategori: "Kelompok Umum",
+      transcriptGroup: "UMUM",
       sequence: 1,
       semesters: [1],
       status: "active",

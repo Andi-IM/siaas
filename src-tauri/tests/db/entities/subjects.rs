@@ -15,6 +15,7 @@ async fn test_subjects_crud() {
         name: Set("Introduction to Programming".to_string()),
         category: Set("Kelompok Umum".to_string()),
         status: Set("active".to_string()),
+        transcript_group: Set("UMUM".to_string()),
         sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),

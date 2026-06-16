@@ -130,9 +130,10 @@ pub async fn create_subject(
     name: String,
     category: String,
     status: String,
+    transcript_group: String,
     sequence: i32,
 ) -> Result<subjects::Model, String> {
-    create_subject_core(&*state.read().await, code, name, category, status, sequence).await.map_err(|e| e.to_string())
+    create_subject_core(&*state.read().await, code, name, category, status, transcript_group, sequence).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -150,9 +151,10 @@ pub async fn update_subject(
     code: String,
     category: String,
     status: String,
+    transcript_group: String,
     sequence: i32,
 ) -> Result<subjects::Model, String> {
-    update_subject_core(&*state.read().await, &id, name, code, category, status, sequence).await.map_err(|e| e.to_string())
+    update_subject_core(&*state.read().await, &id, name, code, category, status, transcript_group, sequence).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
