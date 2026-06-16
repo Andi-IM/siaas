@@ -1,3 +1,16 @@
+# [1.1.0](https://github.com/Andi-IM/siaas/compare/v1.0.0...v1.1.0) (2026-06-16)
+
+
+### Features
+
+* implement academic curriculum management system with subject database schema, transcript view, and integration test suite ([c222b08](https://github.com/Andi-IM/siaas/commit/c222b08a1e3bc1d0e33e1e35b2d05891557f1706))
+* implement core database management commands and initialize Tauri application backend ([45cb3cc](https://github.com/Andi-IM/siaas/commit/45cb3cc84d29f5f37045aaeadcd8ec1d261c6a15))
+* implement database seeding scripts for academic core, students, and grades with associated documentation ([1c36699](https://github.com/Andi-IM/siaas/commit/1c366991ddcc944697aacd82f0d89ee5d1b9aa43))
+* implement husky pre-commit hook with conditional rust and frontend validation ([df075b7](https://github.com/Andi-IM/siaas/commit/df075b78abcf0ce73fd511440a13c4a3cd84e2e2))
+* implement student management views and corresponding unit tests for CRUD operations ([8d7450b](https://github.com/Andi-IM/siaas/commit/8d7450baed5e9bd0dc2f25f84ed33c56f5111dbc))
+* implement View-Wrapper pattern, add rekap page, and integrate diagnostic bug reporting system ([6b925e6](https://github.com/Andi-IM/siaas/commit/6b925e6b8851c5682473880e87e4257418cd0783))
+* Merge pull request [#5](https://github.com/Andi-IM/siaas/issues/5) from Andi-IM/dev ([f054bf4](https://github.com/Andi-IM/siaas/commit/f054bf4c1b40d455c5cf8a660ca8b2bc814d5363))
+
 # 1.0.0 (2026-06-16)
 
 
