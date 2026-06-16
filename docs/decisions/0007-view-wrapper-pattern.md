@@ -1,38 +1,38 @@
-# 0007: Pola View-Wrapper untuk Menghindari Ghost Lines Istanbul
+# 0007: View-Wrapper Pattern to Avoid Istanbul Ghost Lines
 
 **Status:** accepted
 **Date:** 2026-06-16
 
 ## Context and Problem Statement
 
-Pada pengujian aplikasi SIAAS yang berbasis Next.js App Router menggunakan Vitest dan provider coverage Istanbul, kami mendapati adanya anomali *coverage* berupa *ghost lines*. *Ghost lines* ini menunjukkan baris-baris kosong atau baris yang sebenarnya tidak dapat dieksekusi seolah-olah tidak tercover (uncovered). 
+During the testing of the Next.js App Router-based SIAAS application using Vitest and the Istanbul coverage provider, we discovered coverage anomalies in the form of *ghost lines*. These *ghost lines* falsely report empty lines or lines that cannot actually be executed as uncovered.
 
-Analisis menunjukkan bahwa masalah ini merupakan efek dari *double-instrumentation* dan *statement map overriding* oleh Istanbul saat *parallel workers* pada Vitest menjalankan file secara dinamis melalui tes sekaligus memindainya secara statis. Hal ini sering terjadi pada file *page wrapper* Next.js (seperti yang hanya berisi `Suspense`) ketika komponen inner (View) dimock secara langsung dengan *static path*.
+Analysis showed that this issue is an effect of double-instrumentation and statement map overriding by Istanbul when parallel workers in Vitest dynamically execute files through tests while simultaneously scanning them statically. This often occurs on Next.js *page wrapper* files (like those only containing a `Suspense` boundary) when the inner component (View) is directly mocked with a static path.
 
 ## Decision
 
-Untuk memastikan *test coverage* yang valid dan mencapai 100%, kami mengadopsi **Pola View-Wrapper (Single Source of Compilation)** untuk setiap rute halaman:
+To ensure valid test coverage and achieve 100%, we are adopting the **View-Wrapper Pattern (Single Source of Compilation)** for every page route:
 
-1. **Pemisahan Modul**: File `app/[fitur]/page.tsx` murni digunakan sebagai *thin wrapper* (seperti `Suspense` boundary atau layout minimalis).
-2. **Komponen Inti di View**: Seluruh logika utama dipindahkan ke komponen terpisah berakhiran `View.tsx` (misal: `TambahSiswaView.tsx`).
-3. **Pola Pengujian (Krusial)**: 
-   - Di test integrasi utama (misal `siswa_add.test.tsx`), **jangan hanya merender komponen `View`**. Sebaliknya, impor dan **render komponen `Wrapper` (`page.tsx`)** agar worker memuat dan mengkompilasi file *wrapper* secara bersamaan dalam alur yang sama.
-   - Pada file test terpisah khusus *wrapper*, hindari penggunaan `vi.mock("@/app/...")` statis. Gunakan impor asli `import * as ViewModule from "./View"` dan lakukan mock menggunakan `vi.spyOn(ViewModule, "default")`.
-4. **Lokasi Fallback**: Pindahkan komponen Fallback (seperti Skeleton Loading) ke luar `page.tsx` (misalnya diekspor dari file `View`) agar *wrapper* `page.tsx` menjadi seringkas mungkin.
+1. **Module Separation**: The `app/[feature]/page.tsx` file is purely used as a *thin wrapper* (such as a `Suspense` boundary or minimalist layout).
+2. **Core Component in View**: All main logic is moved to a separate component ending with `View.tsx` (e.g., `TambahSiswaView.tsx`).
+3. **Testing Pattern (Crucial)**: 
+   - In the main integration test (e.g., `siswa_add.test.tsx`), **do not only render the `View` component**. Instead, import and **render the `Wrapper` component (`page.tsx`)** so that the worker loads and compiles the wrapper file simultaneously within the same flow.
+   - In the separate wrapper-specific test file, avoid using static `vi.mock("@/app/...")`. Use a native import `import * as ViewModule from "./View"` and mock it using `vi.spyOn(ViewModule, "default")`.
+4. **Fallback Location**: Move Fallback components (such as Skeleton Loading) outside of `page.tsx` (e.g., exported from the `View` file) to keep the `page.tsx` wrapper as concise as possible.
 
 ## Consequences
 
-*   **Positif:** Laporan *coverage* akurat (menghilangkan *ghost lines*) dan representatif.
-*   **Positif:** Pemisahan *concerns* yang lebih rapi antara asynchronous boundary (di `page.tsx`) dengan logika interaksi klien (di `[Page]View.tsx`).
-*   **Negatif:** Sedikit penambahan *boilerplate* saat membuat halaman baru karena selalu membutuhkan dua file (Page dan View) serta test *wrapper* tersendiri.
+*   **Positive:** Accurate (eliminates ghost lines) and representative coverage reports.
+*   **Positive:** Cleaner separation of concerns between asynchronous boundaries (in `page.tsx`) and client interaction logic (in `[Page]View.tsx`).
+*   **Negative:** A slight addition of boilerplate when creating a new page because it always requires two files (Page and View) and a separate wrapper test.
 
 ## Implementation Plan
 
-- **Affected paths**: Pola ini diaplikasikan pada semua halaman rute Next.js (seperti `src/app/siswa/tambah`, `src/app/siswa/detail`, dan `src/app/siswa/edit`).
-- **Pattern**: Rendering komponen `page.tsx` utama pada file unit test komponen `[Page]View`.
-- Kebijakan ini **wajib** diikuti untuk seluruh modul halaman baru agar tidak terjadi kemunduran (regresi) pada persentase test coverage.
+- **Affected paths**: This pattern is applied to all Next.js route pages (such as `src/app/siswa/tambah`, `src/app/siswa/detail`, and `src/app/siswa/edit`).
+- **Pattern**: Rendering the main `page.tsx` component inside the unit test file of the `[Page]View` component.
+- This policy is **mandatory** for all new page modules to prevent regressions in test coverage percentages.
 
 ## Verification
 
-- [x] `npm run test:coverage` menunjukkan 100% *statements*, *branches*, *functions*, dan *lines* pada fitur-fitur yang direfaktor (`tambah`, `edit`, `detail`).
-- [x] Angka *ghost lines* (seperti *line* 397-766 pada file berukuran < 100 baris) tidak lagi muncul di dalam laporan *coverage*.
+- [x] `npm run test:coverage` shows 100% statements, branches, functions, and lines on the refactored features (`tambah`, `edit`, `detail`).
+- [x] The number of ghost lines (like lines 397-766 in a file < 100 lines) no longer appears in the coverage report.
