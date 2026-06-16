@@ -1,5 +1,5 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig, configDefaults } from "vitest/config";
 
 export default defineConfig({
   resolve: {
@@ -12,6 +12,7 @@ export default defineConfig({
     globals: true,
     clearMocks: true,
     setupFiles: ["./vitest.setup.ts"],
+    exclude: [...configDefaults.exclude, "services/**"],
     deps: {
       optimizer: {
         web: {

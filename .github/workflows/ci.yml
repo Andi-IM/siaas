@@ -28,6 +28,14 @@ jobs:
       - name: Run Frontend Tests (Vitest)
         run: npm test
 
+      - name: Install API dependencies
+        working-directory: ./services/api
+        run: npm ci
+
+      - name: Run API Tests (Vitest)
+        working-directory: ./services/api
+        run: npm test
+
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
 
