@@ -33,4 +33,4 @@ jobs:
           env_vars: |
             GITHUB_REPO_OWNER=Andi-IM
             GITHUB_REPO_NAME=siaas
-            GITHUB_PAT=${{ secrets.GITHUB_PAT_ISSUES }}
+            GITHUB_PAT=${{ secrets.GUTHIB_PAT_ISSUES }}
