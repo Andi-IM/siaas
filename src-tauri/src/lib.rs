@@ -3,18 +3,41 @@ use sea_orm::DatabaseConnection;
 
 pub mod db;
 
+#[tauri::command]
+async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
+  let log_dir = app_handle.path().app_log_dir()
+    .map_err(|e| e.to_string())?;
+  
+  let log_path = log_dir.join("sias.log");
+  
+  if !log_path.exists() {
+    return Ok("No log file found.".to_string());
+  }
+
+  let file_content = std::fs::read_to_string(&log_path)
+    .map_err(|e| e.to_string())?;
+
+  let lines: Vec<&str> = file_content.lines().collect();
+  let last_lines = if lines.len() > 50 {
+    &lines[lines.len() - 50..]
+  } else {
+    &lines[..]
+  };
+
+  Ok(last_lines.join("\n"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
     .plugin(tauri_plugin_updater::Builder::new().build())
     .setup(|app| {
-      if cfg!(debug_assertions) {
-        app.handle().plugin(
-          tauri_plugin_log::Builder::default()
-            .level(log::LevelFilter::Info)
-            .build(),
-        )?;
-      }
+      // Initialize logging in both debug and release to enable diagnostics
+      app.handle().plugin(
+        tauri_plugin_log::Builder::default()
+          .level(log::LevelFilter::Info)
+          .build(),
+      )?;
 
       // Resolve application data directory and create if it doesn't exist
       let app_data_dir = app.path().app_data_dir()?;
@@ -47,6 +70,7 @@ pub fn run() {
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+        get_app_logs,
         db::commands::create_program,
         db::commands::get_programs,
         db::commands::update_program,

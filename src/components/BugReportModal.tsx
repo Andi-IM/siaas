@@ -13,7 +13,15 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
     setLoading(true);
 
     try {
-      const logs = "System state: OK\nMemory: 45MB"; // Dummy logs for now
+      let logs = 'No logs available';
+      try {
+        if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
+          const { invoke } = await import('@tauri-apps/api/core');
+          logs = await invoke<string>('get_app_logs');
+        }
+      } catch (err) {
+        console.error('Failed to retrieve system logs:', err);
+      }
       
       const res = await fetch('https://sias-api-893975406407.us-central1.run.app/issues', {
         method: 'POST',
