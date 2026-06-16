@@ -28,7 +28,7 @@ Rust coverage is generated using `cargo llvm-cov` on the integration test target
 ### Execution Command
 To generate the latest Rust coverage report locally:
 ```bash
-cargo llvm-cov --manifest-path src-tauri/Cargo.toml
+cargo llvm-cov --manifest-path src-tauri/Cargo.toml --ignore-filename-regex "entities|main|lib"
 ```
 
 ---

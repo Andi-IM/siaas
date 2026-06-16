@@ -1,6 +1,6 @@
 use super::setup_test_db;
 use app_lib::db::entities::{majors, batches, semesters, subjects, students, curriculum_subjects, student_grades};
-use sea_orm::{EntityTrait, ActiveModelTrait, Set, QueryFilter, ColumnTrait};
+use sea_orm::{EntityTrait, ActiveModelTrait, Set};
 
 #[tokio::test]
 async fn test_crud_operations() {

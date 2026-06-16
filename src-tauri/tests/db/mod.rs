@@ -12,6 +12,10 @@ pub async fn setup_test_db() -> sea_orm::DatabaseConnection {
     db
 }
 
-pub fn mock_state<'a, T: Send + Sync + 'static>(val: &'a T) -> tauri::State<'a, T> {
-    unsafe { std::mem::transmute(val) }
+#[tokio::test]
+async fn test_establish_connection_error() {
+    let bad_path = std::path::Path::new("/invalid_dir/invalid.db");
+    let result = app_lib::db::establish_connection(bad_path).await;
+    
+    assert!(result.is_err(), "Expected connection to fail with invalid path");
 }
