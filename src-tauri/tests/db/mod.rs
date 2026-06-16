@@ -19,3 +19,21 @@ async fn test_establish_connection_error() {
     
     assert!(result.is_err(), "Expected connection to fail with invalid path");
 }
+
+#[tokio::test]
+async fn test_establish_connection_success() {
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let db_path = manifest_dir.join("tests/temp_test_establish.db");
+
+    // Create the empty file first as required by SQLite driver setup
+    std::fs::File::create(&db_path).unwrap();
+
+    // Connect to a physical file (success path)
+    let result = app_lib::db::establish_connection(&db_path).await;
+    assert!(result.is_ok());
+
+    // Clean up temporary database file
+    if db_path.exists() {
+        let _ = std::fs::remove_file(db_path);
+    }
+}

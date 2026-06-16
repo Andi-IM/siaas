@@ -7,16 +7,34 @@ use crate::db::entities::{
 // PROGRAMS CORE LOGIC
 // ==========================================
 
+/// Menciptakan program studi baru.
+///
+/// # Examples
+///
+/// ```
+/// use app_lib::db::core::create_program_core;
+/// use app_lib::db::establish_in_memory_connection;
+/// use app_lib::db::migrations::MigrationManager;
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let db = establish_in_memory_connection().await.unwrap();
+/// let manager = MigrationManager::new();
+/// manager.run(&db).await.unwrap();
+///
+/// let program = create_program_core(&db, "Teknik Informatika").await.unwrap();
+/// assert_eq!(program.name, "Teknik Informatika");
+/// # });
+/// ```
 pub async fn create_program_core(
     db: &DatabaseConnection,
-    name: String,
+    name: impl Into<String>,
 ) -> Result<programs::Model, String> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
     let program = programs::ActiveModel {
         id: Set(id),
-        name: Set(name),
+        name: Set(name.into()),
         created_at: Set(now.clone()),
         updated_at: Set(now),
     };
@@ -34,10 +52,11 @@ pub async fn get_programs_core(
         .map_err(|e| e.to_string())
 }
 
+/// Memperbarui nama program studi berdasarkan ID.
 pub async fn update_program_core(
     db: &DatabaseConnection,
-    id: String,
-    name: String,
+    id: &str,
+    name: impl Into<String>,
 ) -> Result<programs::Model, String> {
     let existing = programs::Entity::find_by_id(id)
         .one(db)
@@ -47,16 +66,17 @@ pub async fn update_program_core(
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: programs::ActiveModel = existing.into();
-    active.name = Set(name);
+    active.name = Set(name.into());
     active.updated_at = Set(now);
 
     let updated = active.update(db).await.map_err(|e| e.to_string())?;
     Ok(updated)
 }
 
+/// Menghapus program studi berdasarkan ID.
 pub async fn delete_program_core(
     db: &DatabaseConnection,
-    id: String,
+    id: &str,
 ) -> Result<bool, String> {
     let res = programs::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
     Ok(res.rows_affected > 0)
@@ -66,10 +86,28 @@ pub async fn delete_program_core(
 // MAJORS CORE LOGIC
 // ==========================================
 
+/// Menciptakan konsentrasi keahlian (major) baru.
+///
+/// # Examples
+///
+/// ```
+/// use app_lib::db::core::create_major_core;
+/// use app_lib::db::establish_in_memory_connection;
+/// use app_lib::db::migrations::MigrationManager;
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let db = establish_in_memory_connection().await.unwrap();
+/// let manager = MigrationManager::new();
+/// manager.run(&db).await.unwrap();
+///
+/// let major = create_major_core(&db, "TKJ", "Teknik Komputer dan Jaringan", None).await.unwrap();
+/// assert_eq!(major.code, "TKJ");
+/// # });
+/// ```
 pub async fn create_major_core(
     db: &DatabaseConnection,
-    code: String,
-    name: String,
+    code: impl Into<String>,
+    name: impl Into<String>,
     program_id: Option<String>,
 ) -> Result<majors::Model, String> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -77,8 +115,8 @@ pub async fn create_major_core(
 
     let major = majors::ActiveModel {
         id: Set(id),
-        code: Set(code),
-        name: Set(name),
+        code: Set(code.into()),
+        name: Set(name.into()),
         program_id: Set(program_id),
         created_at: Set(now.clone()),
         updated_at: Set(now),
@@ -97,11 +135,12 @@ pub async fn get_majors_core(
         .map_err(|e| e.to_string())
 }
 
+/// Memperbarui data konsentrasi keahlian.
 pub async fn update_major_core(
     db: &DatabaseConnection,
-    id: String,
-    name: String,
-    code: String,
+    id: &str,
+    name: impl Into<String>,
+    code: impl Into<String>,
     program_id: Option<String>,
 ) -> Result<majors::Model, String> {
     let existing = majors::Entity::find_by_id(id)
@@ -112,8 +151,8 @@ pub async fn update_major_core(
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: majors::ActiveModel = existing.into();
-    active.name = Set(name);
-    active.code = Set(code);
+    active.name = Set(name.into());
+    active.code = Set(code.into());
     active.program_id = Set(program_id);
     active.updated_at = Set(now);
 
@@ -121,9 +160,10 @@ pub async fn update_major_core(
     Ok(updated)
 }
 
+/// Menghapus konsentrasi keahlian berdasarkan ID.
 pub async fn delete_major_core(
     db: &DatabaseConnection,
-    id: String,
+    id: &str,
 ) -> Result<bool, String> {
     let res = majors::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
     Ok(res.rows_affected > 0)
@@ -133,6 +173,24 @@ pub async fn delete_major_core(
 // BATCHES CORE LOGIC
 // ==========================================
 
+/// Menciptakan angkatan (batch) baru.
+///
+/// # Examples
+///
+/// ```
+/// use app_lib::db::core::create_batch_core;
+/// use app_lib::db::establish_in_memory_connection;
+/// use app_lib::db::migrations::MigrationManager;
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let db = establish_in_memory_connection().await.unwrap();
+/// let manager = MigrationManager::new();
+/// manager.run(&db).await.unwrap();
+///
+/// let batch = create_batch_core(&db, 2024).await.unwrap();
+/// assert_eq!(batch.year, 2024);
+/// # });
+/// ```
 pub async fn create_batch_core(
     db: &DatabaseConnection,
     year: i32,
@@ -164,10 +222,28 @@ pub async fn get_batches_core(
 // SEMESTERS CORE LOGIC
 // ==========================================
 
+/// Menciptakan semester baru.
+///
+/// # Examples
+///
+/// ```
+/// use app_lib::db::core::create_semester_core;
+/// use app_lib::db::establish_in_memory_connection;
+/// use app_lib::db::migrations::MigrationManager;
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let db = establish_in_memory_connection().await.unwrap();
+/// let manager = MigrationManager::new();
+/// manager.run(&db).await.unwrap();
+///
+/// let semester = create_semester_core(&db, "S1", "Semester 1", 1).await.unwrap();
+/// assert_eq!(semester.sequence, 1);
+/// # });
+/// ```
 pub async fn create_semester_core(
     db: &DatabaseConnection,
-    code: String,
-    name: String,
+    code: impl Into<String>,
+    name: impl Into<String>,
     sequence: i32,
 ) -> Result<semesters::Model, String> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -175,8 +251,8 @@ pub async fn create_semester_core(
 
     let semester = semesters::ActiveModel {
         id: Set(id),
-        code: Set(code),
-        name: Set(name),
+        code: Set(code.into()),
+        name: Set(name.into()),
         sequence: Set(sequence),
         created_at: Set(now.clone()),
         updated_at: Set(now),
@@ -208,12 +284,30 @@ pub fn get_category_weight(cat: &str) -> i32 {
     }
 }
 
+/// Menciptakan mata pelajaran baru.
+///
+/// # Examples
+///
+/// ```
+/// use app_lib::db::core::create_subject_core;
+/// use app_lib::db::establish_in_memory_connection;
+/// use app_lib::db::migrations::MigrationManager;
+///
+/// # tokio::runtime::Runtime::new().unwrap().block_on(async {
+/// let db = establish_in_memory_connection().await.unwrap();
+/// let manager = MigrationManager::new();
+/// manager.run(&db).await.unwrap();
+///
+/// let subject = create_subject_core(&db, "MTK", "Matematika", "Kelompok Umum", "active", 1).await.unwrap();
+/// assert_eq!(subject.code, "MTK");
+/// # });
+/// ```
 pub async fn create_subject_core(
     db: &DatabaseConnection,
-    code: String,
-    name: String,
-    category: String,
-    status: String,
+    code: impl Into<String>,
+    name: impl Into<String>,
+    category: impl Into<String>,
+    status: impl Into<String>,
     sequence: i32,
 ) -> Result<subjects::Model, String> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -221,10 +315,10 @@ pub async fn create_subject_core(
 
     let subject = subjects::ActiveModel {
         id: Set(id),
-        code: Set(code),
-        name: Set(name),
-        category: Set(category),
-        status: Set(status),
+        code: Set(code.into()),
+        name: Set(name.into()),
+        category: Set(category.into()),
+        status: Set(status.into()),
         sequence: Set(sequence),
         created_at: Set(now.clone()),
         updated_at: Set(now),
@@ -256,13 +350,14 @@ pub async fn get_subjects_core(
     Ok(sorted)
 }
 
+/// Memperbarui data mata pelajaran.
 pub async fn update_subject_core(
     db: &DatabaseConnection,
-    id: String,
-    name: String,
-    code: String,
-    category: String,
-    status: String,
+    id: &str,
+    name: impl Into<String>,
+    code: impl Into<String>,
+    category: impl Into<String>,
+    status: impl Into<String>,
     sequence: i32,
 ) -> Result<subjects::Model, String> {
     let existing = subjects::Entity::find_by_id(id)
@@ -273,10 +368,10 @@ pub async fn update_subject_core(
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: subjects::ActiveModel = existing.into();
-    active.name = Set(name);
-    active.code = Set(code);
-    active.category = Set(category);
-    active.status = Set(status);
+    active.name = Set(name.into());
+    active.code = Set(code.into());
+    active.category = Set(category.into());
+    active.status = Set(status.into());
     active.sequence = Set(sequence);
     active.updated_at = Set(now);
 
@@ -284,9 +379,10 @@ pub async fn update_subject_core(
     Ok(updated)
 }
 
+/// Menghapus mata pelajaran berdasarkan ID.
 pub async fn delete_subject_core(
     db: &DatabaseConnection,
-    id: String,
+    id: &str,
 ) -> Result<bool, String> {
     let res = subjects::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
     Ok(res.rows_affected > 0)
@@ -353,9 +449,10 @@ pub async fn get_students_core(
         .map_err(|e| e.to_string())
 }
 
+/// Memperbarui data siswa berdasarkan NIS.
 pub async fn update_student_core(
     db: &DatabaseConnection,
-    nis: String,
+    nis: &str,
     student: students::Model,
 ) -> Result<students::Model, String> {
     let existing = students::Entity::find()
@@ -399,9 +496,10 @@ pub async fn update_student_core(
     Ok(updated)
 }
 
+/// Menghapus data siswa berdasarkan NIS.
 pub async fn delete_student_core(
     db: &DatabaseConnection,
-    nis: String,
+    nis: &str,
 ) -> Result<bool, String> {
     let student = students::Entity::find()
         .filter(students::Column::Nis.eq(nis))
@@ -422,22 +520,23 @@ pub async fn delete_student_core(
 // CURRICULUM SUBJECTS CORE LOGIC
 // ==========================================
 
+/// Menghubungkan mata pelajaran ke kurikulum (major, batch, semester).
 pub async fn create_curriculum_subject_core(
     db: &DatabaseConnection,
-    major_id: String,
-    batch_id: String,
-    semester_id: String,
-    subject_id: String,
+    major_id: &str,
+    batch_id: &str,
+    semester_id: &str,
+    subject_id: &str,
 ) -> Result<curriculum_subjects::Model, String> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
     let cs = curriculum_subjects::ActiveModel {
         id: Set(id),
-        major_id: Set(major_id),
-        batch_id: Set(batch_id),
-        semester_id: Set(semester_id),
-        subject_id: Set(subject_id),
+        major_id: Set(major_id.to_string()),
+        batch_id: Set(batch_id.to_string()),
+        semester_id: Set(semester_id.to_string()),
+        subject_id: Set(subject_id.to_string()),
         created_at: Set(now.clone()),
         updated_at: Set(now),
     };
@@ -466,9 +565,10 @@ pub struct MataPelajaranData {
     pub status: String,
 }
 
+/// Mendapatkan daftar mata pelajaran berdasarkan konsentrasi keahlian.
 pub async fn get_subjects_by_major_core(
     db: &DatabaseConnection,
-    major_id: String,
+    major_id: &str,
 ) -> Result<Vec<MataPelajaranData>, String> {
     let mappings = curriculum_subjects::Entity::find()
         .filter(curriculum_subjects::Column::MajorId.eq(major_id))
@@ -479,7 +579,7 @@ pub async fn get_subjects_by_major_core(
     let mut result_map: std::collections::HashMap<String, MataPelajaranData> = std::collections::HashMap::new();
 
     for m in mappings {
-        let subject = subjects::Entity::find_by_id(m.subject_id.clone())
+        let subject = subjects::Entity::find_by_id(&m.subject_id)
             .one(db)
             .await
             .map_err(|e| e.to_string())?
@@ -491,7 +591,7 @@ pub async fn get_subjects_by_major_core(
             .map_err(|e| e.to_string())?
             .ok_or_else(|| "Semester not found".to_string())?;
 
-        let entry = result_map.entry(m.subject_id.clone()).or_insert(MataPelajaranData {
+        let entry = result_map.entry(m.subject_id).or_insert(MataPelajaranData {
             id: subject.id,
             name: subject.name,
             code: subject.code,
@@ -523,10 +623,11 @@ pub async fn get_subjects_by_major_core(
     Ok(final_list)
 }
 
+/// Menetapkan mata pelajaran ke beberapa semester sekaligus untuk suatu konsentrasi keahlian.
 pub async fn assign_subject_to_semesters_core(
     db: &DatabaseConnection,
-    major_id: String,
-    subject_id: String,
+    major_id: &str,
+    subject_id: &str,
     semester_sequences: Vec<i32>,
 ) -> Result<(), String> {
     let now = chrono::Utc::now().to_rfc3339();
@@ -554,8 +655,8 @@ pub async fn assign_subject_to_semesters_core(
 
     // 2. Remove existing mappings for this subject and major
     curriculum_subjects::Entity::delete_many()
-        .filter(curriculum_subjects::Column::MajorId.eq(major_id.clone()))
-        .filter(curriculum_subjects::Column::SubjectId.eq(subject_id.clone()))
+        .filter(curriculum_subjects::Column::MajorId.eq(major_id))
+        .filter(curriculum_subjects::Column::SubjectId.eq(subject_id))
         .exec(db)
         .await
         .map_err(|e| e.to_string())?;
@@ -587,10 +688,10 @@ pub async fn assign_subject_to_semesters_core(
 
         let mapping = curriculum_subjects::ActiveModel {
             id: Set(uuid::Uuid::new_v4().to_string()),
-            major_id: Set(major_id.clone()),
+            major_id: Set(major_id.to_string()),
             batch_id: Set(batch_id.clone()),
             semester_id: Set(semester_id),
-            subject_id: Set(subject_id.clone()),
+            subject_id: Set(subject_id.to_string()),
             created_at: Set(now.clone()),
             updated_at: Set(now.clone()),
         };
@@ -604,21 +705,22 @@ pub async fn assign_subject_to_semesters_core(
 // STUDENT GRADES CORE LOGIC
 // ==========================================
 
+/// Menambahkan atau memperbarui nilai siswa.
 pub async fn upsert_student_grade_core(
     db: &DatabaseConnection,
-    student_id: String, // Can be UUID or NIS
-    curriculum_subject_id: String,
+    student_id: &str, // Can be UUID or NIS
+    curriculum_subject_id: &str,
     grade: f64,
 ) -> Result<student_grades::Model, String> {
-    if grade < 0.0 || grade > 100.0 {
+    if !(0.0..=100.0).contains(&grade) {
         return Err("Nilai harus berada di antara 0 dan 100".to_string());
     }
 
     // Resolve student UUID from ID or NIS
     let student = students::Entity::find()
         .filter(
-            students::Column::Id.eq(student_id.clone())
-                .or(students::Column::Nis.eq(student_id.clone()))
+            students::Column::Id.eq(student_id)
+                .or(students::Column::Nis.eq(student_id))
         )
         .one(db)
         .await
@@ -630,7 +732,7 @@ pub async fn upsert_student_grade_core(
     // Check if entry already exists
     let existing = student_grades::Entity::find()
         .filter(student_grades::Column::StudentId.eq(student.id.clone()))
-        .filter(student_grades::Column::CurriculumSubjectId.eq(curriculum_subject_id.clone()))
+        .filter(student_grades::Column::CurriculumSubjectId.eq(curriculum_subject_id))
         .one(db)
         .await
         .map_err(|e| e.to_string())?;
@@ -648,7 +750,7 @@ pub async fn upsert_student_grade_core(
             let new_grade = student_grades::ActiveModel {
                 id: Set(id),
                 student_id: Set(student.id),
-                curriculum_subject_id: Set(curriculum_subject_id),
+                curriculum_subject_id: Set(curriculum_subject_id.to_string()),
                 grade: Set(grade),
                 created_at: Set(now.clone()),
                 updated_at: Set(now),
@@ -666,9 +768,10 @@ pub struct GradeSummary {
     pub grade: f64,
 }
 
+/// Mendapatkan ringkasan nilai berdasarkan filter konsentrasi keahlian dan semester.
 pub async fn get_grades_by_filter_core(
     db: &DatabaseConnection,
-    major_id: String,
+    major_id: &str,
     semester_sequence: i32,
 ) -> Result<Vec<GradeSummary>, String> {
     // 1. Find all curriculum_subject IDs for this major/semester
@@ -686,7 +789,12 @@ pub async fn get_grades_by_filter_core(
         .await
         .map_err(|e| e.to_string())?;
 
-    let mapping_ids: Vec<String> = mappings.iter().map(|m| m.id.clone()).collect();
+    let mut mapping_id_to_subject_id = std::collections::HashMap::new();
+    let mut mapping_ids = Vec::new();
+    for m in mappings {
+        mapping_ids.push(m.id.clone());
+        mapping_id_to_subject_id.insert(m.id, m.subject_id);
+    }
     let mut results = Vec::new();
 
     if mapping_ids.is_empty() {
@@ -713,11 +821,11 @@ pub async fn get_grades_by_filter_core(
 
     for g in grades {
         // Find back the subject_id from mapping
-        if let Some(m) = mappings.iter().find(|m| m.id == g.curriculum_subject_id) {
+        if let Some(subject_id) = mapping_id_to_subject_id.get(&g.curriculum_subject_id) {
             if let Some(nis) = student_id_to_nis.get(&g.student_id) {
                 results.push(GradeSummary {
                     student_id: nis.clone(), // Return NIS instead of UUID
-                    subject_id: m.subject_id.clone(),
+                    subject_id: subject_id.clone(),
                     grade: g.grade,
                 });
             }
@@ -727,9 +835,10 @@ pub async fn get_grades_by_filter_core(
     Ok(results)
 }
 
+/// Melakukan pembaruan nilai secara massal.
 pub async fn batch_upsert_grades_core(
     db: &DatabaseConnection,
-    major_id: String,
+    major_id: &str,
     semester_sequence: i32,
     grades: Vec<GradeSummary>,
 ) -> Result<(), String> {
@@ -752,15 +861,15 @@ pub async fn batch_upsert_grades_core(
         .map_err(|e| e.to_string())?;
 
     for g in grades {
-        if g.grade < 0.0 || g.grade > 100.0 {
+        if !(0.0..=100.0).contains(&g.grade) {
             return Err("Nilai harus berada di antara 0 dan 100".to_string());
         }
 
         // Resolve student UUID from ID or NIS
         let student = students::Entity::find()
             .filter(
-                students::Column::Id.eq(g.student_id.clone())
-                    .or(students::Column::Nis.eq(g.student_id.clone()))
+                students::Column::Id.eq(&g.student_id)
+                    .or(students::Column::Nis.eq(&g.student_id))
             )
             .one(db)
             .await
@@ -774,8 +883,8 @@ pub async fn batch_upsert_grades_core(
 
         // Perform upsert
         let existing = student_grades::Entity::find()
-            .filter(student_grades::Column::StudentId.eq(student.id.clone()))
-            .filter(student_grades::Column::CurriculumSubjectId.eq(mapping.id.clone()))
+            .filter(student_grades::Column::StudentId.eq(&student.id))
+            .filter(student_grades::Column::CurriculumSubjectId.eq(&mapping.id))
             .one(db)
             .await
             .map_err(|e| e.to_string())?;
@@ -816,15 +925,16 @@ pub struct StudentGradeDetail {
     pub grade: f64,
 }
 
+/// Mendapatkan daftar nilai detail untuk satu siswa.
 pub async fn get_grades_by_student_core(
     db: &DatabaseConnection,
-    student_id: String, // Can be UUID or NIS
+    student_id: &str, // Can be UUID or NIS
 ) -> Result<Vec<StudentGradeDetail>, String> {
     // Resolve student UUID from ID or NIS
     let student = students::Entity::find()
         .filter(
-            students::Column::Id.eq(student_id.clone())
-                .or(students::Column::Nis.eq(student_id.clone()))
+            students::Column::Id.eq(student_id)
+                .or(students::Column::Nis.eq(student_id))
         )
         .one(db)
         .await
@@ -1021,7 +1131,7 @@ pub async fn import_grades_from_excel_core(
 
         if let Some(sub) = subject {
             dynamic_maps.push(DynamicColumnMap {
-                col_idx: col as usize,
+                col_idx: col,
                 semester: current_semester,
                 subject_id: sub.id.clone(),
             });
@@ -1068,7 +1178,7 @@ pub async fn import_grades_from_excel_core(
 
         // Find or create student
         let student = match students::Entity::find()
-            .filter(students::Column::Nis.eq(nis.clone()))
+            .filter(students::Column::Nis.eq(&nis))
             .one(db)
             .await
             .map_err(|e| e.to_string())?
@@ -1078,11 +1188,11 @@ pub async fn import_grades_from_excel_core(
                 let id = uuid::Uuid::new_v4().to_string();
                 let now = chrono::Utc::now().to_rfc3339();
                 let new_student = students::ActiveModel {
-                    id: Set(id.clone()),
+                    id: Set(id),
                     major_id: Set(major.id.clone()),
-                    full_name: Set(name.clone()),
-                    nis: Set(nis.clone()),
-                    nisn: Set(nisn.clone()),
+                    full_name: Set(name),
+                    nis: Set(nis),
+                    nisn: Set(nisn),
                     place_of_birth: Set(Some(tempat_lahir)),
                     date_of_birth: Set(Some(tanggal_lahir)),
                     created_at: Set(now.clone()),
@@ -1110,7 +1220,7 @@ pub async fn import_grades_from_excel_core(
                 _ => continue,
             };
 
-            if grade_val < 0.0 || grade_val > 100.0 {
+            if !(0.0..=100.0).contains(&grade_val) {
                 continue;
             }
 
@@ -1122,9 +1232,9 @@ pub async fn import_grades_from_excel_core(
 
             // Find or create curriculum mapping
             let mapping = match curriculum_subjects::Entity::find()
-                .filter(curriculum_subjects::Column::MajorId.eq(major.id.clone()))
-                .filter(curriculum_subjects::Column::SemesterId.eq(semester.id.clone()))
-                .filter(curriculum_subjects::Column::SubjectId.eq(m.subject_id.clone()))
+                .filter(curriculum_subjects::Column::MajorId.eq(&major.id))
+                .filter(curriculum_subjects::Column::SemesterId.eq(&semester.id))
+                .filter(curriculum_subjects::Column::SubjectId.eq(&m.subject_id))
                 .one(db)
                 .await
                 .map_err(|e| e.to_string())?
@@ -1134,7 +1244,7 @@ pub async fn import_grades_from_excel_core(
                     let id = uuid::Uuid::new_v4().to_string();
                     let now = chrono::Utc::now().to_rfc3339();
                     let new_mapping = curriculum_subjects::ActiveModel {
-                        id: Set(id.clone()),
+                        id: Set(id),
                         major_id: Set(major.id.clone()),
                         batch_id: Set(batch_id.clone()),
                         semester_id: Set(semester.id.clone()),
@@ -1148,8 +1258,8 @@ pub async fn import_grades_from_excel_core(
 
             // Upsert grade
             let existing = student_grades::Entity::find()
-                .filter(student_grades::Column::StudentId.eq(student.id.clone()))
-                .filter(student_grades::Column::CurriculumSubjectId.eq(mapping.id.clone()))
+                .filter(student_grades::Column::StudentId.eq(&student.id))
+                .filter(student_grades::Column::CurriculumSubjectId.eq(&mapping.id))
                 .one(db)
                 .await
                 .map_err(|e| e.to_string())?;
@@ -1433,9 +1543,10 @@ fn populate_excel(
     Ok(())
 }
 
+/// Mengekspor nilai siswa ke berkas Excel berdasarkan konsentrasi keahlian.
 pub async fn export_grades_to_excel_core(
     db: &DatabaseConnection,
-    major_id: String,
+    major_id: &str,
     path: &std::path::Path,
 ) -> Result<String, String> {
     // 1. Fetch Major

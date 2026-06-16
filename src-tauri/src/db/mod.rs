@@ -21,12 +21,7 @@ pub async fn establish_connection(path: &Path) -> Result<DatabaseConnection, sea
         .max_lifetime(Duration::from_secs(5));
 
     let db = Database::connect(opt).await?;
-    
-    // Execute SQLite configuration pragmas
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA foreign_keys = ON;".to_string())).await?;
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA journal_mode = WAL;".to_string())).await?;
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA synchronous = NORMAL;".to_string())).await?;
-
+    configure_sqlite_pragmas(&db).await?;
     Ok(db)
 }
 
@@ -34,11 +29,32 @@ pub async fn establish_connection(path: &Path) -> Result<DatabaseConnection, sea
 pub async fn establish_in_memory_connection() -> Result<DatabaseConnection, sea_orm::DbErr> {
     let url = "sqlite::memory:";
     let db = Database::connect(url).await?;
-    
-    // Execute SQLite configuration pragmas
+    configure_sqlite_pragmas(&db).await?;
+    Ok(db)
+}
+
+/// Executes common SQLite configuration pragmas (WAL mode, foreign keys, normal synchronous writes).
+async fn configure_sqlite_pragmas(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
     db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA foreign_keys = ON;".to_string())).await?;
     db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA journal_mode = WAL;".to_string())).await?;
     db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA synchronous = NORMAL;".to_string())).await?;
+    Ok(())
+}
 
-    Ok(db)
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sea_orm::{MockDatabase, DbErr};
+
+    #[tokio::test]
+    async fn test_configure_sqlite_pragmas_failure() {
+        let db = MockDatabase::new(sea_orm::DatabaseBackend::Sqlite)
+            .append_exec_errors(vec![
+                DbErr::Query(sea_orm::RuntimeErr::Internal("Mocked failure".to_string()))
+            ])
+            .into_connection();
+
+        let result = configure_sqlite_pragmas(&db).await;
+        assert!(result.is_err());
+    }
 }

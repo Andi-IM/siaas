@@ -18,5 +18,6 @@ This directory contains records of significant architecture decisions made in th
 *   [0006: Native Excel (XLSX) Import & Export with Custom Styling](0006-excel-import-export-tauri.md)
 *   [0007: View-Wrapper Pattern to Avoid Istanbul Ghost Lines](0007-view-wrapper-pattern.md)
 *   [0008: Abstract Core Logic from Tauri Commands for Test Coverage](0008-abstraksi-core-logic-tauri.md)
+*   [0009: SQLite Connection Consolidation and Success Path Testing](0009-konsolidasi-sqlite-pragma-dan-test-koneksi.md)
 
 ## Lifecycle Status

@@ -26,11 +26,11 @@ pub fn run() {
       // Initialize database connection and run migrations using Tauri's async runtime
       let db_conn = tauri::async_runtime::block_on(async {
           let conn = db::establish_connection(&db_path).await
-              .map_err(|e| tauri::Error::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+              .map_err(|e| tauri::Error::from(std::io::Error::other(e.to_string())))?;
           
           let migration_manager = db::migrations::MigrationManager::new();
           migration_manager.run(&conn).await
-              .map_err(|e| tauri::Error::from(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))?;
+              .map_err(|e| tauri::Error::from(std::io::Error::other(e.to_string())))?;
           
           Ok::<DatabaseConnection, tauri::Error>(conn)
       })?;

@@ -11,6 +11,12 @@ struct Migration {
     down: &'static str,
 }
 
+impl Default for MigrationManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MigrationManager {
     pub fn new() -> Self {
         Self {

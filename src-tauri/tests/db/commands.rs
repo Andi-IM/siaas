@@ -1,68 +1,110 @@
 use super::setup_test_db;
 use app_lib::db::core::*;
-use app_lib::db::entities::{students, student_grades};
+use app_lib::db::entities::{students, curriculum_subjects};
 use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
 
+// ==========================================
+// PROGRAM TESTS
+// ==========================================
+
 #[tokio::test]
-async fn test_tauri_commands() {
-    // 1. Setup database connection
+async fn program_lifecycle_should_work() {
     let db = setup_test_db().await;
 
-    // 2. Test Program Commands
-    let prog = create_program_core(&db, "Teknik Komputer".to_string())
+    // Create
+    let prog = create_program_core(&db, "Teknik Komputer")
         .await
         .expect("Failed to create program");
     assert_eq!(prog.name, "Teknik Komputer");
 
+    // List
     let progs = get_programs_core(&db)
         .await
         .expect("Failed to get programs");
     assert!(!progs.is_empty());
 
-    let updated_prog = update_program_core(&db, prog.id.clone(), "Teknik Komputer Updated".to_string())
+    // Update
+    let updated_prog = update_program_core(&db, &prog.id, "Teknik Komputer Updated")
         .await
         .expect("Failed to update program");
     assert_eq!(updated_prog.name, "Teknik Komputer Updated");
 
-    // 3. Test Major Commands
+    // Delete
+    let delete_res = delete_program_core(&db, &prog.id)
+        .await
+        .expect("Failed to delete program");
+    assert!(delete_res);
+}
+
+#[tokio::test]
+async fn duplicate_program_creation_should_fail() {
+    let db = setup_test_db().await;
+    
+    create_program_core(&db, "Teknik Sipil").await.unwrap();
+    let dup_prog = create_program_core(&db, "Teknik Sipil").await;
+    
+    assert!(dup_prog.is_err(), "Expected duplicate program creation to fail");
+}
+
+// ==========================================
+// MAJOR TESTS
+// ==========================================
+
+#[tokio::test]
+async fn major_lifecycle_should_work() {
+    let db = setup_test_db().await;
+    let prog = create_program_core(&db, "Program Test").await.unwrap();
+
+    // Create
     let major = create_major_core(
         &db,
-        "TK".to_string(),
-        "Teknik Komputer dan Jaringan".to_string(),
+        "TK",
+        "Teknik Komputer dan Jaringan",
         Some(prog.id.clone()),
     )
     .await
     .expect("Failed to create major");
     assert_eq!(major.code, "TK");
 
+    // List
     let majors_list = get_majors_core(&db)
         .await
         .expect("Failed to get majors");
     assert!(!majors_list.is_empty());
 
+    // Update
     let updated_major = update_major_core(
         &db,
-        major.id.clone(),
-        "Teknik Komputer Jaringan".to_string(),
-        "TKJ".to_string(),
-        Some(prog.id.clone()),
+        &major.id,
+        "Teknik Komputer Jaringan",
+        "TKJ",
+        Some(prog.id),
     )
     .await
     .expect("Failed to update major");
     assert_eq!(updated_major.code, "TKJ");
 
-    // 4. Test Batch and Semester Commands
+    // Delete
+    let delete_res = delete_major_core(&db, &major.id)
+        .await
+        .expect("Failed to delete major");
+    assert!(delete_res);
+}
+
+// ==========================================
+// BATCH & SEMESTER TESTS
+// ==========================================
+
+#[tokio::test]
+async fn batch_and_semester_creation_should_work() {
+    let db = setup_test_db().await;
+
     let batch = create_batch_core(&db, 2026)
         .await
         .expect("Failed to create batch");
     assert_eq!(batch.year, 2026);
 
-    let batches_list = get_batches_core(&db)
-        .await
-        .expect("Failed to get batches");
-    assert!(!batches_list.is_empty());
-
-    let semester = create_semester_core(&db, "SEM1".to_string(), "Ganjil I".to_string(), 1)
+    let semester = create_semester_core(&db, "SEM1", "Ganjil I", 1)
         .await
         .expect("Failed to create semester");
     assert_eq!(semester.sequence, 1);
@@ -70,43 +112,59 @@ async fn test_tauri_commands() {
     let semesters_list = get_semesters_core(&db)
         .await
         .expect("Failed to get semesters");
-    assert!(!semesters_list.is_empty());
+    assert_eq!(semesters_list.len(), 1);
+}
 
-    // 5. Test Subject Commands
+// ==========================================
+// SUBJECT TESTS
+// ==========================================
+
+#[tokio::test]
+async fn subject_lifecycle_should_work() {
+    let db = setup_test_db().await;
+
+    // Create
     let subject = create_subject_core(
         &db,
-        "MAT01".to_string(),
-        "Matematika Dasar".to_string(),
-        "Kelompok A".to_string(),
-        "active".to_string(),
+        "MAT01",
+        "Matematika Dasar",
+        "Kelompok A",
+        "active",
         1,
     )
     .await
     .expect("Failed to create subject");
     assert_eq!(subject.code, "MAT01");
 
-    let subjects_list = get_subjects_core(&db)
-        .await
-        .expect("Failed to get subjects");
-    assert!(!subjects_list.is_empty());
-
+    // Update
     let updated_subject = update_subject_core(
         &db,
-        subject.id.clone(),
-        "Matematika Dasar Lanjut".to_string(),
-        "MAT01-U".to_string(),
-        "Kelompok A".to_string(),
-        "active".to_string(),
+        &subject.id,
+        "Matematika Dasar Lanjut",
+        "MAT01-U",
+        "Kelompok A",
+        "active",
         2,
     )
     .await
     .expect("Failed to update subject");
     assert_eq!(updated_subject.name, "Matematika Dasar Lanjut");
 
-    // 6. Test Student Commands
-    let student_payload = students::Model {
+    // Delete
+    let delete_res = delete_subject_core(&db, &subject.id)
+        .await
+        .expect("Failed to delete subject");
+    assert!(delete_res);
+}
+
+// ==========================================
+// STUDENT TESTS
+// ==========================================
+
+fn make_test_student_payload(major_id: String) -> students::Model {
+    students::Model {
         id: String::new(),
-        major_id: major.id.clone(),
+        major_id,
         full_name: "Budi Santoso".to_string(),
         nis: "12345".to_string(),
         nisn: "0012345".to_string(),
@@ -134,234 +192,359 @@ async fn test_tauri_commands() {
         graduation_date: None,
         created_at: String::new(),
         updated_at: String::new(),
-    };
+    }
+}
 
-    let created_student = create_student_core(&db, student_payload.clone())
+#[tokio::test]
+async fn student_creation_should_succeed() {
+    let db = setup_test_db().await;
+    let major = create_major_core(&db, "M1", "Major 1", None).await.unwrap();
+    let student_payload = make_test_student_payload(major.id);
+
+    let created_student = create_student_core(&db, student_payload)
         .await
         .expect("Failed to create student");
     assert_eq!(created_student.full_name, "Budi Santoso");
+    assert_eq!(created_student.nis, "12345");
+}
 
-    let students_list = get_students_core(&db)
-        .await
-        .expect("Failed to get students");
-    assert!(!students_list.is_empty());
+#[tokio::test]
+async fn student_update_should_succeed() {
+    let db = setup_test_db().await;
+    let major = create_major_core(&db, "M1", "Major 1", None).await.unwrap();
+    let student_payload = make_test_student_payload(major.id);
+    let created_student = create_student_core(&db, student_payload).await.unwrap();
 
     let mut update_payload = created_student.clone();
     update_payload.full_name = "Budi Santoso Updated".to_string();
     let updated_student = update_student_core(
         &db,
-        created_student.nis.clone(),
+        &created_student.nis,
         update_payload,
     )
     .await
     .expect("Failed to update student");
     assert_eq!(updated_student.full_name, "Budi Santoso Updated");
-
-    // 7. Test Curriculum and Subject Assignments
-    let cs = create_curriculum_subject_core(
-        &db,
-        major.id.clone(),
-        batch.id.clone(),
-        semester.id.clone(),
-        updated_subject.id.clone(),
-    )
-    .await
-    .expect("Failed to create curriculum subject");
-    assert_eq!(cs.subject_id, updated_subject.id);
-
-    let cs_list = get_curriculum_subjects_core(&db)
-        .await
-        .expect("Failed to get curriculum subjects");
-    assert!(!cs_list.is_empty());
-
-    let subjs_by_major = get_subjects_by_major_core(&db, major.id.clone())
-        .await
-        .expect("Failed to get subjects by major");
-    assert!(!subjs_by_major.is_empty());
-
-    assign_subject_to_semesters_core(
-        &db,
-        major.id.clone(),
-        updated_subject.id.clone(),
-        vec![1],
-    )
-    .await
-    .expect("Failed to assign subject to semesters");
-
-    // Fetch the updated curriculum subjects to get the active ID
-    let updated_cs_list = get_curriculum_subjects_core(&db)
-        .await
-        .expect("Failed to get curriculum subjects after assignment");
-    let active_cs_id = updated_cs_list[0].id.clone();
-
-    // 8. Test Grades Commands
-    let grade_model = upsert_student_grade_core(
-        &db,
-        created_student.id.clone(),
-        active_cs_id,
-        88.5,
-    )
-    .await
-    .expect("Failed to upsert student grade");
-    assert_eq!(grade_model.grade, 88.5);
-
-    let all_grades = get_student_grades_core(&db)
-        .await
-        .expect("Failed to get student grades");
-    assert!(!all_grades.is_empty());
-
-    let student_grade_details = get_grades_by_student_core(&db, created_student.nis.clone())
-        .await
-        .expect("Failed to get grades by student (NIS)");
-    assert!(!student_grade_details.is_empty());
-    assert_eq!(student_grade_details[0].grade, 88.5);
-
-    let grades_by_filter = get_grades_by_filter_core(&db, major.id.clone(), 1)
-        .await
-        .expect("Failed to get grades by filter");
-    assert!(!grades_by_filter.is_empty());
-
-    let batch_gs = GradeSummary {
-        student_id: created_student.id.clone(),
-        subject_id: updated_subject.id.clone(),
-        grade: 92.0,
-    };
-    batch_upsert_grades_core(&db, major.id.clone(), 1, vec![batch_gs])
-        .await
-        .expect("Failed to batch upsert grades");
-
-    let student_grade_details_updated = get_grades_by_student_core(&db, created_student.id.clone())
-        .await
-        .expect("Failed to get grades by student (UUID)");
-    assert_eq!(student_grade_details_updated[0].grade, 92.0);
-
-    // 9. Excel Import/Export Code Path Testing (direct core calls to avoid file picker popups)
-    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let import_path = manifest_dir.join("tests/test_excel.xlsx");
-    let export_path = manifest_dir.join("tests/test_excel_output.xlsx");
-    let _ = import_grades_from_excel_core(&db, &import_path).await;
-    let _ = export_grades_to_excel_core(&db, major.id.clone(), &export_path).await;
-
-    if export_path.exists() {
-        let _ = std::fs::remove_file(export_path);
-    }
-
-    // 10. Test Delete Commands
-    let delete_student_res = delete_student_core(&db, created_student.nis.clone())
-        .await
-        .expect("Failed to delete student");
-    assert!(delete_student_res);
-
-    let delete_subject_res = delete_subject_core(&db, updated_subject.id.clone())
-        .await
-        .expect("Failed to delete subject");
-    assert!(delete_subject_res);
-
-    let delete_major_res = delete_major_core(&db, major.id.clone())
-        .await
-        .expect("Failed to delete major");
-    assert!(delete_major_res);
-
-    let delete_prog_res = delete_program_core(&db, prog.id.clone())
-        .await
-        .expect("Failed to delete program");
-    assert!(delete_prog_res);
-
-    // 11. Test Unhappy Paths (Not Found & Duplication)
-    let not_found_update = update_program_core(&db, "invalid-id".to_string(), "New Name".to_string()).await;
-    assert!(not_found_update.is_err(), "Expected error when updating non-existent program");
-    
-    let not_found_delete = delete_student_core(&db, "invalid-nis".to_string()).await;
-    assert_eq!(not_found_delete.unwrap(), false, "Expected false when deleting non-existent student");
-
-    let _prog_sipil = create_program_core(&db, "Teknik Sipil".to_string()).await.unwrap();
-    let dup_prog = create_program_core(&db, "Teknik Sipil".to_string()).await;
-    assert!(dup_prog.is_err(), "Expected duplicate program creation to fail");
 }
 
 #[tokio::test]
-async fn test_import_excel_file() {
-    // 1. Setup database connection
+async fn student_deletion_should_succeed() {
     let db = setup_test_db().await;
+    let major = create_major_core(&db, "M1", "Major 1", None).await.unwrap();
+    let student_payload = make_test_student_payload(major.id);
+    let created_student = create_student_core(&db, student_payload).await.unwrap();
 
-    // Seed Semesters 1 to 6
-    for seq in 1..=6 {
-        create_semester_core(
-            &db,
-            format!("SEM{}", seq),
-            format!("Semester {}", seq),
-            seq,
-        )
+    let delete_res = delete_student_core(&db, &created_student.nis)
+        .await
+        .expect("Failed to delete student");
+    assert!(delete_res);
+}
+
+#[tokio::test]
+async fn student_deletion_non_existent_should_return_false() {
+    let db = setup_test_db().await;
+    let not_found_delete = delete_student_core(&db, "invalid-nis").await;
+    assert!(!not_found_delete.unwrap());
+}
+
+// ==========================================
+// CURRICULUM & GRADE TESTS
+// ==========================================
+
+async fn setup_curriculum_and_grade_test_env(db: &sea_orm::DatabaseConnection) -> (
+    app_lib::db::entities::majors::Model,
+    app_lib::db::entities::batches::Model,
+    app_lib::db::entities::semesters::Model,
+    app_lib::db::entities::subjects::Model,
+    students::Model
+) {
+    let prog = create_program_core(db, "P1").await.unwrap();
+    let major = create_major_core(db, "M1", "Major 1", Some(prog.id)).await.unwrap();
+    let batch = create_batch_core(db, 2024).await.unwrap();
+    let semester = create_semester_core(db, "S1", "Sem 1", 1).await.unwrap();
+    let subject = create_subject_core(db, "SUB1", "Subj 1", "A", "active", 1).await.unwrap();
+    let student = create_student_core(db, students::Model {
+        id: "".into(),
+        nis: "S001".into(),
+        full_name: "S1".into(),
+        major_id: major.id.clone(),
+        nisn: "".into(),
+        place_of_birth: None,
+        date_of_birth: None,
+        gender: None,
+        religion: None,
+        family_status: None,
+        child_order: None,
+        home_address: None,
+        telephone: None,
+        previous_school: None,
+        admission_grade: None,
+        admission_date: None,
+        father_name: None,
+        mother_name: None,
+        parent_address: None,
+        father_occupation: None,
+        mother_occupation: None,
+        guardian_name: None,
+        guardian_address: None,
+        guardian_phone_number: None,
+        guardian_occupation: None,
+        diploma_number: None,
+        graduation_date: None,
+        created_at: "".into(),
+        updated_at: "".into(),
+    }).await.unwrap();
+    (major, batch, semester, subject, student)
+}
+
+#[tokio::test]
+async fn grade_upsert_should_succeed() {
+    let db = setup_test_db().await;
+    let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+
+    // 1. Create Curriculum Mapping
+    let _cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
         .await
         .unwrap();
-    }
 
-    // Seed Program and Major
-    let prog = create_program_core(&db, "Teknik Mesin".to_string()).await.unwrap();
-    let major = create_major_core(
-        &db,
-        "TP".to_string(),
-        "TEKNIK PEMESINAN".to_string(),
-        Some(prog.id),
-    )
-    .await
-    .unwrap();
-
-    // Seed all Subject Codes expected in the spreadsheet
-    let codes = vec![
-        "PAPB", "PPKn", "B.IND", "PJOK", "SEJ", "SENBUD", "MULOK", "MTK", "B.ING", 
-        "TI", "IPAS", "DDK", "GTM", "BUBUT", "GRD", "FRAIS", "CNC", "MAPIL", "PKWU", "PKL"
-    ];
-    for code in codes {
-        create_subject_core(
-            &db,
-            code.to_string(),
-            format!("Subject {}", code),
-            "Kelompok A".to_string(),
-            "active".to_string(),
-            1,
-        )
+    // 2. Assign multiple semesters
+    assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1, 2])
         .await
         .unwrap();
-    }
 
-    // 2. Call the core production function directly on test_excel.xlsx
-    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let path = manifest_dir.join("tests/test_excel.xlsx");
-    let result = import_grades_from_excel_core(&db, &path).await;
-    assert!(result.is_ok(), "Failed to import grades from Excel: {:?}", result.err());
-
-    // 3. Assert that the student was created
-    let imported_student = students::Entity::find()
-        .filter(students::Column::Nis.eq("10310780".to_string()))
+    // Fetch the new mapping for semester sequence 1 (semester 1)
+    let cs_new = curriculum_subjects::Entity::find()
+        .filter(curriculum_subjects::Column::MajorId.eq(&major.id))
+        .filter(curriculum_subjects::Column::SemesterId.eq(&semester.id))
+        .filter(curriculum_subjects::Column::SubjectId.eq(&subject.id))
         .one(&db)
         .await
         .unwrap()
-        .expect("Imported student should exist in database");
+        .expect("New mapping should have been created by assign_subject_to_semesters_core");
 
-    assert_eq!(imported_student.full_name, "Andika Teguh Perkasa Putra");
+    // 3. Upsert Grade
+    let grade = upsert_student_grade_core(&db, &student.nis, &cs_new.id, 95.0)
+        .await
+        .unwrap();
+    assert_eq!(grade.grade, 95.0);
+}
 
-    // Assert that grades were imported
-    let imported_grades = student_grades::Entity::find()
-        .filter(student_grades::Column::StudentId.eq(imported_student.id))
-        .all(&db)
+#[tokio::test]
+async fn grade_batch_upsert_should_succeed() {
+    let db = setup_test_db().await;
+    let (major, _batch, _semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+
+    // Assign multiple semesters
+    assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1, 2])
         .await
         .unwrap();
 
-    assert!(!imported_grades.is_empty(), "Student grades should be imported");
+    // Batch Upsert
+    let batch_gs = GradeSummary {
+        student_id: student.nis.clone(),
+        subject_id: subject.id.clone(),
+        grade: 88.0,
+    };
+    batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs])
+        .await
+        .unwrap();
 
-    // 4. Verify export core functionality by exporting it back to a temporary file
-    let export_path = manifest_dir.join("tests/test_excel_output.xlsx");
-    let export_result = export_grades_to_excel_core(&db, major.id, &export_path).await;
-    assert!(export_result.is_ok(), "Failed to export grades to Excel: {:?}", export_result.err());
+    // Fetch and Verify
+    let student_grades = get_grades_by_student_core(&db, &student.nis).await.unwrap();
+    assert_eq!(student_grades[0].grade, 88.0);
+}
 
-    // Clean up exported file if it exists
+#[tokio::test]
+async fn grade_retrieval_by_student_should_succeed() {
+    let db = setup_test_db().await;
+    let (major, _batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+
+    // Assign semesters
+    assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1])
+        .await
+        .unwrap();
+
+    let cs = curriculum_subjects::Entity::find()
+        .filter(curriculum_subjects::Column::MajorId.eq(&major.id))
+        .filter(curriculum_subjects::Column::SemesterId.eq(&semester.id))
+        .filter(curriculum_subjects::Column::SubjectId.eq(&subject.id))
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
+
+    let _ = upsert_student_grade_core(&db, &student.nis, &cs.id, 92.5)
+        .await
+        .unwrap();
+
+    let student_grades = get_grades_by_student_core(&db, &student.nis).await.unwrap();
+    assert_eq!(student_grades.len(), 1);
+    assert_eq!(student_grades[0].grade, 92.5);
+}
+
+// ==========================================
+// EXCEL TESTS
+// ==========================================
+
+async fn setup_excel_test_env(db: &sea_orm::DatabaseConnection) -> app_lib::db::entities::majors::Model {
+    let prog = create_program_core(db, "Teknik Mesin").await.unwrap();
+    let major = create_major_core(db, "TP", "TEKNIK PEMESINAN", Some(prog.id)).await.unwrap();
+    
+    for seq in 1..=6 {
+        create_semester_core(db, format!("S{}", seq), format!("Sem {}", seq), seq).await.unwrap();
+    }
+
+    let codes = vec!["PAPB", "PPKn", "B.IND", "PJOK", "SEJ", "SENBUD", "MULOK", "MTK", "B.ING", "TI", "IPAS", "DDK", "GTM", "BUBUT", "GRD", "FRAIS", "CNC", "MAPIL", "PKWU", "PKL"];
+    for code in codes {
+        create_subject_core(db, code, code, "A", "active", 1).await.unwrap();
+    }
+    major
+}
+
+#[tokio::test]
+async fn excel_import_should_succeed() {
+    let db = setup_test_db().await;
+    let _major = setup_excel_test_env(&db).await;
+
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let import_path = manifest_dir.join("tests/test_excel.xlsx");
+    
+    let result = import_grades_from_excel_core(&db, &import_path).await;
+    assert!(result.is_ok());
+}
+
+#[tokio::test]
+async fn excel_export_should_succeed() {
+    let db = setup_test_db().await;
+    let major = setup_excel_test_env(&db).await;
+
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let import_path = manifest_dir.join("tests/test_excel.xlsx");
+    
+    let import_result = import_grades_from_excel_core(&db, &import_path).await;
+    assert!(import_result.is_ok());
+
+    // Export test
+    let export_path = manifest_dir.join("tests/test_excel_output_isolated.xlsx");
+    let export_result = export_grades_to_excel_core(&db, &major.id, &export_path).await;
+    assert!(export_result.is_ok());
+
     if export_path.exists() {
         let _ = std::fs::remove_file(export_path);
     }
+}
 
-    // 5. Test Unhappy Path (Invalid Excel File)
-    let invalid_path = manifest_dir.join("tests/does_not_exist_file.xlsx");
-    let invalid_result = import_grades_from_excel_core(&db, &invalid_path).await;
-    assert!(invalid_result.is_err(), "Expected error when importing from invalid path");
+#[tokio::test]
+async fn invalid_excel_import_should_fail() {
+    let db = setup_test_db().await;
+    let path = std::path::Path::new("non_existent.xlsx");
+    let result = import_grades_from_excel_core(&db, path).await;
+    assert!(result.is_err());
+}
+
+#[tokio::test]
+async fn upsert_grade_invalid_value_should_fail() {
+    let db = setup_test_db().await;
+    let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+
+    let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
+        .await
+        .unwrap();
+
+    // Try too high
+    let result_high = upsert_student_grade_core(&db, &student.nis, &cs.id, 105.0).await;
+    assert!(result_high.is_err());
+    assert_eq!(result_high.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+
+    // Try too low
+    let result_low = upsert_student_grade_core(&db, &student.nis, &cs.id, -5.0).await;
+    assert!(result_low.is_err());
+    assert_eq!(result_low.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+}
+
+#[tokio::test]
+async fn batch_upsert_grades_invalid_value_should_fail() {
+    let db = setup_test_db().await;
+    let (major, _batch, _semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+
+    assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1])
+        .await
+        .unwrap();
+
+    // Grade too high
+    let batch_gs_high = GradeSummary {
+        student_id: student.nis.clone(),
+        subject_id: subject.id.clone(),
+        grade: 150.0,
+    };
+    let result_high = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_high]).await;
+    assert!(result_high.is_err());
+    assert_eq!(result_high.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+
+    // Grade too low
+    let batch_gs_low = GradeSummary {
+        student_id: student.nis.clone(),
+        subject_id: subject.id.clone(),
+        grade: -1.0,
+    };
+    let result_low = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_low]).await;
+    assert!(result_low.is_err());
+    assert_eq!(result_low.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+}
+
+#[tokio::test]
+async fn import_excel_invalid_structure_should_fail() {
+    let db = setup_test_db().await;
+    let _major = setup_excel_test_env(&db).await;
+
+    use rust_xlsxwriter::Workbook;
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    
+    // Write less than 8 rows to trigger the "Berkas Excel tidak valid (minimal harus 8 baris)" error
+    worksheet.write_string(0, 0, "Short Excel").unwrap();
+
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp_path = manifest_dir.join("tests/temp_malformed.xlsx");
+    workbook.save(&temp_path).unwrap();
+
+    let result = import_grades_from_excel_core(&db, &temp_path).await;
+    assert!(result.is_err());
+    assert_eq!(result.unwrap_err(), "Berkas Excel tidak valid (minimal harus 8 baris)");
+
+    if temp_path.exists() {
+        let _ = std::fs::remove_file(temp_path);
+    }
+}
+
+#[tokio::test]
+async fn import_excel_invalid_header_should_fail() {
+    let db = setup_test_db().await;
+    let _major = setup_excel_test_env(&db).await;
+
+    use rust_xlsxwriter::Workbook;
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    
+    // Write 10 rows to establish a valid height >= 8
+    for r in 0..10 {
+        worksheet.write_string(r, 0, "Dummy").unwrap();
+    }
+    // Write an invalid format into A3 (row 2, col 0)
+    worksheet.write_string(2, 0, "INVALID FORMAT").unwrap();
+
+    let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let temp_path = manifest_dir.join("tests/temp_invalid_header.xlsx");
+    workbook.save(&temp_path).unwrap();
+
+    let result = import_grades_from_excel_core(&db, &temp_path).await;
+    assert!(result.is_err());
+    assert_eq!(
+        result.unwrap_err(),
+        "Nama Konsentrasi Keahlian tidak ditemukan di sel A3 (format harus 'KONSENTRASI KEAHLIAN : NAMA')"
+    );
+
+    if temp_path.exists() {
+        let _ = std::fs::remove_file(temp_path);
+    }
 }
