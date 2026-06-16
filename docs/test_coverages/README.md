@@ -52,6 +52,9 @@ We formally validate the system against common database vulnerabilities:
 
 ## ⚛️ Frontend Reliability (Next.js)
 
+[![codecov](https://codecov.io/gh/Andi-IM/siaas/graphs/tree.svg?token=FHYTwuBZYh)](https://codecov.io/gh/Andi-IM/siaas)
+
+
 The frontend is protected by a suite of **79 automated tests** ensuring that the user experience is fluid, predictable, and error-free.
 
 ### 1. Core Component Coverage

@@ -42,6 +42,42 @@ async fn configure_sqlite_pragmas(db: &DatabaseConnection) -> Result<(), sea_orm
     Ok(())
 }
 
+/// Backups the database before running migrations, retaining the last 5 backups.
+pub fn backup_database(db_path: &Path) -> std::io::Result<()> {
+    if !db_path.exists() {
+        return Ok(());
+    }
+
+    let backup_dir = db_path.parent().unwrap().join("backup");
+    if !backup_dir.exists() {
+        std::fs::create_dir_all(&backup_dir)?;
+    }
+
+    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
+    let backup_file_name = format!("sias_backup_{}.db", timestamp);
+    let backup_path = backup_dir.join(backup_file_name);
+    
+    std::fs::copy(db_path, &backup_path)?;
+
+    let mut backups: Vec<_> = std::fs::read_dir(&backup_dir)?
+        .filter_map(Result::ok)
+        .filter(|e| {
+            let p = e.path();
+            p.is_file() && p.file_name().unwrap_or_default().to_string_lossy().starts_with("sias_backup_")
+        })
+        .collect();
+
+    backups.sort_by_key(|e| e.metadata().and_then(|m| m.modified()).ok());
+
+    if backups.len() > 5 {
+        for old_backup in backups.iter().take(backups.len() - 5) {
+            let _ = std::fs::remove_file(old_backup.path());
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

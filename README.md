@@ -1,6 +1,6 @@
 # SIAAS: Academic Administrative Core
 
-[![codecov](https://codecov.io/gh/Andi-IM/siaas/branch/main/graph/badge.svg)](https://codecov.io/gh/Andi-IM/siaas)
+[![codecov](https://codecov.io/gh/Andi-IM/siaas/graph/badge.svg?token=FHYTwuBZYh)](https://codecov.io/gh/Andi-IM/siaas)
 
 Sistem Informasi Administrasi Akademik Siswa (SIAAS) is an offline-native administrative platform designed to digitalize and automate the management of student records in Indonesian schools (Buku Induk). Built for speed, precision, and institutional trust.
 
@@ -60,7 +60,7 @@ As an offline-native desktop application designed specifically for local adminis
 
 We maintain high testing standards across our core application features. The project uses **Vitest** for testing, **Istanbul** for code coverage, and **Codecov** for tracking coverage history.
 
-[![codecov](https://codecov.io/gh/Andi-IM/siaas/branch/main/graph/badge.svg)](https://codecov.io/gh/Andi-IM/siaas)
+[![codecov](https://codecov.io/gh/Andi-IM/siaas/graph/badge.svg?token=FHYTwuBZYh)](https://codecov.io/gh/Andi-IM/siaas)
 
 ### Run Commands
 - Run all tests: `npm run test`

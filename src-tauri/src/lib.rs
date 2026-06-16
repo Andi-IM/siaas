@@ -6,6 +6,7 @@ pub mod db;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
+    .plugin(tauri_plugin_updater::Builder::new().build())
     .setup(|app| {
       if cfg!(debug_assertions) {
         app.handle().plugin(
@@ -21,6 +22,11 @@ pub fn run() {
       let db_path = app_data_dir.join("sias.db");
       if !db_path.exists() {
         std::fs::File::create(&db_path)?;
+      }
+      
+      // Backup database before running migrations
+      if let Err(e) = db::backup_database(&db_path) {
+          log::warn!("Failed to backup database: {}", e);
       }
       
       // Initialize database connection and run migrations using Tauri's async runtime

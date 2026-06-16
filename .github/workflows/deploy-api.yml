@@ -1,0 +1,36 @@
+name: Deploy API to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'services/api/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: sias-api
+          source: ./services/api
+          region: asia-southeast2
+          env_vars: |
+            GITHUB_REPO_OWNER=Andi-IM
+            GITHUB_REPO_NAME=siaas
+            GITHUB_PAT=${{ secrets.GITHUB_PAT_ISSUES }}
