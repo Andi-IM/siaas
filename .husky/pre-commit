@@ -20,6 +20,20 @@ done
 if [ "$TRIGGER_CHECKS" = true ]; then
   echo "🚀 Code changes detected. Running verification checks..."
   
+  # Cek apakah ada file Rust yang diubah
+  RUST_CHANGES=false
+  for FILE in $STAGED_FILES; do
+    if echo "$FILE" | grep -qE '^src-tauri/|\.rs$'; then
+      RUST_CHANGES=true
+      break
+    fi
+  done
+
+  if [ "$RUST_CHANGES" = true ]; then
+    echo "🦀 Rust changes detected. Running Rust tests..."
+    cargo test --manifest-path src-tauri/Cargo.toml || exit 1
+  fi
+  
   echo "🔍 Running Linting..."
   npm run lint || exit 1
   
