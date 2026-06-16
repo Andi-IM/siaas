@@ -5,7 +5,7 @@ export const navItems = [
   { href: "/siswa", label: "Peserta Didik", icon: Users, exact: false },
   { href: "/kurikulum", label: "Kurikulum", icon: BookOpen, exact: false },
   { href: "/rekap", label: "Rekap Data", icon: FileSpreadsheet, exact: false },
-  { href: "#", label: "Pengaturan", icon: Settings, exact: false },
+  { href: "/pengaturan", label: "Pengaturan", icon: Settings, exact: false },
 ];
 
 export type NavItem = typeof navItems[number];

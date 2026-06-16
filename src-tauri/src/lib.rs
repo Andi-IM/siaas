@@ -27,6 +27,47 @@ async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
   Ok(last_lines.join("\n"))
 }
 
+#[tauri::command]
+async fn reset_database(
+  app_handle: tauri::AppHandle,
+  db_conn: tauri::State<'_, DatabaseConnection>
+) -> Result<(), String> {
+  // Close the database connection to release the lock on sias.db
+  db_conn.inner().close_by_ref().await
+    .map_err(|e| e.to_string())?;
+
+  // Resolve database path
+  let app_data_dir = app_handle.path().app_data_dir()
+    .map_err(|e| e.to_string())?;
+  let db_path = app_data_dir.join("sias.db");
+
+  // Delete database files (sias.db, sias.db-wal, sias.db-shm)
+  let wal_path = app_data_dir.join("sias.db-wal");
+  let shm_path = app_data_dir.join("sias.db-shm");
+  
+  let _ = std::fs::remove_file(&db_path);
+  let _ = std::fs::remove_file(&wal_path);
+  let _ = std::fs::remove_file(&shm_path);
+
+  // Create empty file again
+  std::fs::File::create(&db_path)
+    .map_err(|e| e.to_string())?;
+
+  // Establish new connection
+  let new_conn = db::establish_connection(&db_path).await
+    .map_err(|e| e.to_string())?;
+
+  // Run migrations
+  let migration_manager = db::migrations::MigrationManager::new();
+  migration_manager.run(&new_conn).await
+    .map_err(|e| e.to_string())?;
+
+  // Re-manage the database connection in Tauri
+  app_handle.manage(new_conn);
+
+  Ok(())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -71,6 +112,7 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
         get_app_logs,
+        reset_database,
         db::commands::create_program,
         db::commands::get_programs,
         db::commands::update_program,
