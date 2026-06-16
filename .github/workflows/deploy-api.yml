@@ -29,7 +29,7 @@ jobs:
         with:
           service: sias-api
           source: ./services/api
-          region: asia-southeast2
+          region: us-central1
           env_vars: |
             GITHUB_REPO_OWNER=Andi-IM
             GITHUB_REPO_NAME=siaas
