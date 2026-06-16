@@ -26,6 +26,7 @@ tauri-plugin-log = "2"
 tauri-plugin-updater = "2"
 brotli = "=8.0.3"
 sea-orm = { version = "1.1.0", features = ["sqlx-sqlite", "runtime-tokio-native-tls", "macros", "mock"] }
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
 tokio = { version = "1.38.0", features = ["full"] }
 uuid = { version = "1.8.0", features = ["v4", "serde"] }
 chrono = { version = "0.4.38", features = ["serde"] }

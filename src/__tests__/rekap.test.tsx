@@ -11,6 +11,7 @@ import {
   getStudentGradesByFilter,
   importGradesFromExcel,
   exportGradesToExcel,
+  getSemesters,
 } from "@/lib/data";
 
 // Mock the data client
@@ -22,6 +23,7 @@ vi.mock("@/lib/data", () => ({
   getStudentGradesByFilter: vi.fn(),
   importGradesFromExcel: vi.fn(),
   exportGradesToExcel: vi.fn(),
+  getSemesters: vi.fn(),
 }));
 
 const mockStudents = [
@@ -33,6 +35,7 @@ const mockSubjects = [
   { id: "sub-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum", sequence: 1, semesters: [1] },
 ];
 const mockGrades = [{ studentId: "11111", subjectId: "sub-1", grade: 85 }];
+const mockSemesters = [{ id: "sem-1", nama: "Semester 1", sequence: 1 }];
 
 describe("Rekap Data Page - Dialog Modal Alerts", () => {
   beforeEach(() => {
@@ -42,6 +45,7 @@ describe("Rekap Data Page - Dialog Modal Alerts", () => {
     (getConcentrations as any).mockResolvedValue(mockConcentrations);
     (getSubjects as any).mockResolvedValue(mockSubjects);
     (getStudentGradesByFilter as any).mockResolvedValue(mockGrades);
+    (getSemesters as any).mockResolvedValue(mockSemesters);
   });
 
   it("renders filter controls and student list", async () => {
@@ -109,24 +113,21 @@ describe("Rekap Data Page - Dialog Modal Alerts", () => {
 
     render(<RekapDataPage />);
 
-    await waitFor(() => {
-      expect(screen.getByText("Ekspor Excel")).toBeInTheDocument();
-    });
+    await screen.findByText("Rekap Data Hasil Belajar");
 
-    // Change concentration select to ""
+    // Wait for concentrations to be "loaded" (empty in this case)
     const consSelect = screen.getByLabelText("Konsentrasi Keahlian");
-    fireEvent.change(consSelect, { target: { value: "" } });
+    await waitFor(() => {
+      expect(consSelect).toHaveValue("");
+    });
 
     const exportBtn = screen.getByRole("button", { name: /ekspor excel/i });
     await userEvent.click(exportBtn);
 
     // Assert that warning modal shows
-    await waitFor(() => {
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toBeInTheDocument();
-      expect(within(dialog).getByText("Pilih Konsentrasi")).toBeInTheDocument();
-      expect(within(dialog).getByText("Silakan pilih Konsentrasi Keahlian terlebih dahulu.")).toBeInTheDocument();
-    });
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Pilih Konsentrasi")).toBeInTheDocument();
+    expect(within(dialog).getByText("Silakan pilih Konsentrasi Keahlian terlebih dahulu.")).toBeInTheDocument();
   });
 
   it("shows success dialog modal on successful Excel export", async () => {
@@ -134,19 +135,20 @@ describe("Rekap Data Page - Dialog Modal Alerts", () => {
 
     render(<RekapDataPage />);
 
+    await screen.findByText("Rekap Data Hasil Belajar");
+
+    // Wait for concentrations to load and the first one to be auto-selected
+    const consSelect = await screen.findByLabelText("Konsentrasi Keahlian");
     await waitFor(() => {
-      expect(screen.getByText("Ekspor Excel")).toBeInTheDocument();
+      expect(consSelect).toHaveValue("con-1");
     });
 
     const exportBtn = screen.getByRole("button", { name: /ekspor excel/i });
     await userEvent.click(exportBtn);
 
     // Assert that success modal shows
-    await waitFor(() => {
-      const dialog = screen.getByRole("dialog");
-      expect(dialog).toBeInTheDocument();
-      expect(within(dialog).getByText("Ekspor Excel")).toBeInTheDocument();
-      expect(within(dialog).getByText("Ekspor berhasil disimpan di D:/rekap.xlsx")).toBeInTheDocument();
-    });
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/Ekspor Excel/i)).toBeInTheDocument();
+    expect(within(dialog).getByText(/Ekspor berhasil disimpan di D:\/rekap\.xlsx/i)).toBeInTheDocument();
   });
 });

@@ -101,6 +101,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
 
   // 2. Overlay grades
   grades.forEach(g => {
+    if (g.semester_sequence > 6) return;
     const cat = g.category === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
     if (categoryMap[cat][g.subject_id]) {
       categoryMap[cat][g.subject_id].scores[g.semester_sequence - 1] = g.grade;
