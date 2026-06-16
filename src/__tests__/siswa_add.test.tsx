@@ -5,6 +5,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import TambahPage from "@/app/siswa/tambah/page";
 import { TambahFallback } from "@/app/siswa/tambah/fallback";
 import { addStudent } from "@/lib/data";
+import { getConcentrations } from "@/lib/curriculum-data";
 
 // Mock router
 const mockPush = vi.fn();
@@ -14,9 +15,15 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-// Mock the data client
+// Mock the data clients
 vi.mock("@/lib/data", () => ({
   addStudent: vi.fn(),
+}));
+
+vi.mock("@/lib/curriculum-data", () => ({
+  getConcentrations: vi.fn(() => Promise.resolve([
+    { id: "k1", nama: "Teknik Pemesinan", programId: "p1" }
+  ])),
 }));
 
 const originalSetTimeout = global.setTimeout;
@@ -112,6 +119,12 @@ describe("Add Student Page", () => {
 
     const { container } = render(<TambahPage />);
 
+    // Wait for async concentration loading to finish
+    await waitFor(() => {
+      expect(screen.queryByText(/Belum ada data Konsentrasi/)).not.toBeInTheDocument();
+      expect(container.querySelector("select")).toBeInTheDocument();
+    });
+
     // Fill all form fields using fireEvent for high-speed execution
     fireEvent.change(getFieldInput(container, "Nama Peserta Didik (Lengkap)"), { target: { value: "David" } });
     fireEvent.change(getFieldInput(container, "Nomor Induk (NIS)"), { target: { value: "44444" } });
@@ -125,7 +138,7 @@ describe("Add Student Page", () => {
     fireEvent.change(getFieldInput(container, "Sekolah Asal"), { target: { value: "SMP 1" } });
     fireEvent.change(getFieldInput(container, "Diterima di Kelas"), { target: { value: "X-1" } });
     fireEvent.change(getFieldInput(container, "Diterima pada Tanggal"), { target: { value: "2025-07-01" } });
-    fireEvent.change(getFieldInput(container, "Kompetensi Keahlian"), { target: { value: "Teknik Pemesinan" } });
+    fireEvent.change(getFieldInput(container, "Konsentrasi Keahlian"), { target: { value: "Teknik Pemesinan" } });
     fireEvent.change(getFieldInput(container, "Nomor Ijazah (Alumni)"), { target: { value: "IJZ-123" } });
     fireEvent.change(getFieldInput(container, "Tanggal Kelulusan (Alumni)"), { target: { value: "2028-06-01" } });
     fireEvent.change(getFieldInput(container, "Nama Ayah"), { target: { value: "Ayah David" } });
@@ -203,5 +216,20 @@ describe("Add Student Page", () => {
   it("renders TambahFallback correctly", () => {
     const { container } = render(<TambahFallback />);
     expect(container.querySelector(".skeleton")).toBeInTheDocument();
+  });
+
+  it("shows alert when concentrations list is empty", async () => {
+    (getConcentrations as any).mockResolvedValueOnce([]);
+
+    render(<TambahPage />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Belum ada data Konsentrasi/)).toBeInTheDocument();
+      expect(screen.getByText(/Tambah di Manajemen Kurikulum/)).toBeInTheDocument();
+    });
+
+    const fields = Array.from(document.querySelectorAll(".form-field"));
+    const konsentrasiField = fields.find(f => f.textContent?.includes("Konsentrasi Keahlian"));
+    expect(konsentrasiField?.querySelector("select")).not.toBeInTheDocument();
   });
 });

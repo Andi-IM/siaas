@@ -152,7 +152,7 @@ export default function StudentDetailView({ nis }: { nis: string }) {
               <DetailRow label="Sekolah Asal" value={student.sekolahAsal} />
               <DetailRow label="Diterima di Kelas" value={student.diterimaDiKelas} />
               <DetailRow label="Diterima pada Tanggal" value={student.diterimaPadaTanggal} />
-              <DetailRow label="Kompetensi Keahlian" value={student.kompetensi} />
+              <DetailRow label="Konsentrasi Keahlian" value={student.kompetensi} />
               <DetailRow label="Nomor Ijazah (Alumni)" value={student.nomorIjazah} />
               <DetailRow label="Tanggal Kelulusan (Alumni)" value={student.tanggalKelulusan} />
               <DetailRow label="Status Siswa" value={student.status === "active" ? "Aktif" : "Nonaktif"} isStatus />
