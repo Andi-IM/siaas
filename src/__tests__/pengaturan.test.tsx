@@ -23,8 +23,8 @@ describe("PengaturanView", () => {
     }
     // Safe async timeout mock to avoid re-entrancy issues in Testing Library
     vi.spyOn(global, "setTimeout").mockImplementation((cb: any, delay) => {
-      if (delay === 1000 || delay === 1200 || delay === 1500) {
-        return originalSetTimeout(cb, 0);
+      if (delay === 1000 || delay === 1200 || delay === 1500 || delay === 2000) {
+        return originalSetTimeout(cb, 50);
       }
       return originalSetTimeout(cb, delay);
     });
@@ -323,5 +323,93 @@ describe("PengaturanView", () => {
     await userEvent.click(openBugBtn);
 
     expect(screen.getByText("Laporkan Bug / Kendala")).toBeInTheDocument();
+    expect(screen.getByTestId("bug-report-form")).toBeInTheDocument();
+  });
+
+  it("submits bug report successfully with logs in Tauri environment", async () => {
+    (window as any).__TAURI_INTERNALS__ = {};
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "get_app_logs") return "SYSTEM_LOG_DATA";
+      return undefined;
+    });
+
+    // Mock global fetch
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ status: "success" }),
+    });
+    global.fetch = mockFetch;
+
+    render(<PengaturanView />);
+    await userEvent.click(screen.getByTestId("open-bug-report-button"));
+
+    // Fill the form
+    await userEvent.type(screen.getByTestId("bug-title-input"), "Test Bug Title");
+    await userEvent.type(screen.getByTestId("bug-body-input"), "Test Bug Body");
+
+    const submitBtn = screen.getByTestId("submit-bug-report-button");
+    await userEvent.click(submitBtn);
+
+    // Should call invoke for logs
+    await waitFor(() => {
+      expect(mockInvoke).toHaveBeenCalledWith("get_app_logs");
+    });
+
+    // Should call fetch with correct data
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining("/issues"),
+        expect.objectContaining({
+          method: "POST",
+          body: JSON.stringify({
+            title: "Test Bug Title",
+            body: "Test Bug Body",
+            logs: "SYSTEM_LOG_DATA",
+          }),
+        })
+      );
+    });
+
+    // Should show success message
+    await waitFor(() => {
+      expect(screen.getByTestId("bug-report-success")).toBeInTheDocument();
+    });
+
+    // Should automatically close after timeout (mocked in beforeEach)
+    await waitFor(() => {
+      expect(screen.queryByText("Laporkan Bug / Kendala")).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows error message if bug report submission fails", async () => {
+    // Mock global fetch failure
+    const mockFetch = vi.fn().mockResolvedValue({
+      ok: false,
+    });
+    global.fetch = mockFetch;
+
+    render(<PengaturanView />);
+    await userEvent.click(screen.getByTestId("open-bug-report-button"));
+
+    await userEvent.type(screen.getByTestId("bug-title-input"), "Error Bug");
+    await userEvent.type(screen.getByTestId("bug-body-input"), "Error Body");
+
+    await userEvent.click(screen.getByTestId("submit-bug-report-button"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("bug-report-error")).toHaveTextContent(
+        "Gagal mengirim laporan bug. Silakan coba lagi nanti."
+      );
+    });
+  });
+
+  it("closes bug report modal when Batal is clicked", async () => {
+    render(<PengaturanView />);
+    await userEvent.click(screen.getByTestId("open-bug-report-button"));
+
+    const cancelBtn = screen.getByTestId("cancel-bug-report-button");
+    await userEvent.click(cancelBtn);
+
+    expect(screen.queryByText("Laporkan Bug / Kendala")).not.toBeInTheDocument();
   });
 });

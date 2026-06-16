@@ -17,6 +17,7 @@ This directory contains records of significant architecture decisions made in th
 *   [0011: Coverage Gap Closure - Read Operations](0011-coverage-gap-closure-read-operations.md)
 *   [0012: Integration Testing Strategy for Sea-ORM Entities](0012-integration-testing-sea-orm.md)
 *   [0013: Update Delivery, Database Migration, and Release CI/CD Strategy](0013-strategi-update-dan-rilis.md)
+*   [0014: Pelaporan Bug Otomatis dengan Log Diagnostik](0014-pelaporan-bug-dan-log-diagnostik.md)
 
 ## Lifecycle Status
 

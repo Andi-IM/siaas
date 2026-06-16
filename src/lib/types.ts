@@ -62,3 +62,10 @@ export interface StudentGrade {
   subjectId: string;
   grade: number;
 }
+
+export interface Semester {
+  id: string;
+  kode: string;
+  nama: string;
+  sequence: number;
+}
