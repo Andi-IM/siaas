@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "sias",
   "version": "0.1.0",
-  "identifier": "com.siaas.app",
+  "identifier": "com.siaas.desktop",
   "build": {
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
