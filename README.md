@@ -34,6 +34,16 @@ Sistem Informasi Administrasi Akademik Siswa (SIAAS) is an offline-native admini
 2. Install dependencies: `npm install`
 3. Run in browser: `npm run dev`
 4. Run in desktop: `npx tauri dev`
+5. (Optional) Seed the database with demo/testing data:
+   - Ensure the database is initialized (run the desktop app once).
+   - Execute the SQL seed scripts in order:
+     ```powershell
+     # Windows PowerShell
+     Get-Content scripts\seed_academic_core.sql -Raw | sqlite3 "$env:APPDATA\com.siaas.desktop\sias.db"
+     Get-Content scripts\seed_students.sql -Raw | sqlite3 "$env:APPDATA\com.siaas.desktop\sias.db"
+     Get-Content scripts\seed_grades.sql -Raw | sqlite3 "$env:APPDATA\com.siaas.desktop\sias.db"
+     ```
+
 
 ### Production Build
 1. Export static assets: `npm run build`

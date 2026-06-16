@@ -575,11 +575,11 @@ pub async fn get_subjects_by_major_core<C: ConnectionTrait>(
             ?
             .ok_or_else(|| AppError::NotFound { entity: "Subject", field: "id", value: m.subject_id.clone() })?;
 
-        let semester = semesters::Entity::find_by_id(m.semester_id)
+        let semester = semesters::Entity::find_by_id(m.semester_id.clone())
             .one(db)
             .await
             ?
-            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
+            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: m.semester_id.clone() })?;
 
         let entry = result_map.entry(m.subject_id).or_insert(MataPelajaranData {
             id: subject.id,
