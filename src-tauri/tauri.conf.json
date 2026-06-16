@@ -40,7 +40,7 @@
   "plugins": {
     "updater": {
       "endpoints": [
-        "https://https://sias-api-893975406407.us-central1.run.app/updater?version={{current_version}}&target={{target}}&arch={{arch}}&os={{os}}"
+        "https://sias-api-893975406407.us-central1.run.app/updater?version={{current_version}}&target={{target}}&arch={{arch}}&os={{os}}"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDJCQzFDNkU5MTgwOEMyRkQKUldUOXdnZ1k2Y2JCSzRIOE9ydW5FaDhFcWJDeTk3QnFhRmZncEdaQXZyd0JqSzEyMEZwbEk1dk0K"
     }

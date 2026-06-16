@@ -15,9 +15,12 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
     try {
       const logs = "System state: OK\nMemory: 45MB"; // Dummy logs for now
       
-      const res = await fetch('https://api.sias.app/issues', {
+      const res = await fetch('https://sias-api-893975406407.us-central1.run.app/issues', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'X-SIAAS-App-Token': 'siaas_app_secure_token_2026_xyz'
+        },
         body: JSON.stringify({ title, body, logs })
       });
 

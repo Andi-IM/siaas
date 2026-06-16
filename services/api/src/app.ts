@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
+import { rateLimit } from 'express-rate-limit';
 
 dotenv.config();
 
@@ -9,6 +10,27 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Rate limiting for bug reports: max 5 requests per hour per IP (disabled in test)
+const bugReportLimiter = process.env.NODE_ENV === 'test'
+  ? (req: Request, res: Response, next: any) => next()
+  : rateLimit({
+      windowMs: 60 * 60 * 1000, // 1 hour
+      max: 5,
+      message: { error: 'Too many bug reports from this IP, please try again after an hour.' },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+
+// Middleware to verify custom app token header for issue creation
+const verifyAppToken = (req: Request, res: Response, next: any) => {
+  const token = req.headers['x-siaas-app-token'];
+  const expectedToken = process.env.SIAAS_APP_TOKEN || 'siaas_app_secure_token_2026_xyz';
+  if (token !== expectedToken) {
+    return res.status(403).json({ error: 'Forbidden: Invalid Application Token' });
+  }
+  next();
+};
 
 /**
  * Health check endpoint for Cloud Run
@@ -106,7 +128,7 @@ Please respond with ONLY the markdown content.`;
  * 
  * Receives bug reports from the client app and creates a GitHub issue.
  */
-app.post('/issues', async (req: Request, res: Response) => {
+app.post('/issues', verifyAppToken, bugReportLimiter, async (req: Request, res: Response) => {
   const githubPat = process.env.GITHUB_PAT;
   if (!githubPat) {
     return res.status(500).json({ error: 'GitHub PAT is not configured on the server.' });

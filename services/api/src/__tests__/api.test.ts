@@ -65,11 +65,31 @@ describe('SIAAS API Server', () => {
   });
 
   describe('POST /issues', () => {
+    it('should return 403 if X-SIAAS-App-Token is missing', async () => {
+      const res = await request(app)
+        .post('/issues')
+        .send({ title: 'Test Bug', body: 'Description' });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: 'Forbidden: Invalid Application Token' });
+    });
+
+    it('should return 403 if X-SIAAS-App-Token is invalid', async () => {
+      const res = await request(app)
+        .post('/issues')
+        .set('x-siaas-app-token', 'wrong_token')
+        .send({ title: 'Test Bug', body: 'Description' });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toEqual({ error: 'Forbidden: Invalid Application Token' });
+    });
+
     it('should return 500 if GITHUB_PAT is missing', async () => {
       delete process.env.GITHUB_PAT;
 
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug', body: 'Description' });
 
       expect(res.status).toBe(500);
@@ -79,6 +99,7 @@ describe('SIAAS API Server', () => {
     it('should return 400 if title is missing', async () => {
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ body: 'Description' });
 
       expect(res.status).toBe(400);
@@ -88,6 +109,7 @@ describe('SIAAS API Server', () => {
     it('should return 400 if body is missing', async () => {
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug' });
 
       expect(res.status).toBe(400);
@@ -105,6 +127,7 @@ describe('SIAAS API Server', () => {
 
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug', body: 'Description', logs: 'some logs' });
 
       expect(res.status).toBe(201);
@@ -152,6 +175,7 @@ describe('SIAAS API Server', () => {
 
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug', body: 'Description', logs: 'some logs' });
 
       expect(res.status).toBe(201);
@@ -196,6 +220,7 @@ describe('SIAAS API Server', () => {
 
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug', body: 'Description', logs: 'some logs' });
 
       expect(res.status).toBe(201);
@@ -220,6 +245,7 @@ describe('SIAAS API Server', () => {
 
       const res = await request(app)
         .post('/issues')
+        .set('x-siaas-app-token', 'siaas_app_secure_token_2026_xyz')
         .send({ title: 'Test Bug', body: 'Description' });
 
       expect(res.status).toBe(401);
