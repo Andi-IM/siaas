@@ -1,22 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { invoke } from "@tauri-apps/api/core";
+import styles from './BugReportModal.module.css';
 
 export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Close on ESC key and submit on Ctrl+Enter
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isOpen) return;
+      
+      if (e.key === 'Escape') {
+        onClose();
+      }
+      
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        // Find the form and submit it if it exists and we're not already loading
+        const form = modalRef.current?.querySelector('form');
+        if (form && !loading && !success) {
+          form.requestSubmit();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose, loading, success]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!title.trim() || !body.trim()) return;
+    
     setLoading(true);
+    setError(null);
 
     try {
       let logs = 'No logs available';
       try {
         if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
-          const { invoke } = await import('@tauri-apps/api/core');
           logs = await invoke<string>('get_app_logs');
         }
       } catch (err) {
@@ -37,68 +65,106 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
         setTimeout(() => {
           setSuccess(false);
           onClose();
+          // Reset form after success
+          setTitle('');
+          setBody('');
         }, 2000);
       } else {
-        alert('Gagal mengirim laporan bug.');
+        setError('Gagal mengirim laporan bug. Silakan coba lagi nanti.');
       }
     } catch (err) {
       console.error('Failed to submit bug report:', err);
-      alert('Terjadi kesalahan koneksi.');
+      setError('Terjadi kesalahan koneksi. Pastikan Anda terhubung ke internet.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-xl">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Laporkan Bug / Kendala</h2>
+    <div 
+      className={styles.overlay}
+      onClick={handleBackdropClick}
+      aria-modal="true"
+      role="dialog"
+    >
+      <div 
+        ref={modalRef}
+        className={styles.modal}
+      >
+        <div className={styles.header}>
+          <h2 className={styles.title}>Laporkan Bug / Kendala</h2>
+          <button 
+            onClick={onClose}
+            className={styles.closeButton}
+            aria-label="Tutup"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
         
+        {error && (
+          <div className={styles.error}>
+            {error}
+          </div>
+        )}
+
         {success ? (
-          <div className="bg-green-50 text-green-700 p-4 rounded-md border border-green-200">
+          <div className={styles.success}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Laporan berhasil dikirim! Terima kasih atas bantuan Anda.
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">Judul Masalah</label>
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Judul Masalah</label>
               <input 
                 type="text" 
                 required 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                autoFocus
+                className={styles.input}
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Misal: Tombol Ekspor Excel tidak merespon"
               />
             </div>
             
-            <div>
-              <label className="block text-sm font-medium mb-1 text-gray-700">Deskripsi Lengkap</label>
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Deskripsi Lengkap</label>
               <textarea 
                 required 
-                className="w-full border border-gray-300 rounded-md px-3 py-2 h-32 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`${styles.input} ${styles.textarea}`}
                 value={body}
                 onChange={e => setBody(e.target.value)}
-                placeholder="Ceritakan langkah-langkah yang Anda lakukan sebelum error terjadi..."
+                placeholder="Ceritakan langkah-langkah yang Anda lakukan sebelum error terjadi... (Tekan Ctrl+Enter untuk kirim)"
               />
             </div>
 
-            <div className="text-xs text-gray-500">
-              Sistem akan secara otomatis melampirkan log teknis untuk membantu tim mendiagnosis masalah.
+            <div className={styles.diagnostics}>
+              <p className={styles.diagnosticsTitle}>Catatan Diagnostik:</p>
+              Sistem akan secara otomatis melampirkan log teknis untuk membantu tim mendiagnosis masalah. 
+              <span className={styles.diagnosticsSub}>
+                Hanya data teknis aplikasi yang dikirim, tidak ada data pribadi siswa yang disertakan.
+              </span>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
+            <div className={styles.actions}>
               <button 
                 type="button" 
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700"
+                className={`${styles.button} ${styles.buttonSecondary}`}
               >
                 Batal
               </button>
               <button 
                 type="submit" 
-                disabled={loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                disabled={loading || !title.trim() || !body.trim()}
+                className={`${styles.button} ${styles.buttonPrimary}`}
               >
                 {loading ? 'Mengirim...' : 'Kirim Laporan'}
               </button>

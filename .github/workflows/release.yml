@@ -2,19 +2,22 @@ name: Release CI
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [windows-latest]
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -33,15 +36,10 @@ jobs:
         with:
           workspaces: "src-tauri"
 
-      - name: Build Tauri App
-        uses: tauri-apps/tauri-action@v0
+      - name: Run Semantic Release
+        run: npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'SIAAS ${{ github.ref_name }}'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
-          prerelease: false
+          NEXT_PUBLIC_SIAAS_APP_TOKEN: ${{ secrets.SIAAS_APP_TOKEN }}

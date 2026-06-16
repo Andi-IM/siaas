@@ -1,7 +1,7 @@
 # ADR 0013: Update Delivery, Database Migration, Release CI/CD, and Cloud Run Telemetry Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 SIAAS is designed as an offline-native application (Desktop/Windows) for school administrations in Indonesia, which often have limited internet access. SIAAS stores its data locally using SQLite. Updating the application is a high-risk operation because it involves releasing a new binary and migrating the local SQLite schema, where migration failures could lead to permanent loss of the student master book (Buku Induk).
@@ -25,14 +25,18 @@ We are adopting a four-layered strategy:
    - **Bug Reporting**: It will expose a `POST /issues` endpoint to receive crash reports or user-submitted bugs. The Cloud Run service will securely hold a GitHub Personal Access Token (PAT) and use the GitHub API to create an issue in the repository.
 3. **Updates via Tauri Updater**:
    The application will integrate the `tauri-plugin-updater` in the background, configured to poll the new Cloud Run `/updater` endpoint. Update messages are only displayed when the new installer is ready and downloaded.
-4. **CI/CD via GitHub Actions (Release Workflow)**:
-   We will add a new workflow `.github/workflows/release.yml` triggered on pushing tags `v*.*.*`. The CI will cross-compile for Windows, sign the installer, and publish it to GitHub Releases. Another workflow will handle continuous deployment to Google Cloud Run.
+4. **CI/CD via GitHub Actions and Automated SemVer (Release Workflow)**:
+   We will adopt `semantic-release` to automate Semantic Versioning (SemVer) based on Conventional Commits.
+   - The workflow `.github/workflows/release.yml` will be triggered on push to `main` branch.
+   - The CI will analyze commits, automatically calculate the next version, update version numbers in `package.json` and `src-tauri/tauri.conf.json`, generate the changelog, create the Git tag, compile the installer (`.msi`) for Windows, and publish it to GitHub Releases.
 
 ## Consequences
 - **Positive**: Bug reporting becomes automated and centralized in GitHub Issues without exposing GitHub tokens in the client. Update delivery can be monitored and controlled (e.g., phased rollouts) via the Cloud Run proxy.
+- **Positive**: Release versioning, changelog generation, and tag creation are fully automated, removing human error and ensuring consistent version numbering.
 - **Negative**: Introduces a minor cloud dependency (Cloud Run) and infrastructure cost, though it will be negligible for these specific use cases. Requires setting up Google Cloud authentication and GitHub tokens in the Cloud Run environment.
 
 ## References
 - Tauri v2 Updater Plugin Documentation
 - Offline-Native Strategy (PRODUCT.md)
 - Google Cloud Run Documentation
+- Semantic Release Documentation

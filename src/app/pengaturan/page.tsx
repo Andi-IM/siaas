@@ -1,7 +1,5 @@
-"use client";
-
 import { Suspense } from "react";
-import PengaturanView from "./PengaturanView";
+import PengaturanView from "@/app/pengaturan/PengaturanView";
 import { PengaturanFallback } from "./fallback";
 
 export default function PengaturanPage() {

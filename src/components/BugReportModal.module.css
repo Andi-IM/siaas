@@ -1,0 +1,198 @@
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal {
+  background-color: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #c5c5d3);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  animation: modalEnter 0.2s ease-out;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.title {
+  font-family: var(--font-family);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--on-surface, #191c1e);
+  margin: 0;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  color: var(--outline, #757682);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.closeButton:hover {
+  background-color: var(--surface-container-low, #f2f4f6);
+  color: var(--on-surface, #191c1e);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--on-surface-variant, #444651);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.input {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--on-surface, #191c1e);
+  border: 1px solid var(--outline-variant, #c5c5d3);
+  border-radius: 4px;
+  padding: 8px 12px;
+  background-color: var(--surface-container-lowest, #ffffff);
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary, #00236f);
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.diagnostics {
+  font-family: var(--font-family);
+  font-size: 12px;
+  color: var(--on-surface-variant, #444651);
+  background-color: var(--surface-container-low, #f2f4f6);
+  border: 1px solid var(--surface-container-high, #e6e8ea);
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.diagnosticsTitle {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.diagnosticsSub {
+  display: block;
+  margin-top: 4px;
+  font-style: italic;
+  color: var(--outline, #757682);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.button {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+}
+
+.buttonSecondary {
+  background-color: var(--surface-container-lowest, #ffffff);
+  border: 1px solid var(--outline-variant, #c5c5d3);
+  color: var(--secondary, #505f76);
+}
+
+.buttonSecondary:hover {
+  background-color: var(--surface-container-low, #f2f4f6);
+  color: var(--on-surface, #191c1e);
+}
+
+.buttonPrimary {
+  background-color: var(--primary, #00236f);
+  border: none;
+  color: var(--on-primary, #ffffff);
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background-color: var(--primary-container, #1e3a8a);
+}
+
+.buttonPrimary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  background-color: var(--error-container, #ffdad6);
+  color: var(--on-error-container, #93000a);
+  border: 1px solid var(--error, #ba1a1a);
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.success {
+  background-color: var(--secondary-container, #d0e1fb);
+  color: var(--on-secondary-container, #54647a);
+  border: 1px solid var(--outline-variant, #c5c5d3);
+  border-radius: 4px;
+  padding: 12px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}

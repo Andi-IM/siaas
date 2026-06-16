@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { BugReportModal } from "@/components/BugReportModal";
 import { Database, Bug, AlertTriangle, RefreshCw, Download, Upload } from "lucide-react";
+import { invoke } from "@tauri-apps/api/core";
 
 export default function PengaturanView() {
   const [appVersion, setAppVersion] = useState("Memuat...");
@@ -17,7 +18,6 @@ export default function PengaturanView() {
     const fetchVersion = async () => {
       try {
         if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-          const { invoke } = await import("@tauri-apps/api/core");
           const ver = await invoke<string>("get_app_version");
           setAppVersion(ver);
         } else {
@@ -36,7 +36,6 @@ export default function PengaturanView() {
     setStatusMsg(null);
     try {
       if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        const { invoke } = await import("@tauri-apps/api/core");
         await invoke("export_database");
         setStatusMsg({
           type: "success",
@@ -73,7 +72,6 @@ export default function PengaturanView() {
     setStatusMsg(null);
     try {
       if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        const { invoke } = await import("@tauri-apps/api/core");
         await invoke("import_database");
         setStatusMsg({
           type: "success",
@@ -105,7 +103,6 @@ export default function PengaturanView() {
     setStatusMsg(null);
     try {
       if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        const { invoke } = await import("@tauri-apps/api/core");
         await invoke("reset_database");
         setStatusMsg({
           type: "success",
@@ -145,7 +142,7 @@ export default function PengaturanView() {
             padding: "6px 12px",
             backgroundColor: "var(--color-bg-card, #ffffff)",
             border: "1px solid var(--color-border)",
-            borderRadius: "6px",
+            borderRadius: "4px",
             fontSize: "12px",
             color: "var(--color-fg-muted)",
             fontWeight: 500
@@ -161,7 +158,7 @@ export default function PengaturanView() {
           data-testid="status-message"
           style={{
             padding: "12px 16px",
-            borderRadius: "6px",
+            borderRadius: "4px",
             marginBottom: "1.5rem",
             fontSize: "14px",
             border: "1px solid",
@@ -179,7 +176,7 @@ export default function PengaturanView() {
         <section 
           style={{
             border: "1px solid var(--color-border)",
-            borderRadius: "8px",
+            borderRadius: "4px",
             padding: "1.5rem",
             backgroundColor: "var(--color-bg-card, #ffffff)"
           }}
@@ -197,7 +194,7 @@ export default function PengaturanView() {
             style={{
               backgroundColor: "#fffbeb",
               border: "1px solid #fef3c7",
-              borderRadius: "6px",
+              borderRadius: "4px",
               padding: "12px 16px",
               marginBottom: "1.5rem",
               display: "flex",
@@ -266,7 +263,7 @@ export default function PengaturanView() {
                   backgroundColor: "#ffffff",
                   color: "var(--color-fg)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: "6px",
+                  borderRadius: "4px",
                   padding: "8px 16px",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -291,7 +288,7 @@ export default function PengaturanView() {
                   backgroundColor: "#ffffff",
                   color: "var(--color-fg)",
                   border: "1px solid var(--color-border)",
-                  borderRadius: "6px",
+                  borderRadius: "4px",
                   padding: "8px 16px",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -316,7 +313,7 @@ export default function PengaturanView() {
                   backgroundColor: "#fef2f2",
                   color: "#dc2626",
                   border: "1px solid #fca5a5",
-                  borderRadius: "6px",
+                  borderRadius: "4px",
                   padding: "8px 16px",
                   fontSize: "13px",
                   fontWeight: 500,
@@ -340,7 +337,7 @@ export default function PengaturanView() {
         <section 
           style={{
             border: "1px solid var(--color-border)",
-            borderRadius: "8px",
+            borderRadius: "4px",
             padding: "1.5rem",
             backgroundColor: "var(--color-bg-card, #ffffff)"
           }}
@@ -351,7 +348,7 @@ export default function PengaturanView() {
           </div>
 
           <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", lineHeight: "1.5", marginBottom: "1.5rem" }}>
-            Menemukan keanehan atau error saat menggunakan sistem? Laporkan kepada tim pengembang kami. Pelaporan akan secara otomatis mengompresi log diagnostik lokal Anda dan meneruskannya ke backend berbasis kecerdasan buatan (Mistral-7B AI) sebelum didaftarkan sebagai tiket perbaikan GitHub.
+            Menemukan keanehan atau error saat menggunakan sistem? Laporkan kepada tim pengembang kami. Pelaporan akan secara otomatis mengumpulkan log diagnostik lokal Anda untuk membantu proses perbaikan secara tepat dan efisien.
           </p>
 
           <button
@@ -361,7 +358,7 @@ export default function PengaturanView() {
               backgroundColor: "#0f172a",
               color: "#ffffff",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "4px",
               padding: "8px 16px",
               fontSize: "13px",
               fontWeight: 500,
