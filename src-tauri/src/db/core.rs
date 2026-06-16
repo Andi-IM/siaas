@@ -1,4 +1,5 @@
-use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryOrder, ColumnTrait, QueryFilter};
+use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set, QueryOrder, ColumnTrait, QueryFilter, ConnectionTrait, TransactionTrait};
+use crate::db::error::AppError;
 use crate::db::entities::{
     programs, majors, batches, semesters, subjects, students, curriculum_subjects, student_grades
 };
@@ -25,10 +26,10 @@ use crate::db::entities::{
 /// assert_eq!(program.name, "Teknik Informatika");
 /// # });
 /// ```
-pub async fn create_program_core(
-    db: &DatabaseConnection,
+pub async fn create_program_core<C: ConnectionTrait>(
+    db: &C,
     name: impl Into<String>,
-) -> Result<programs::Model, String> {
+) -> Result<programs::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -39,46 +40,44 @@ pub async fn create_program_core(
         updated_at: Set(now),
     };
 
-    let result = program.insert(db).await.map_err(|e| e.to_string())?;
+    let result = program.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_programs_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<programs::Model>, String> {
-    programs::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_programs_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<programs::Model>, AppError> {
+    let res = programs::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 /// Memperbarui nama program studi berdasarkan ID.
-pub async fn update_program_core(
-    db: &DatabaseConnection,
+pub async fn update_program_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
     name: impl Into<String>,
-) -> Result<programs::Model, String> {
+) -> Result<programs::Model, AppError> {
     let existing = programs::Entity::find_by_id(id)
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Program not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Program", field: "id", value: id.to_string() })?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: programs::ActiveModel = existing.into();
     active.name = Set(name.into());
     active.updated_at = Set(now);
 
-    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    let updated = active.update(db).await?;
     Ok(updated)
 }
 
 /// Menghapus program studi berdasarkan ID.
-pub async fn delete_program_core(
-    db: &DatabaseConnection,
+pub async fn delete_program_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
-) -> Result<bool, String> {
-    let res = programs::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+) -> Result<bool, AppError> {
+    let res = programs::Entity::delete_by_id(id).exec(db).await?;
     Ok(res.rows_affected > 0)
 }
 
@@ -104,12 +103,12 @@ pub async fn delete_program_core(
 /// assert_eq!(major.code, "TKJ");
 /// # });
 /// ```
-pub async fn create_major_core(
-    db: &DatabaseConnection,
+pub async fn create_major_core<C: ConnectionTrait>(
+    db: &C,
     code: impl Into<String>,
     name: impl Into<String>,
     program_id: Option<String>,
-) -> Result<majors::Model, String> {
+) -> Result<majors::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -122,32 +121,30 @@ pub async fn create_major_core(
         updated_at: Set(now),
     };
 
-    let result = major.insert(db).await.map_err(|e| e.to_string())?;
+    let result = major.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_majors_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<majors::Model>, String> {
-    majors::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_majors_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<majors::Model>, AppError> {
+    let res = majors::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 /// Memperbarui data konsentrasi keahlian.
-pub async fn update_major_core(
-    db: &DatabaseConnection,
+pub async fn update_major_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
     name: impl Into<String>,
     code: impl Into<String>,
     program_id: Option<String>,
-) -> Result<majors::Model, String> {
+) -> Result<majors::Model, AppError> {
     let existing = majors::Entity::find_by_id(id)
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Major not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Major", field: "id", value: id.to_string() })?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: majors::ActiveModel = existing.into();
@@ -156,16 +153,16 @@ pub async fn update_major_core(
     active.program_id = Set(program_id);
     active.updated_at = Set(now);
 
-    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    let updated = active.update(db).await?;
     Ok(updated)
 }
 
 /// Menghapus konsentrasi keahlian berdasarkan ID.
-pub async fn delete_major_core(
-    db: &DatabaseConnection,
+pub async fn delete_major_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
-) -> Result<bool, String> {
-    let res = majors::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+) -> Result<bool, AppError> {
+    let res = majors::Entity::delete_by_id(id).exec(db).await?;
     Ok(res.rows_affected > 0)
 }
 
@@ -191,10 +188,10 @@ pub async fn delete_major_core(
 /// assert_eq!(batch.year, 2024);
 /// # });
 /// ```
-pub async fn create_batch_core(
-    db: &DatabaseConnection,
+pub async fn create_batch_core<C: ConnectionTrait>(
+    db: &C,
     year: i32,
-) -> Result<batches::Model, String> {
+) -> Result<batches::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -205,17 +202,15 @@ pub async fn create_batch_core(
         updated_at: Set(now),
     };
 
-    let result = batch.insert(db).await.map_err(|e| e.to_string())?;
+    let result = batch.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_batches_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<batches::Model>, String> {
-    batches::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_batches_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<batches::Model>, AppError> {
+    let res = batches::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 // ==========================================
@@ -240,12 +235,12 @@ pub async fn get_batches_core(
 /// assert_eq!(semester.sequence, 1);
 /// # });
 /// ```
-pub async fn create_semester_core(
-    db: &DatabaseConnection,
+pub async fn create_semester_core<C: ConnectionTrait>(
+    db: &C,
     code: impl Into<String>,
     name: impl Into<String>,
     sequence: i32,
-) -> Result<semesters::Model, String> {
+) -> Result<semesters::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -258,18 +253,18 @@ pub async fn create_semester_core(
         updated_at: Set(now),
     };
 
-    let result = semester.insert(db).await.map_err(|e| e.to_string())?;
+    let result = semester.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_semesters_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<semesters::Model>, String> {
-    semesters::Entity::find()
+pub async fn get_semesters_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<semesters::Model>, AppError> {
+    let res = semesters::Entity::find()
         .order_by_asc(semesters::Column::Sequence)
         .all(db)
-        .await
-        .map_err(|e| e.to_string())
+        .await?;
+    Ok(res)
 }
 
 // ==========================================
@@ -302,14 +297,14 @@ pub fn get_category_weight(cat: &str) -> i32 {
 /// assert_eq!(subject.code, "MTK");
 /// # });
 /// ```
-pub async fn create_subject_core(
-    db: &DatabaseConnection,
+pub async fn create_subject_core<C: ConnectionTrait>(
+    db: &C,
     code: impl Into<String>,
     name: impl Into<String>,
     category: impl Into<String>,
     status: impl Into<String>,
     sequence: i32,
-) -> Result<subjects::Model, String> {
+) -> Result<subjects::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -324,17 +319,17 @@ pub async fn create_subject_core(
         updated_at: Set(now),
     };
 
-    let result = subject.insert(db).await.map_err(|e| e.to_string())?;
+    let result = subject.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_subjects_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<subjects::Model>, String> {
+pub async fn get_subjects_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<subjects::Model>, AppError> {
     let list = subjects::Entity::find()
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
     
     let mut sorted = list;
     sorted.sort_by(|a, b| {
@@ -351,20 +346,19 @@ pub async fn get_subjects_core(
 }
 
 /// Memperbarui data mata pelajaran.
-pub async fn update_subject_core(
-    db: &DatabaseConnection,
+pub async fn update_subject_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
     name: impl Into<String>,
     code: impl Into<String>,
     category: impl Into<String>,
     status: impl Into<String>,
     sequence: i32,
-) -> Result<subjects::Model, String> {
+) -> Result<subjects::Model, AppError> {
     let existing = subjects::Entity::find_by_id(id)
         .one(db)
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Subject not found".to_string())?;
+        .await?
+        .ok_or_else(|| AppError::NotFound { entity: "Subject", field: "id", value: id.to_string() })?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: subjects::ActiveModel = existing.into();
@@ -375,16 +369,16 @@ pub async fn update_subject_core(
     active.sequence = Set(sequence);
     active.updated_at = Set(now);
 
-    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    let updated = active.update(db).await?;
     Ok(updated)
 }
 
 /// Menghapus mata pelajaran berdasarkan ID.
-pub async fn delete_subject_core(
-    db: &DatabaseConnection,
+pub async fn delete_subject_core<C: ConnectionTrait>(
+    db: &C,
     id: &str,
-) -> Result<bool, String> {
-    let res = subjects::Entity::delete_by_id(id).exec(db).await.map_err(|e| e.to_string())?;
+) -> Result<bool, AppError> {
+    let res = subjects::Entity::delete_by_id(id).exec(db).await?;
     Ok(res.rows_affected > 0)
 }
 
@@ -392,10 +386,10 @@ pub async fn delete_subject_core(
 // STUDENT CORE LOGIC
 // ==========================================
 
-pub async fn create_student_core(
-    db: &DatabaseConnection,
+pub async fn create_student_core<C: ConnectionTrait>(
+    db: &C,
     mut student: students::Model,
-) -> Result<students::Model, String> {
+) -> Result<students::Model, AppError> {
     if student.id.is_empty() {
         student.id = uuid::Uuid::new_v4().to_string();
     }
@@ -436,31 +430,29 @@ pub async fn create_student_core(
         updated_at: Set(student.updated_at),
     };
 
-    let result = active_student.insert(db).await.map_err(|e| e.to_string())?;
+    let result = active_student.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_students_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<students::Model>, String> {
-    students::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_students_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<students::Model>, AppError> {
+    let res = students::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 /// Memperbarui data siswa berdasarkan NIS.
-pub async fn update_student_core(
-    db: &DatabaseConnection,
+pub async fn update_student_core<C: ConnectionTrait>(
+    db: &C,
     nis: &str,
     student: students::Model,
-) -> Result<students::Model, String> {
+) -> Result<students::Model, AppError> {
     let existing = students::Entity::find()
         .filter(students::Column::Nis.eq(nis))
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Student not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Student", field: "nis/id", value: "unknown".to_string() })?;
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: students::ActiveModel = existing.into();
@@ -492,24 +484,24 @@ pub async fn update_student_core(
     active.graduation_date = Set(student.graduation_date);
     active.updated_at = Set(now);
 
-    let updated = active.update(db).await.map_err(|e| e.to_string())?;
+    let updated = active.update(db).await?;
     Ok(updated)
 }
 
 /// Menghapus data siswa berdasarkan NIS.
-pub async fn delete_student_core(
-    db: &DatabaseConnection,
+pub async fn delete_student_core<C: ConnectionTrait>(
+    db: &C,
     nis: &str,
-) -> Result<bool, String> {
+) -> Result<bool, AppError> {
     let student = students::Entity::find()
         .filter(students::Column::Nis.eq(nis))
         .one(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     match student {
         Some(s) => {
-            let res = students::Entity::delete_by_id(s.id).exec(db).await.map_err(|e| e.to_string())?;
+            let res = students::Entity::delete_by_id(s.id).exec(db).await?;
             Ok(res.rows_affected > 0)
         }
         None => Ok(false)
@@ -521,13 +513,13 @@ pub async fn delete_student_core(
 // ==========================================
 
 /// Menghubungkan mata pelajaran ke kurikulum (major, batch, semester).
-pub async fn create_curriculum_subject_core(
-    db: &DatabaseConnection,
+pub async fn create_curriculum_subject_core<C: ConnectionTrait>(
+    db: &C,
     major_id: &str,
     batch_id: &str,
     semester_id: &str,
     subject_id: &str,
-) -> Result<curriculum_subjects::Model, String> {
+) -> Result<curriculum_subjects::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -541,17 +533,15 @@ pub async fn create_curriculum_subject_core(
         updated_at: Set(now),
     };
 
-    let result = cs.insert(db).await.map_err(|e| e.to_string())?;
+    let result = cs.insert(db).await?;
     Ok(result)
 }
 
-pub async fn get_curriculum_subjects_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<curriculum_subjects::Model>, String> {
-    curriculum_subjects::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_curriculum_subjects_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<curriculum_subjects::Model>, AppError> {
+    let res = curriculum_subjects::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
@@ -566,15 +556,15 @@ pub struct MataPelajaranData {
 }
 
 /// Mendapatkan daftar mata pelajaran berdasarkan konsentrasi keahlian.
-pub async fn get_subjects_by_major_core(
-    db: &DatabaseConnection,
+pub async fn get_subjects_by_major_core<C: ConnectionTrait>(
+    db: &C,
     major_id: &str,
-) -> Result<Vec<MataPelajaranData>, String> {
+) -> Result<Vec<MataPelajaranData>, AppError> {
     let mappings = curriculum_subjects::Entity::find()
         .filter(curriculum_subjects::Column::MajorId.eq(major_id))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let mut result_map: std::collections::HashMap<String, MataPelajaranData> = std::collections::HashMap::new();
 
@@ -582,14 +572,14 @@ pub async fn get_subjects_by_major_core(
         let subject = subjects::Entity::find_by_id(&m.subject_id)
             .one(db)
             .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| format!("Subject {} not found", m.subject_id))?;
+            ?
+            .ok_or_else(|| AppError::NotFound { entity: "Subject", field: "id", value: m.subject_id.clone() })?;
 
         let semester = semesters::Entity::find_by_id(m.semester_id)
             .one(db)
             .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Semester not found".to_string())?;
+            ?
+            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
 
         let entry = result_map.entry(m.subject_id).or_insert(MataPelajaranData {
             id: subject.id,
@@ -626,17 +616,17 @@ pub async fn get_subjects_by_major_core(
 /// Menetapkan mata pelajaran ke beberapa semester sekaligus untuk suatu konsentrasi keahlian.
 pub async fn assign_subject_to_semesters_core(
     db: &DatabaseConnection,
-    major_id: &str,
+major_id: &str,
     subject_id: &str,
     semester_sequences: Vec<i32>,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
 
     // 1. Get or Create a default Batch (needed for curriculum_subjects)
     let batch = batches::Entity::find()
         .one(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
     
     let batch_id = match batch {
         Some(b) => b.id,
@@ -648,7 +638,7 @@ pub async fn assign_subject_to_semesters_core(
                 created_at: Set(now.clone()),
                 updated_at: Set(now.clone()),
             };
-            new_batch.insert(db).await.map_err(|e| e.to_string())?;
+            new_batch.insert(db).await?;
             id
         }
     };
@@ -659,7 +649,7 @@ pub async fn assign_subject_to_semesters_core(
         .filter(curriculum_subjects::Column::SubjectId.eq(subject_id))
         .exec(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     // 3. Add new mappings
     for seq in semester_sequences {
@@ -667,7 +657,7 @@ pub async fn assign_subject_to_semesters_core(
             .filter(semesters::Column::Sequence.eq(seq))
             .one(db)
             .await
-            .map_err(|e| e.to_string())?;
+            ?;
         
         let semester_id = match semester {
             Some(s) => s.id,
@@ -681,7 +671,7 @@ pub async fn assign_subject_to_semesters_core(
                     created_at: Set(now.clone()),
                     updated_at: Set(now.clone()),
                 };
-                new_sem.insert(db).await.map_err(|e| e.to_string())?;
+                new_sem.insert(db).await?;
                 id
             }
         };
@@ -695,7 +685,7 @@ pub async fn assign_subject_to_semesters_core(
             created_at: Set(now.clone()),
             updated_at: Set(now.clone()),
         };
-        mapping.insert(db).await.map_err(|e| e.to_string())?;
+        mapping.insert(db).await?;
     }
 
     Ok(())
@@ -706,14 +696,14 @@ pub async fn assign_subject_to_semesters_core(
 // ==========================================
 
 /// Menambahkan atau memperbarui nilai siswa.
-pub async fn upsert_student_grade_core(
-    db: &DatabaseConnection,
+pub async fn upsert_student_grade_core<C: ConnectionTrait>(
+    db: &C,
     student_id: &str, // Can be UUID or NIS
     curriculum_subject_id: &str,
     grade: f64,
-) -> Result<student_grades::Model, String> {
+) -> Result<student_grades::Model, AppError> {
     if !(0.0..=100.0).contains(&grade) {
-        return Err("Nilai harus berada di antara 0 dan 100".to_string());
+        return Err(AppError::Validation("Nilai harus berada di antara 0 dan 100".to_string()));
     }
 
     // Resolve student UUID from ID or NIS
@@ -724,8 +714,8 @@ pub async fn upsert_student_grade_core(
         )
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Student not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Student", field: "nis/id", value: "unknown".to_string() })?;
 
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -735,14 +725,14 @@ pub async fn upsert_student_grade_core(
         .filter(student_grades::Column::CurriculumSubjectId.eq(curriculum_subject_id))
         .one(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     match existing {
         Some(record) => {
             let mut active: student_grades::ActiveModel = record.into();
             active.grade = Set(grade);
             active.updated_at = Set(now);
-            let updated = active.update(db).await.map_err(|e| e.to_string())?;
+            let updated = active.update(db).await?;
             Ok(updated)
         }
         None => {
@@ -755,7 +745,7 @@ pub async fn upsert_student_grade_core(
                 created_at: Set(now.clone()),
                 updated_at: Set(now),
             };
-            let result = new_grade.insert(db).await.map_err(|e| e.to_string())?;
+            let result = new_grade.insert(db).await?;
             Ok(result)
         }
     }
@@ -769,25 +759,25 @@ pub struct GradeSummary {
 }
 
 /// Mendapatkan ringkasan nilai berdasarkan filter konsentrasi keahlian dan semester.
-pub async fn get_grades_by_filter_core(
-    db: &DatabaseConnection,
+pub async fn get_grades_by_filter_core<C: ConnectionTrait>(
+    db: &C,
     major_id: &str,
     semester_sequence: i32,
-) -> Result<Vec<GradeSummary>, String> {
+) -> Result<Vec<GradeSummary>, AppError> {
     // 1. Find all curriculum_subject IDs for this major/semester
     let semester = semesters::Entity::find()
         .filter(semesters::Column::Sequence.eq(semester_sequence))
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Semester not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
 
     let mappings = curriculum_subjects::Entity::find()
         .filter(curriculum_subjects::Column::MajorId.eq(major_id))
         .filter(curriculum_subjects::Column::SemesterId.eq(semester.id))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let mut mapping_id_to_subject_id = std::collections::HashMap::new();
     let mut mapping_ids = Vec::new();
@@ -806,13 +796,13 @@ pub async fn get_grades_by_filter_core(
         .filter(student_grades::Column::CurriculumSubjectId.is_in(mapping_ids))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     // Fetch all students to map their UUIDs to NIS
     let students_list = students::Entity::find()
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
     
     let mut student_id_to_nis = std::collections::HashMap::new();
     for s in students_list {
@@ -838,10 +828,10 @@ pub async fn get_grades_by_filter_core(
 /// Melakukan pembaruan nilai secara massal.
 pub async fn batch_upsert_grades_core(
     db: &DatabaseConnection,
-    major_id: &str,
+major_id: &str,
     semester_sequence: i32,
     grades: Vec<GradeSummary>,
-) -> Result<(), String> {
+) -> Result<(), AppError> {
     let now = chrono::Utc::now().to_rfc3339();
 
     // 1. Resolve Semester
@@ -849,8 +839,8 @@ pub async fn batch_upsert_grades_core(
         .filter(semesters::Column::Sequence.eq(semester_sequence))
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Semester not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
 
     // 2. Resolve Mappings for this Major/Semester
     let mappings = curriculum_subjects::Entity::find()
@@ -858,11 +848,11 @@ pub async fn batch_upsert_grades_core(
         .filter(curriculum_subjects::Column::SemesterId.eq(semester.id))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     for g in grades {
         if !(0.0..=100.0).contains(&g.grade) {
-            return Err("Nilai harus berada di antara 0 dan 100".to_string());
+            return Err(AppError::Validation("Nilai harus berada di antara 0 dan 100".to_string()));
         }
 
         // Resolve student UUID from ID or NIS
@@ -873,13 +863,13 @@ pub async fn batch_upsert_grades_core(
             )
             .one(db)
             .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| format!("Student not found for id/nis {}", g.student_id))?;
+            ?
+            .ok_or_else(|| AppError::NotFound { entity: "Student", field: "id/nis", value: g.student_id.clone() })?;
 
         // Find the curriculum_subject_id for this subject
         let mapping = mappings.iter()
             .find(|m| m.subject_id == g.subject_id)
-            .ok_or_else(|| format!("Mapping not found for subject {}", g.subject_id))?;
+            .ok_or_else(|| AppError::NotFound { entity: "CurriculumSubject", field: "subject_id", value: g.subject_id.clone() })?;
 
         // Perform upsert
         let existing = student_grades::Entity::find()
@@ -887,14 +877,14 @@ pub async fn batch_upsert_grades_core(
             .filter(student_grades::Column::CurriculumSubjectId.eq(&mapping.id))
             .one(db)
             .await
-            .map_err(|e| e.to_string())?;
+            ?;
 
         match existing {
             Some(record) => {
                 let mut active: student_grades::ActiveModel = record.into();
                 active.grade = Set(g.grade);
                 active.updated_at = Set(now.clone());
-                active.update(db).await.map_err(|e| e.to_string())?;
+                active.update(db).await?;
             }
             None => {
                 let id = uuid::Uuid::new_v4().to_string();
@@ -906,7 +896,7 @@ pub async fn batch_upsert_grades_core(
                     created_at: Set(now.clone()),
                     updated_at: Set(now.clone()),
                 };
-                new_grade.insert(db).await.map_err(|e| e.to_string())?;
+                new_grade.insert(db).await?;
             }
         }
     }
@@ -926,10 +916,10 @@ pub struct StudentGradeDetail {
 }
 
 /// Mendapatkan daftar nilai detail untuk satu siswa.
-pub async fn get_grades_by_student_core(
-    db: &DatabaseConnection,
+pub async fn get_grades_by_student_core<C: ConnectionTrait>(
+    db: &C,
     student_id: &str, // Can be UUID or NIS
-) -> Result<Vec<StudentGradeDetail>, String> {
+) -> Result<Vec<StudentGradeDetail>, AppError> {
     // Resolve student UUID from ID or NIS
     let student = students::Entity::find()
         .filter(
@@ -938,39 +928,37 @@ pub async fn get_grades_by_student_core(
         )
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Student not found".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Student", field: "nis/id", value: "unknown".to_string() })?;
 
     // 1. Fetch all grades for student
     let grades = student_grades::Entity::find()
         .filter(student_grades::Column::StudentId.eq(student.id))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let mut results = Vec::new();
 
     for g in grades {
         // 2. Resolve mapping info
-        let mapping = curriculum_subjects::Entity::find_by_id(g.curriculum_subject_id)
+        let mapping = curriculum_subjects::Entity::find_by_id(g.curriculum_subject_id.clone())
             .one(db)
-            .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Curriculum mapping not found".to_string())?;
+            .await?
+            .ok_or_else(|| AppError::NotFound { entity: "CurriculumSubject", field: "id", value: g.curriculum_subject_id.clone() })?;
 
         // 3. Resolve subject info
-        let subject = subjects::Entity::find_by_id(mapping.subject_id)
+        let subject = subjects::Entity::find_by_id(mapping.subject_id.clone())
             .one(db)
-            .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Subject not found".to_string())?;
+            .await?
+            .ok_or_else(|| AppError::NotFound { entity: "Subject", field: "id", value: mapping.subject_id.clone() })?;
 
         // 4. Resolve semester info
         let semester = semesters::Entity::find_by_id(mapping.semester_id)
             .one(db)
             .await
-            .map_err(|e| e.to_string())?
-            .ok_or_else(|| "Semester not found".to_string())?;
+            ?
+            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
 
         results.push(StudentGradeDetail {
             subject_id: subject.id,
@@ -986,13 +974,11 @@ pub async fn get_grades_by_student_core(
     Ok(results)
 }
 
-pub async fn get_student_grades_core(
-    db: &DatabaseConnection,
-) -> Result<Vec<student_grades::Model>, String> {
-    student_grades::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())
+pub async fn get_student_grades_core<C: ConnectionTrait>(
+    db: &C,
+) -> Result<Vec<student_grades::Model>, AppError> {
+    let res = student_grades::Entity::find().all(db).await?;
+    Ok(res)
 }
 
 // ==========================================
@@ -1011,50 +997,51 @@ pub struct SubjectColumn {
 pub async fn import_grades_from_excel_core(
     db: &DatabaseConnection,
     path: &std::path::Path,
-) -> Result<String, String> {
+) -> Result<String, AppError> {
     // 2. Open Workbook using calamine
     use calamine::{Reader, open_workbook_auto, Data};
     let mut excel = open_workbook_auto(path)
-        .map_err(|e| format!("Gagal membuka berkas Excel: {}", e))?;
+        .map_err(|e| AppError::Excel(format!("Gagal membuka berkas Excel: {}", e)))?;
 
     let sheet_name = excel.sheet_names().first()
-        .ok_or_else(|| "Berkas Excel tidak memiliki sheet".to_string())?
+        .ok_or_else(|| AppError::Excel("Berkas Excel tidak memiliki sheet".to_string()))?
         .clone();
 
     let range = excel.worksheet_range(&sheet_name)
-        .map_err(|e| format!("Gagal memproses sheet: {}", e))?;
+        .map_err(|e| AppError::Excel(format!("Gagal memproses sheet: {}", e)))?;
 
     if range.height() < 8 {
-        return Err("Berkas Excel tidak valid (minimal harus 8 baris)".to_string());
+        return Err(AppError::Excel("Berkas Excel tidak valid (minimal harus 8 baris)".to_string()));
     }
 
     // 3. Parse Major name from cell A3 (row index 2, col index 0)
     let major_val = range.get_value((2, 0))
-        .ok_or_else(|| "Sel A3 tidak ditemukan".to_string())?;
+        .ok_or_else(|| AppError::Excel("Sel A3 tidak ditemukan".to_string()))?;
 
     let major_info = match major_val {
         Data::String(s) => s.trim().to_string(),
-        _ => return Err("Format sel A3 harus berupa teks (KONSENTRASI KEAHLIAN : NAMA)".to_string()),
+        _ => return Err(AppError::Excel("Format sel A3 harus berupa teks (KONSENTRASI KEAHLIAN : NAMA)".to_string())),
     };
 
     let parts: Vec<&str> = major_info.split(':').collect();
     if parts.len() < 2 {
-        return Err("Nama Konsentrasi Keahlian tidak ditemukan di sel A3 (format harus 'KONSENTRASI KEAHLIAN : NAMA')".to_string());
+        return Err(AppError::Excel("Nama Konsentrasi Keahlian tidak ditemukan di sel A3 (format harus 'KONSENTRASI KEAHLIAN : NAMA')".to_string()));
     }
     let major_name = parts[1].trim();
 
+    let txn = db.begin().await?;
+
     // Find major in database (case-insensitive)
     let all_majors = majors::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())?;
+        .all(&txn)
+        .await?;
 
     let major = all_majors.into_iter()
         .find(|m| m.name.eq_ignore_ascii_case(major_name))
-        .ok_or_else(|| format!("Konsentrasi Keahlian '{}' tidak ditemukan di database", major_name))?;
+        .ok_or_else(|| AppError::NotFound { entity: "Major", field: "name", value: major_name.to_string() })?;
 
     // Find or create default batch
-    let batch_id = match batches::Entity::find().one(db).await.map_err(|e| e.to_string())? {
+    let batch_id = match batches::Entity::find().one(&txn).await? {
         Some(b) => b.id,
         None => {
             let id = uuid::Uuid::new_v4().to_string();
@@ -1065,21 +1052,19 @@ pub async fn import_grades_from_excel_core(
                 created_at: Set(now.clone()),
                 updated_at: Set(now),
             };
-            new_batch.insert(db).await.map_err(|e| e.to_string())?;
+            new_batch.insert(&txn).await?;
             id
         }
     };
 
     // Cache subjects and semesters
     let subjects_list = subjects::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())?;
+        .all(&txn)
+        .await?;
 
     let semesters_list = semesters::Entity::find()
-        .all(db)
-        .await
-        .map_err(|e| e.to_string())?;
+        .all(&txn)
+        .await?;
 
     // 4. Dynamically build column mappings from Excel Row 5 (Semester) and Row 6 (Subject Code)
     struct DynamicColumnMap {
@@ -1179,9 +1164,8 @@ pub async fn import_grades_from_excel_core(
         // Find or create student
         let student = match students::Entity::find()
             .filter(students::Column::Nis.eq(&nis))
-            .one(db)
-            .await
-            .map_err(|e| e.to_string())?
+            .one(&txn)
+            .await?
         {
             Some(s) => s,
             None => {
@@ -1199,7 +1183,7 @@ pub async fn import_grades_from_excel_core(
                     updated_at: Set(now),
                     ..Default::default()
                 };
-                new_student.insert(db).await.map_err(|e| e.to_string())?
+                new_student.insert(&txn).await?
             }
         };
 
@@ -1235,9 +1219,8 @@ pub async fn import_grades_from_excel_core(
                 .filter(curriculum_subjects::Column::MajorId.eq(&major.id))
                 .filter(curriculum_subjects::Column::SemesterId.eq(&semester.id))
                 .filter(curriculum_subjects::Column::SubjectId.eq(&m.subject_id))
-                .one(db)
-                .await
-                .map_err(|e| e.to_string())?
+                .one(&txn)
+                .await?
             {
                 Some(map) => map,
                 None => {
@@ -1252,7 +1235,7 @@ pub async fn import_grades_from_excel_core(
                         created_at: Set(now.clone()),
                         updated_at: Set(now),
                     };
-                    new_mapping.insert(db).await.map_err(|e| e.to_string())?
+                    new_mapping.insert(&txn).await?
                 }
             };
 
@@ -1260,16 +1243,15 @@ pub async fn import_grades_from_excel_core(
             let existing = student_grades::Entity::find()
                 .filter(student_grades::Column::StudentId.eq(&student.id))
                 .filter(student_grades::Column::CurriculumSubjectId.eq(&mapping.id))
-                .one(db)
-                .await
-                .map_err(|e| e.to_string())?;
+                .one(&txn)
+                .await?;
 
             match existing {
                 Some(record) => {
                     let mut active: student_grades::ActiveModel = record.into();
                     active.grade = Set(grade_val);
                     active.updated_at = Set(chrono::Utc::now().to_rfc3339());
-                    active.update(db).await.map_err(|e| e.to_string())?;
+                    active.update(&txn).await?;
                 }
                 None => {
                     let id = uuid::Uuid::new_v4().to_string();
@@ -1282,17 +1264,16 @@ pub async fn import_grades_from_excel_core(
                         created_at: Set(now.clone()),
                         updated_at: Set(now),
                     };
-                    new_grade.insert(db).await.map_err(|e| e.to_string())?;
+                    new_grade.insert(&txn).await?;
                 }
             }
         }
         import_count += 1;
     }
 
+    txn.commit().await?;
     Ok(format!("Berhasil mengimpor {} data siswa beserta nilainya dari berkas Excel untuk Konsentrasi Keahlian '{}'", import_count, major.name))
-}
-
-fn populate_excel(
+}fn populate_excel(
     worksheet: &mut rust_xlsxwriter::Worksheet,
     program_name: &str,
     major_name: &str,
@@ -1544,24 +1525,24 @@ fn populate_excel(
 }
 
 /// Mengekspor nilai siswa ke berkas Excel berdasarkan konsentrasi keahlian.
-pub async fn export_grades_to_excel_core(
-    db: &DatabaseConnection,
+pub async fn export_grades_to_excel_core<C: ConnectionTrait>(
+    db: &C,
     major_id: &str,
     path: &std::path::Path,
-) -> Result<String, String> {
+) -> Result<String, AppError> {
     // 1. Fetch Major
     let major = majors::Entity::find_by_id(major_id)
         .one(db)
         .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| "Konsentrasi Keahlian tidak ditemukan".to_string())?;
+        ?
+        .ok_or_else(|| AppError::NotFound { entity: "Major", field: "name", value: "unknown".to_string() })?;
 
     // 2. Fetch Program Name
     let program_name = if let Some(prog_id) = &major.program_id {
         programs::Entity::find_by_id(prog_id.clone())
             .one(db)
             .await
-            .map_err(|e| e.to_string())?
+            ?
             .map(|p| p.name)
             .unwrap_or_else(|| "TEKNIK MESIN".to_string())
     } else {
@@ -1573,13 +1554,13 @@ pub async fn export_grades_to_excel_core(
         .filter(students::Column::MajorId.eq(major.id.clone()))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let mappings = curriculum_subjects::Entity::find()
         .filter(curriculum_subjects::Column::MajorId.eq(major.id.clone()))
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let student_ids: Vec<String> = students_list.iter().map(|s| s.id.clone()).collect();
     let grades = if student_ids.is_empty() {
@@ -1589,18 +1570,18 @@ pub async fn export_grades_to_excel_core(
             .filter(student_grades::Column::StudentId.is_in(student_ids))
             .all(db)
             .await
-            .map_err(|e| e.to_string())?
+            ?
     };
 
     let subjects_list = subjects::Entity::find()
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     let semesters_list = semesters::Entity::find()
         .all(db)
         .await
-        .map_err(|e| e.to_string())?;
+        ?;
 
     // 5. Build dynamically sorted list of subject columns to export based on major's active mappings in the DB
     let mut columns_to_export = Vec::new();
@@ -1651,10 +1632,10 @@ pub async fn export_grades_to_excel_core(
         &students_list,
         &columns_to_export,
         &grades,
-    ).map_err(|e| format!("Gagal mengisi data Excel: {}", e))?;
+    ).map_err(|e| AppError::Excel(format!("Gagal mengisi data Excel: {}", e)))?;
 
     workbook.save(path)
-        .map_err(|e| format!("Gagal menyimpan berkas Excel: {}", e))?;
+        .map_err(|e| AppError::Excel(format!("Gagal menyimpan berkas Excel: {}", e)))?;
 
     Ok(format!("Berhasil mengekspor data ke {:?}", path.file_name().unwrap_or_default()))
 }

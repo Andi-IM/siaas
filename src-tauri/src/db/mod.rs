@@ -6,6 +6,7 @@ pub mod entities;
 pub mod migrations;
 pub mod commands;
 pub mod core;
+pub mod error;
 
 /// Establishes an async connection to the SQLite database file and executes PRAGMAs to enable WAL mode, foreign keys, and normal synchronous writes.
 pub async fn establish_connection(path: &Path) -> Result<DatabaseConnection, sea_orm::DbErr> {

@@ -31,6 +31,7 @@ chrono = { version = "0.4.38", features = ["serde"] }
 rfd = { version = "0.15", default-features = false }
 calamine = "0.26"
 rust_xlsxwriter = "0.64.0"
+thiserror = "2"
 
 [patch.crates-io]
 alloc-no-stdlib = { git = "https://github.com/dropbox/rust-alloc-no-stdlib", branch = "master" }

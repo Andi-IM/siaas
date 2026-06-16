@@ -454,12 +454,12 @@ async fn upsert_grade_invalid_value_should_fail() {
     // Try too high
     let result_high = upsert_student_grade_core(&db, &student.nis, &cs.id, 105.0).await;
     assert!(result_high.is_err());
-    assert_eq!(result_high.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(result_high.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
 
     // Try too low
     let result_low = upsert_student_grade_core(&db, &student.nis, &cs.id, -5.0).await;
     assert!(result_low.is_err());
-    assert_eq!(result_low.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(result_low.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
 }
 
 #[tokio::test]
@@ -479,7 +479,7 @@ async fn batch_upsert_grades_invalid_value_should_fail() {
     };
     let result_high = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_high]).await;
     assert!(result_high.is_err());
-    assert_eq!(result_high.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(result_high.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
 
     // Grade too low
     let batch_gs_low = GradeSummary {
@@ -489,7 +489,7 @@ async fn batch_upsert_grades_invalid_value_should_fail() {
     };
     let result_low = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_low]).await;
     assert!(result_low.is_err());
-    assert_eq!(result_low.unwrap_err(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(result_low.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
 }
 
 #[tokio::test]
@@ -510,7 +510,7 @@ async fn import_excel_invalid_structure_should_fail() {
 
     let result = import_grades_from_excel_core(&db, &temp_path).await;
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err(), "Berkas Excel tidak valid (minimal harus 8 baris)");
+    assert_eq!(result.unwrap_err().to_string(), "Berkas Excel tidak valid (minimal harus 8 baris)");
 
     if temp_path.exists() {
         let _ = std::fs::remove_file(temp_path);
@@ -540,7 +540,7 @@ async fn import_excel_invalid_header_should_fail() {
     let result = import_grades_from_excel_core(&db, &temp_path).await;
     assert!(result.is_err());
     assert_eq!(
-        result.unwrap_err(),
+        result.unwrap_err().to_string(),
         "Nama Konsentrasi Keahlian tidak ditemukan di sel A3 (format harus 'KONSENTRASI KEAHLIAN : NAMA')"
     );
 

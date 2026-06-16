@@ -19,5 +19,6 @@ This directory contains records of significant architecture decisions made in th
 *   [0007: View-Wrapper Pattern to Avoid Istanbul Ghost Lines](0007-view-wrapper-pattern.md)
 *   [0008: Abstract Core Logic from Tauri Commands for Test Coverage](0008-abstraksi-core-logic-tauri.md)
 *   [0009: SQLite Connection Consolidation and Success Path Testing](0009-konsolidasi-sqlite-pragma-dan-test-koneksi.md)
+*   [0010: Typed Error Handling, Generic Connection Traits, and Transaction Safety](0010-rust-error-handling-dan-transaction-safety.md)
 
 ## Lifecycle Status
