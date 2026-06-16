@@ -1,14 +1,104 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BugReportModal } from "@/components/BugReportModal";
-import { Database, Bug, AlertTriangle, RefreshCw } from "lucide-react";
+import { Database, Bug, AlertTriangle, RefreshCw, Download, Upload } from "lucide-react";
 
 export default function PengaturanView() {
+  const [appVersion, setAppVersion] = useState("Memuat...");
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
   const [loadingReset, setLoadingReset] = useState(false);
+  const [loadingExport, setLoadingExport] = useState(false);
+  const [loadingImport, setLoadingImport] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    const fetchVersion = async () => {
+      try {
+        if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+          const { invoke } = await import("@tauri-apps/api/core");
+          const ver = await invoke<string>("get_app_version");
+          setAppVersion(ver);
+        } else {
+          setAppVersion("0.1.0 (Development)");
+        }
+      } catch (err) {
+        console.error("Failed to fetch app version:", err);
+        setAppVersion("0.1.0");
+      }
+    };
+    fetchVersion();
+  }, []);
+
+  const handleExportDatabase = async () => {
+    setLoadingExport(true);
+    setStatusMsg(null);
+    try {
+      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("export_database");
+        setStatusMsg({
+          type: "success",
+          text: "Basis data berhasil diekspor!"
+        });
+      } else {
+        // Fallback for development browser
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setStatusMsg({
+          type: "success",
+          text: "[DEV MODE] Basis data disimulasikan berhasil diekspor."
+        });
+      }
+    } catch (err: any) {
+      if (err !== "Batal memilih lokasi penyimpanan") {
+        console.error("Failed to export database:", err);
+        setStatusMsg({
+          type: "error",
+          text: `Gagal mengekspor basis data: ${err.message || err}`
+        });
+      }
+    } finally {
+      setLoadingExport(false);
+    }
+  };
+
+  const handleImportDatabase = async () => {
+    const confirmImport = window.confirm(
+      "Apakah Anda yakin ingin mengimpor database baru? Tindakan ini akan menimpa database aktif Anda saat ini secara permanen."
+    );
+    if (!confirmImport) return;
+
+    setLoadingImport(true);
+    setStatusMsg(null);
+    try {
+      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+        const { invoke } = await import("@tauri-apps/api/core");
+        await invoke("import_database");
+        setStatusMsg({
+          type: "success",
+          text: "Basis data berhasil diimpor!"
+        });
+      } else {
+        // Fallback for development browser
+        await new Promise((resolve) => setTimeout(resolve, 1200));
+        setStatusMsg({
+          type: "success",
+          text: "[DEV MODE] Basis data disimulasikan berhasil diimpor."
+        });
+      }
+    } catch (err: any) {
+      if (err !== "Batal memilih berkas database") {
+        console.error("Failed to import database:", err);
+        setStatusMsg({
+          type: "error",
+          text: `Gagal mengimpor basis data: ${err.message || err}`
+        });
+      }
+    } finally {
+      setLoadingImport(false);
+    }
+  };
 
   const handleResetDatabase = async () => {
     setLoadingReset(true);
@@ -43,11 +133,27 @@ export default function PengaturanView() {
 
   return (
     <div className="container" style={{ padding: "var(--gutter)", maxWidth: "800px", margin: "0 auto" }}>
-      <header style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "24px", fontWeight: 600, color: "var(--color-fg)" }}>Pengaturan Sistem</h1>
-        <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", marginTop: "4px" }}>
-          Kelola basis data lokal dan lakukan pelaporan diagnostik kendala sistem.
-        </p>
+      <header style={{ marginBottom: "2rem", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <div>
+          <h1 style={{ fontSize: "24px", fontWeight: 600, color: "var(--color-fg)" }}>Pengaturan Sistem</h1>
+          <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", marginTop: "4px" }}>
+            Kelola basis data lokal dan lakukan pelaporan diagnostik kendala sistem.
+          </p>
+        </div>
+        <div 
+          style={{
+            padding: "6px 12px",
+            backgroundColor: "var(--color-bg-card, #ffffff)",
+            border: "1px solid var(--color-border)",
+            borderRadius: "6px",
+            fontSize: "12px",
+            color: "var(--color-fg-muted)",
+            fontWeight: 500
+          }}
+          data-testid="app-version-badge"
+        >
+          Versi: {appVersion}
+        </div>
       </header>
 
       {statusMsg && (
@@ -84,7 +190,7 @@ export default function PengaturanView() {
           </div>
 
           <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", lineHeight: "1.5", marginBottom: "1.5rem" }}>
-            Aplikasi SIAAS menyimpan seluruh catatan siswa secara lokal menggunakan SQLite. Jika basis data Anda mengalami kerusakan struktural atau Anda ingin membersihkan seluruh data untuk memulai dari awal, gunakan opsi reset di bawah ini.
+            Aplikasi SIAAS menyimpan seluruh catatan siswa secara lokal menggunakan SQLite. Anda dapat mengekspor salinan database Anda untuk keperluan cadangan (backup), mengimpor database cadangan yang sudah ada, atau mereset seluruh database jika terjadi kerusakan struktural.
           </p>
 
           <div 
@@ -101,9 +207,9 @@ export default function PengaturanView() {
           >
             <AlertTriangle size={18} style={{ color: "#d97706", flexShrink: 0, marginTop: "2px" }} />
             <div>
-              <h4 style={{ fontSize: "13px", fontWeight: 600, color: "#92400e" }}>Tindakan Destruktif!</h4>
+              <h4 style={{ fontSize: "13px", fontWeight: 600, color: "#92400e" }}>Tindakan Pengelolaan Data!</h4>
               <p style={{ fontSize: "12px", color: "#b45309", marginTop: "2px", lineHeight: "1.4" }}>
-                Tindakan ini akan menghapus berkas data lokal secara permanen. Semua data sekolah, siswa, nilai, dan kurikulum akan hilang sepenuhnya dan tidak dapat dikembalikan.
+                Proses impor dan reset database adalah tindakan destruktif. Data aktif yang ada di sistem saat ini akan digantikan atau dihapus secara permanen. Pastikan Anda telah mengekspor database cadangan terlebih dahulu sebelum melakukan impor atau reset.
               </p>
             </div>
           </div>
@@ -151,29 +257,82 @@ export default function PengaturanView() {
               </div>
             </div>
           ) : (
-            <button
-              onClick={() => setResetConfirm(true)}
-              data-testid="reset-db-button"
-              style={{
-                backgroundColor: "#fef2f2",
-                color: "#dc2626",
-                border: "1px solid #fca5a5",
-                borderRadius: "6px",
-                padding: "8px 16px",
-                fontSize: "13px",
-                fontWeight: 500,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s"
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#fee2e2"}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#fef2f2"}
-            >
-              <RefreshCw size={14} />
-              Reset & Buat Ulang Database
-            </button>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+              <button
+                onClick={handleExportDatabase}
+                disabled={loadingExport || loadingImport}
+                data-testid="export-db-button"
+                style={{
+                  backgroundColor: "#ffffff",
+                  color: "var(--color-fg)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "6px",
+                  padding: "8px 16px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "var(--color-bg-hover, #f1f5f9)"; }}
+                onMouseLeave={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "#ffffff"; }}
+              >
+                <Download size={14} />
+                {loadingExport ? "Mengekspor..." : "Ekspor Database"}
+              </button>
+
+              <button
+                onClick={handleImportDatabase}
+                disabled={loadingExport || loadingImport}
+                data-testid="import-db-button"
+                style={{
+                  backgroundColor: "#ffffff",
+                  color: "var(--color-fg)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "6px",
+                  padding: "8px 16px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "var(--color-bg-hover, #f1f5f9)"; }}
+                onMouseLeave={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "#ffffff"; }}
+              >
+                <Upload size={14} />
+                {loadingImport ? "Mengimpor..." : "Impor Database"}
+              </button>
+
+              <button
+                onClick={() => setResetConfirm(true)}
+                disabled={loadingExport || loadingImport}
+                data-testid="reset-db-button"
+                style={{
+                  backgroundColor: "#fef2f2",
+                  color: "#dc2626",
+                  border: "1px solid #fca5a5",
+                  borderRadius: "6px",
+                  padding: "8px 16px",
+                  fontSize: "13px",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s"
+                }}
+                onMouseEnter={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "#fee2e2"; }}
+                onMouseLeave={(e) => { if (!loadingExport && !loadingImport) e.currentTarget.style.backgroundColor = "#fef2f2"; }}
+              >
+                <RefreshCw size={14} />
+                Reset Database
+              </button>
+            </div>
           )}
         </section>
 

@@ -68,6 +68,86 @@ async fn reset_database(
   Ok(())
 }
 
+#[tauri::command]
+async fn export_database(app_handle: tauri::AppHandle) -> Result<(), String> {
+  let app_data_dir = app_handle.path().app_data_dir()
+    .map_err(|e| e.to_string())?;
+  let db_path = app_data_dir.join("sias.db");
+
+  if !db_path.exists() {
+    return Err("Berkas database tidak ditemukan.".to_string());
+  }
+
+  let file_path = rfd::FileDialog::new()
+    .add_filter("SQLite Database", &["db"])
+    .set_file_name("sias_export.db")
+    .save_file();
+
+  let dest_path = match file_path {
+    Some(p) => p,
+    None => return Err("Batal memilih lokasi penyimpanan".to_string()),
+  };
+
+  std::fs::copy(&db_path, &dest_path)
+    .map_err(|e| e.to_string())?;
+
+  Ok(())
+}
+
+#[tauri::command]
+async fn import_database(
+  app_handle: tauri::AppHandle,
+  db_conn: tauri::State<'_, DatabaseConnection>
+) -> Result<(), String> {
+  let file_path = rfd::FileDialog::new()
+    .add_filter("SQLite Database", &["db"])
+    .pick_file();
+
+  let src_path = match file_path {
+    Some(p) => p,
+    None => return Err("Batal memilih berkas database".to_string()),
+  };
+
+  // Close the database connection to release the lock on sias.db
+  db_conn.inner().close_by_ref().await
+    .map_err(|e| e.to_string())?;
+
+  // Resolve database path
+  let app_data_dir = app_handle.path().app_data_dir()
+    .map_err(|e| e.to_string())?;
+  let db_path = app_data_dir.join("sias.db");
+  let wal_path = app_data_dir.join("sias.db-wal");
+  let shm_path = app_data_dir.join("sias.db-shm");
+
+  // Delete database files (sias.db, sias.db-wal, sias.db-shm)
+  let _ = std::fs::remove_file(&db_path);
+  let _ = std::fs::remove_file(&wal_path);
+  let _ = std::fs::remove_file(&shm_path);
+
+  // Copy imported file to sias.db
+  std::fs::copy(&src_path, &db_path)
+    .map_err(|e| e.to_string())?;
+
+  // Establish new connection
+  let new_conn = db::establish_connection(&db_path).await
+    .map_err(|e| e.to_string())?;
+
+  // Run migrations
+  let migration_manager = db::migrations::MigrationManager::new();
+  migration_manager.run(&new_conn).await
+    .map_err(|e| e.to_string())?;
+
+  // Re-manage the database connection in Tauri
+  app_handle.manage(new_conn);
+
+  Ok(())
+}
+
+#[tauri::command]
+fn get_app_version(app_handle: tauri::AppHandle) -> String {
+  app_handle.package_info().version.to_string()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
   tauri::Builder::default()
@@ -113,6 +193,9 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
         get_app_logs,
         reset_database,
+        export_database,
+        import_database,
+        get_app_version,
         db::commands::create_program,
         db::commands::get_programs,
         db::commands::update_program,
