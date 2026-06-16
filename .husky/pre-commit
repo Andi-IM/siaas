@@ -1,38 +1,39 @@
+#!/bin/bash
+
 # Ambil daftar file yang di-stage
 STAGED_FILES=$(git diff --cached --name-only)
 
-# Cek apakah ada file yang berpengaruh pada kode/test
-# Kriteria trigger:
-# 1. File di dalam folder src/
-# 2. File di dalam folder src-tauri/ (logic backend)
-# 3. Konfigurasi (package.json, tsconfig.json, vitest.config.mts, etc)
-# 4. File source (.ts, .tsx, .js, .jsx, .mts, .rs)
-
-TRIGGER_CHECKS=false
+# Flags untuk mendeteksi tipe perubahan
+RUST_CHANGES=false
+TS_CHANGES=false
 
 for FILE in $STAGED_FILES; do
-  if echo "$FILE" | grep -qE '^src/|^src-tauri/|^package\.json$|^tsconfig\.json$|^vitest\.config\.mts$|^\.github/|^\.env|\.(ts|tsx|js|jsx|mts|rs)$'; then
-    TRIGGER_CHECKS=true
-    break
+  # Deteksi perubahan Rust (Backend)
+  if echo "$FILE" | grep -qE '^src-tauri/|\.rs$|^Cargo\.(toml|lock)$'; then
+    RUST_CHANGES=true
+  fi
+  
+  # Deteksi perubahan TypeScript/JavaScript (Frontend)
+  # Kita exclude folder docs/ jika ada perubahan di sana
+  if echo "$FILE" | grep -qE '^src/|^package\.json$|^package-lock\.json$|^tsconfig\.json$|^vitest\.config\.mts$|^eslint\.config\.mjs$|\.(ts|tsx|js|jsx|mts)$'; then
+    # Jika hanya merubah file di docs/ atau asset di public/, jangan trigger TS_CHANGES
+    if ! echo "$FILE" | grep -qE '^docs/|^public/|^README\.md|^PRODUCT\.md|^DESIGN\.md|^GEMINI\.md'; then
+      TS_CHANGES=true
+    fi
   fi
 done
 
-if [ "$TRIGGER_CHECKS" = true ]; then
-  echo "🚀 Code changes detected. Running verification checks..."
-  
-  # Cek apakah ada file Rust yang diubah
-  RUST_CHANGES=false
-  for FILE in $STAGED_FILES; do
-    if echo "$FILE" | grep -qE '^src-tauri/|\.rs$'; then
-      RUST_CHANGES=true
-      break
-    fi
-  done
+# Jalankan Check Rust jika ada perubahan Rust
+if [ "$RUST_CHANGES" = true ]; then
+  echo "🦀 Rust changes detected. Running Rust tests..."
+  # Menggunakan --quiet untuk mengurangi output jika berhasil
+  cargo test --manifest-path src-tauri/Cargo.toml --quiet || exit 1
+  echo "✅ Rust tests passed!"
+fi
 
-  if [ "$RUST_CHANGES" = true ]; then
-    echo "🦀 Rust changes detected. Running Rust tests..."
-    cargo test --manifest-path src-tauri/Cargo.toml || exit 1
-  fi
+# Jalankan Check Frontend jika ada perubahan TS/JS
+if [ "$TS_CHANGES" = true ]; then
+  echo "🚀 TypeScript/JavaScript changes detected. Running Frontend checks..."
   
   echo "🔍 Running Linting..."
   npm run lint || exit 1
@@ -40,10 +41,13 @@ if [ "$TRIGGER_CHECKS" = true ]; then
   echo "🔍 Running Type-Checking..."
   npx tsc --noEmit || exit 1
   
-  echo "🧪 Running Tests..."
-  npm run test:coverage:full || exit 1
+  echo "🧪 Running Frontend Tests (Fast Mode)..."
+  # Menggunakan test:fast agar tidak membebani dengan coverage saat pre-commit
+  npm run test:fast || exit 1
   
-  echo "✅ All checks passed!"
-else
-  echo "📝 No code changes detected (only documentation or assets). Skipping checks."
+  echo "✅ Frontend checks passed!"
+fi
+
+if [ "$RUST_CHANGES" = false ] && [ "$TS_CHANGES" = false ]; then
+  echo "📝 No code changes detected. Skipping checks."
 fi
