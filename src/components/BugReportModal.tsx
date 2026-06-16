@@ -103,24 +103,25 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
             onClick={onClose}
             className={styles.closeButton}
             aria-label="Tutup"
+            data-testid="close-modal-button"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           </button>
         </div>
         
         {error && (
-          <div className={styles.error}>
+          <div className={styles.error} data-testid="bug-report-error">
             {error}
           </div>
         )}
 
         {success ? (
-          <div className={styles.success}>
+          <div className={styles.success} data-testid="bug-report-success">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             Laporan berhasil dikirim! Terima kasih atas bantuan Anda.
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <form onSubmit={handleSubmit} className={styles.form} data-testid="bug-report-form">
             <div className={styles.fieldGroup}>
               <label className={styles.label}>Judul Masalah</label>
               <input 
@@ -131,6 +132,7 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="Misal: Tombol Ekspor Excel tidak merespon"
+                data-testid="bug-title-input"
               />
             </div>
             
@@ -142,6 +144,7 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                 value={body}
                 onChange={e => setBody(e.target.value)}
                 placeholder="Ceritakan langkah-langkah yang Anda lakukan sebelum error terjadi... (Tekan Ctrl+Enter untuk kirim)"
+                data-testid="bug-body-input"
               />
             </div>
 
@@ -158,6 +161,7 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                 type="button" 
                 onClick={onClose}
                 className={`${styles.button} ${styles.buttonSecondary}`}
+                data-testid="cancel-bug-report-button"
               >
                 Batal
               </button>
@@ -165,6 +169,7 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
                 type="submit" 
                 disabled={loading || !title.trim() || !body.trim()}
                 className={`${styles.button} ${styles.buttonPrimary}`}
+                data-testid="submit-bug-report-button"
               >
                 {loading ? 'Mengirim...' : 'Kirim Laporan'}
               </button>

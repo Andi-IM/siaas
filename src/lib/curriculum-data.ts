@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran } from "./types";
+import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, TranscriptGroup, Semester } from "./types";
 import { isTauri } from "./tauri-utils";
 import { programs, concentrations, subjects } from "./mock-data";
 
@@ -13,6 +13,31 @@ export async function getPrograms(): Promise<ProgramKeahlian[]> {
     }
   }
   return [...programs];
+}
+
+export async function getSemesters(): Promise<Semester[]> {
+  if (isTauri()) {
+    try {
+      const dbSems = await invoke<{ id: string; code: string; name: string; sequence: number }[]>("get_semesters");
+      return dbSems.map(s => ({
+        id: s.id,
+        kode: s.code,
+        nama: s.name,
+        sequence: s.sequence
+      })).sort((a, b) => a.sequence - b.sequence);
+    } catch (e) {
+      console.error("Tauri get_semesters failed:", e);
+    }
+  }
+  return [
+    { id: "s1", kode: "SMT1", nama: "Semester 1", sequence: 1 },
+    { id: "s2", kode: "SMT2", nama: "Semester 2", sequence: 2 },
+    { id: "s3", kode: "SMT3", nama: "Semester 3", sequence: 3 },
+    { id: "s4", kode: "SMT4", nama: "Semester 4", sequence: 4 },
+    { id: "s5", kode: "SMT5", nama: "Semester 5", sequence: 5 },
+    { id: "s6", kode: "SMT6", nama: "Semester 6", sequence: 6 },
+    { id: "s99", kode: "UKK", nama: "Uji Kompetensi Keahlian", sequence: 99 }
+  ];
 }
 
 export async function getConcentrations(programId?: string): Promise<KonsentrasiKeahlian[]> {
@@ -50,6 +75,7 @@ export async function getSubjects(konsentrasiId?: string): Promise<MataPelajaran
         nama: s.name,
         kode: s.code,
         kategori: s.kategori as any,
+        transcriptGroup: (s.transcript_group as TranscriptGroup) ?? "UMUM",
         sequence: s.sequence,
         semesters: s.semesters,
         status: s.status as any
@@ -146,6 +172,7 @@ export async function addSubject(subject: Omit<MataPelajaran, "id">): Promise<Ma
           name: subject.nama,
           category: subject.kategori,
           status: subject.status,
+          transcriptGroup: subject.transcriptGroup,
           sequence: subject.sequence
         });
         subjectId = res.id;
@@ -175,7 +202,7 @@ export async function addSubject(subject: Omit<MataPelajaran, "id">): Promise<Ma
 export async function updateSubject(id: string, data: Partial<MataPelajaran>): Promise<void> {
   if (isTauri()) {
     try {
-      if (data.nama || data.kode || data.kategori || data.status || data.sequence !== undefined) {
+      if (data.nama || data.kode || data.kategori || data.status || data.transcriptGroup || data.sequence !== undefined) {
         const all = await invoke<any[]>("get_subjects");
         const current = all.find(s => s.id === id);
         if (current) {
@@ -185,6 +212,7 @@ export async function updateSubject(id: string, data: Partial<MataPelajaran>): P
             code: data.kode || current.code,
             category: data.kategori || current.category,
             status: data.status || current.status,
+            transcriptGroup: data.transcriptGroup || current.transcript_group,
             sequence: data.sequence !== undefined ? data.sequence : current.sequence
           });
         }

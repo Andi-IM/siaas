@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Printer, FileUp, FileDown, Edit3, Save, X } from "lucide-react";
 import Link from "next/link";
-import { getStudents, getPrograms, getConcentrations, getSubjects, getStudentGradesByFilter, saveGradesBatch, importGradesFromExcel, exportGradesToExcel } from "@/lib/data";
-import type { Student, ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, StudentGrade } from "@/lib/types";
+import { getStudents, getPrograms, getConcentrations, getSubjects, getStudentGradesByFilter, saveGradesBatch, importGradesFromExcel, exportGradesToExcel, getSemesters } from "@/lib/data";
+import type { Student, ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, StudentGrade, Semester } from "@/lib/types";
 
 function getCategoryWeight(cat: string): number {
   if (cat === "Kelompok Umum") return 1;
@@ -19,6 +19,7 @@ export default function RekapDataPage() {
   const [subjects, setSubjects] = useState<MataPelajaran[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [grades, setGrades] = useState<StudentGrade[]>([]);
+  const [semestersList, setSemestersList] = useState<Semester[]>([]);
 
   // Filters
   const [selectedProgramId, setSelectedProgramId] = useState("");
@@ -48,13 +49,15 @@ export default function RekapDataPage() {
     let active = true;
     async function loadInitial() {
       try {
-        const [studs, progs] = await Promise.all([
+        const [studs, progs, sems] = await Promise.all([
           getStudents(),
-          getPrograms()
+          getPrograms(),
+          getSemesters()
         ]);
         if (active) {
           setStudents(studs);
           setPrograms(progs);
+          setSemestersList(sems);
           if (progs.length > 0) setSelectedProgramId(progs[0].id);
         }
       } catch (e) {
@@ -126,6 +129,9 @@ export default function RekapDataPage() {
       if (wA !== wB) return wA - wB;
       return a.sequence - b.sequence;
     });
+
+  const activeSemesterInfo = semestersList.find(s => s.sequence === selectedSemester);
+  const activeSemesterName = activeSemesterInfo ? activeSemesterInfo.nama : `Semester ${selectedSemester}`;
 
   const handlePrint = () => {
     window.print();
@@ -289,7 +295,7 @@ export default function RekapDataPage() {
         <div className="form-field semester-field">
           <label className="label-md" htmlFor="select-semester">Semester</label>
           <select id="select-semester" className="filter-select" value={selectedSemester} onChange={e => setSelectedSemester(parseInt(e.target.value))}>
-            {[1, 2, 3, 4, 5, 6].map(s => <option key={s} value={s}>Semester {s}</option>)}
+            {semestersList.map(s => <option key={s.id} value={s.sequence}>{s.nama}</option>)}
           </select>
         </div>
       </section>
@@ -302,7 +308,7 @@ export default function RekapDataPage() {
           <h3 className="print-subtitle">SMKN 1 SUMATERA BARAT</h3>
           <div className="print-meta-grid">
             <div>Program Studi: {programs.find(p => p.id === selectedProgramId)?.nama || "—"}</div>
-            <div>Semester: {selectedSemester}</div>
+            <div>Semester: {activeSemesterName}</div>
             <div>Konsentrasi: {concentrations.find(k => k.id === selectedKonsentrasiId)?.nama || "—"}</div>
             <div>Tahun Pelajaran: 2024/2025</div>
           </div>
@@ -319,7 +325,7 @@ export default function RekapDataPage() {
                 <th rowSpan={2} className="th-center">L/P</th>
                 <th rowSpan={2} className="th-center">NIS</th>
                 <th rowSpan={2} className="th-center">NISN</th>
-                <th colSpan={filteredSubjects.length} className="th-center">MATA PELAJARAN (SEMESTER {selectedSemester})</th>
+                <th colSpan={filteredSubjects.length} className="th-center">MATA PELAJARAN ({activeSemesterName.toUpperCase()})</th>
               </tr>
               {/* Tier 2 Header */}
               <tr>

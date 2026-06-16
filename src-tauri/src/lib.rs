@@ -30,10 +30,11 @@ async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 async fn reset_database(
   app_handle: tauri::AppHandle,
-  db_conn: tauri::State<'_, DatabaseConnection>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
 ) -> Result<(), String> {
   // Close the database connection to release the lock on sias.db
-  db_conn.inner().close_by_ref().await
+  let mut db_conn = db_conn_state.write().await;
+  db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
   // Resolve database path
@@ -45,9 +46,22 @@ async fn reset_database(
   let wal_path = app_data_dir.join("sias.db-wal");
   let shm_path = app_data_dir.join("sias.db-shm");
   
-  let _ = std::fs::remove_file(&db_path);
-  let _ = std::fs::remove_file(&wal_path);
-  let _ = std::fs::remove_file(&shm_path);
+  // Solusi 1: Lakukan beberapa kali percobaan dengan jeda waktu karena OS (Windows) membutuhkan waktu untuk melepas file handle
+  let mut deleted = false;
+  for _i in 0..5 {
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    let db_removed = std::fs::remove_file(&db_path).is_ok();
+    let _ = std::fs::remove_file(&wal_path);
+    let _ = std::fs::remove_file(&shm_path);
+    if db_removed || !db_path.exists() {
+      deleted = true;
+      break;
+    }
+  }
+
+  if !deleted && db_path.exists() {
+    return Err("Gagal menghapus berkas basis data lama karena masih terkunci oleh sistem.".to_string());
+  }
 
   // Create empty file again
   std::fs::File::create(&db_path)
@@ -63,7 +77,7 @@ async fn reset_database(
     .map_err(|e| e.to_string())?;
 
   // Re-manage the database connection in Tauri
-  app_handle.manage(new_conn);
+  *db_conn = new_conn;
 
   Ok(())
 }
@@ -97,7 +111,7 @@ async fn export_database(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn import_database(
   app_handle: tauri::AppHandle,
-  db_conn: tauri::State<'_, DatabaseConnection>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
 ) -> Result<(), String> {
   let file_path = rfd::FileDialog::new()
     .add_filter("SQLite Database", &["db"])
@@ -109,7 +123,8 @@ async fn import_database(
   };
 
   // Close the database connection to release the lock on sias.db
-  db_conn.inner().close_by_ref().await
+  let mut db_conn = db_conn_state.write().await;
+  db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
   // Resolve database path
@@ -119,10 +134,22 @@ async fn import_database(
   let wal_path = app_data_dir.join("sias.db-wal");
   let shm_path = app_data_dir.join("sias.db-shm");
 
-  // Delete database files (sias.db, sias.db-wal, sias.db-shm)
-  let _ = std::fs::remove_file(&db_path);
-  let _ = std::fs::remove_file(&wal_path);
-  let _ = std::fs::remove_file(&shm_path);
+  // Solusi 1: Lakukan beberapa kali percobaan dengan jeda waktu karena OS (Windows) membutuhkan waktu untuk melepas file handle
+  let mut deleted = false;
+  for _i in 0..5 {
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    let db_removed = std::fs::remove_file(&db_path).is_ok();
+    let _ = std::fs::remove_file(&wal_path);
+    let _ = std::fs::remove_file(&shm_path);
+    if db_removed || !db_path.exists() {
+      deleted = true;
+      break;
+    }
+  }
+
+  if !deleted && db_path.exists() {
+    return Err("Gagal menghapus berkas basis data lama karena masih terkunci oleh sistem.".to_string());
+  }
 
   // Copy imported file to sias.db
   std::fs::copy(&src_path, &db_path)
@@ -138,7 +165,7 @@ async fn import_database(
     .map_err(|e| e.to_string())?;
 
   // Re-manage the database connection in Tauri
-  app_handle.manage(new_conn);
+  *db_conn = new_conn;
 
   Ok(())
 }
@@ -167,6 +194,12 @@ pub fn run() {
       if !db_path.exists() {
         std::fs::File::create(&db_path)?;
       }
+
+      // Clean up stale WAL/SHM files from a previous crashed session.
+      // These files can cause "database is locked" (code: 5) on startup
+      // because SQLite WAL recovery conflicts with new connection setup.
+      let _ = std::fs::remove_file(app_data_dir.join("sias.db-wal"));
+      let _ = std::fs::remove_file(app_data_dir.join("sias.db-shm"));
       
       // Backup database before running migrations
       if let Err(e) = db::backup_database(&db_path) {
@@ -186,7 +219,7 @@ pub fn run() {
       })?;
 
       // Manage database connection in Tauri state
-      app.manage(db_conn);
+      app.manage(tokio::sync::RwLock::new(db_conn));
 
       Ok(())
     })

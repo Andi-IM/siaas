@@ -28,7 +28,7 @@ To ensure valid test coverage and achieve 100%, we are adopting the **View-Wrapp
 
 ## Implementation Plan
 
-- **Affected paths**: This pattern is applied to all Next.js route pages (such as `src/app/siswa/tambah`, `src/app/siswa/detail`, and `src/app/siswa/edit`).
+- **Affected paths**: This pattern is applied to all Next.js route pages (such as `src/app/siswa/tambah`, `src/app/siswa/detail`, `src/app/siswa/edit`, dan `src/app/pengaturan`).
 - **Pattern**: Rendering the main `page.tsx` component inside the unit test file of the `[Page]View` component.
 - This policy is **mandatory** for all new page modules to prevent regressions in test coverage percentages.
 

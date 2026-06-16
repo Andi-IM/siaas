@@ -293,7 +293,7 @@ pub fn get_category_weight(cat: &str) -> i32 {
 /// let manager = MigrationManager::new();
 /// manager.run(&db).await.unwrap();
 ///
-/// let subject = create_subject_core(&db, "MTK", "Matematika", "Kelompok Umum", "active", 1).await.unwrap();
+/// let subject = create_subject_core(&db, "MTK", "Matematika", "Kelompok Umum", "active", "UMUM", 1).await.unwrap();
 /// assert_eq!(subject.code, "MTK");
 /// # });
 /// ```
@@ -303,6 +303,7 @@ pub async fn create_subject_core<C: ConnectionTrait>(
     name: impl Into<String>,
     category: impl Into<String>,
     status: impl Into<String>,
+    transcript_group: impl Into<String>,
     sequence: i32,
 ) -> Result<subjects::Model, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
@@ -314,6 +315,7 @@ pub async fn create_subject_core<C: ConnectionTrait>(
         name: Set(name.into()),
         category: Set(category.into()),
         status: Set(status.into()),
+        transcript_group: Set(transcript_group.into()),
         sequence: Set(sequence),
         created_at: Set(now.clone()),
         updated_at: Set(now),
@@ -353,6 +355,7 @@ pub async fn update_subject_core<C: ConnectionTrait>(
     code: impl Into<String>,
     category: impl Into<String>,
     status: impl Into<String>,
+    transcript_group: impl Into<String>,
     sequence: i32,
 ) -> Result<subjects::Model, AppError> {
     let existing = subjects::Entity::find_by_id(id)
@@ -366,6 +369,7 @@ pub async fn update_subject_core<C: ConnectionTrait>(
     active.code = Set(code.into());
     active.category = Set(category.into());
     active.status = Set(status.into());
+    active.transcript_group = Set(transcript_group.into());
     active.sequence = Set(sequence);
     active.updated_at = Set(now);
 
@@ -550,6 +554,7 @@ pub struct MataPelajaranData {
     pub name: String,
     pub code: String,
     pub kategori: String,
+    pub transcript_group: String,
     pub sequence: i32,
     pub semesters: Vec<i32>,
     pub status: String,
@@ -575,17 +580,18 @@ pub async fn get_subjects_by_major_core<C: ConnectionTrait>(
             ?
             .ok_or_else(|| AppError::NotFound { entity: "Subject", field: "id", value: m.subject_id.clone() })?;
 
-        let semester = semesters::Entity::find_by_id(m.semester_id)
+        let semester = semesters::Entity::find_by_id(m.semester_id.clone())
             .one(db)
             .await
             ?
-            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: "unknown".to_string() })?;
+            .ok_or_else(|| AppError::NotFound { entity: "Semester", field: "id", value: m.semester_id.clone() })?;
 
         let entry = result_map.entry(m.subject_id).or_insert(MataPelajaranData {
             id: subject.id,
             name: subject.name,
             code: subject.code,
             kategori: subject.category,
+            transcript_group: subject.transcript_group,
             sequence: subject.sequence,
             semesters: Vec::new(),
             status: subject.status,
@@ -910,6 +916,7 @@ pub struct StudentGradeDetail {
     pub subject_name: String,
     pub subject_code: String,
     pub category: String,
+    pub transcript_group: String,
     pub sequence: i32,
     pub semester_sequence: i32,
     pub grade: f64,
@@ -965,6 +972,7 @@ pub async fn get_grades_by_student_core<C: ConnectionTrait>(
             subject_name: subject.name,
             subject_code: subject.code,
             category: subject.category,
+            transcript_group: subject.transcript_group,
             sequence: subject.sequence,
             semester_sequence: semester.sequence,
             grade: g.grade,

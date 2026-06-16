@@ -46,12 +46,20 @@ export interface KonsentrasiKeahlian {
   nama: string;
 }
 
+export type TranscriptGroup =
+  | "UMUM"
+  | "KEJURUAN_UMUM"
+  | "KEJURUAN_DASAR"
+  | "KEJURUAN_KONSENTRASI"
+  | "UKK";
+
 export interface MataPelajaran {
   id: string;
   konsentrasiId: string;
   nama: string;
   kode: string;
   kategori: "Kelompok Umum" | "Kelompok Kejuruan";
+  transcriptGroup: TranscriptGroup;
   sequence: number;
   semesters: number[];
   status: "active" | "inactive";
@@ -61,4 +69,11 @@ export interface StudentGrade {
   studentId: string;
   subjectId: string;
   grade: number;
+}
+
+export interface Semester {
+  id: string;
+  kode: string;
+  nama: string;
+  sequence: number;
 }

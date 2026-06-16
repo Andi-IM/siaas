@@ -25,6 +25,9 @@ pub struct Model {
     /// Status of the subject (e.g., "active", "inactive").
     pub status: String,
 
+    /// Transcript aggregation group for diploma supplement calculations.
+    pub transcript_group: String,
+
     /// Manual sort order/sequence for document formatting.
     pub sequence: i32,
 

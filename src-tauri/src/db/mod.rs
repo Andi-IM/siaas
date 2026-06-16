@@ -1,5 +1,7 @@
-use sea_orm::{Database, DatabaseConnection, ConnectOptions, ConnectionTrait, Statement, DbBackend};
+use sea_orm::{DatabaseConnection, SqlxSqliteConnector};
+use sqlx::sqlite::{SqliteConnectOptions, SqliteJournalMode, SqlitePoolOptions, SqliteSynchronous};
 use std::path::Path;
+use std::str::FromStr;
 use std::time::Duration;
 
 pub mod entities;
@@ -8,38 +10,56 @@ pub mod commands;
 pub mod core;
 pub mod error;
 
-/// Establishes an async connection to the SQLite database file and executes PRAGMAs to enable WAL mode, foreign keys, and normal synchronous writes.
+/// Establishes an async connection pool to the SQLite database file.
+///
+/// Uses SQLx's `SqliteConnectOptions` to configure WAL mode, foreign keys, and
+/// synchronous mode at the **driver level** (per-connection), rather than as a
+/// manual PRAGMA sent through the pool after creation.
+///
+/// This is critical because `PRAGMA journal_mode = WAL` requires **exclusive access**
+/// (no other connections may be open). Sending it through a pool that already has
+/// multiple idle connections causes (code: 5) "database is locked" errors.
+/// By embedding WAL in `SqliteConnectOptions`, each connection sets it atomically
+/// on open, which is safe and race-free.
 pub async fn establish_connection(path: &Path) -> Result<DatabaseConnection, sea_orm::DbErr> {
     let path_str = path.to_string_lossy().replace("\\", "/");
     let url = format!("sqlite:{}", path_str);
 
-    let mut opt = ConnectOptions::new(url);
-    opt.max_connections(10)
-        .min_connections(2)
-        .connect_timeout(Duration::from_secs(5))
-        .acquire_timeout(Duration::from_secs(5))
-        .idle_timeout(Duration::from_secs(5))
-        .max_lifetime(Duration::from_secs(5));
+    let connect_opts = SqliteConnectOptions::from_str(&url)
+        .map_err(|e| sea_orm::DbErr::Conn(sea_orm::RuntimeErr::Internal(e.to_string())))?
+        .journal_mode(SqliteJournalMode::Wal)
+        .foreign_keys(true)
+        .synchronous(SqliteSynchronous::Normal)
+        .create_if_missing(false);
 
-    let db = Database::connect(opt).await?;
-    configure_sqlite_pragmas(&db).await?;
-    Ok(db)
+    let pool = SqlitePoolOptions::new()
+        .max_connections(10)
+        .min_connections(1)
+        .acquire_timeout(Duration::from_secs(10))
+        .idle_timeout(Duration::from_secs(10))
+        .max_lifetime(Duration::from_secs(30))
+        .connect_with(connect_opts)
+        .await
+        .map_err(|e| sea_orm::DbErr::Conn(sea_orm::RuntimeErr::Internal(e.to_string())))?;
+
+    Ok(SqlxSqliteConnector::from_sqlx_sqlite_pool(pool))
 }
 
-/// Establishes an in-memory SQLite connection for testing and runs PRAGMAs.
+/// Establishes an in-memory SQLite connection for testing.
 pub async fn establish_in_memory_connection() -> Result<DatabaseConnection, sea_orm::DbErr> {
-    let url = "sqlite::memory:";
-    let db = Database::connect(url).await?;
-    configure_sqlite_pragmas(&db).await?;
-    Ok(db)
-}
+    let connect_opts = SqliteConnectOptions::from_str("sqlite::memory:")
+        .map_err(|e| sea_orm::DbErr::Conn(sea_orm::RuntimeErr::Internal(e.to_string())))?
+        .foreign_keys(true)
+        .synchronous(SqliteSynchronous::Normal)
+        .create_if_missing(true);
 
-/// Executes common SQLite configuration pragmas (WAL mode, foreign keys, normal synchronous writes).
-async fn configure_sqlite_pragmas(db: &DatabaseConnection) -> Result<(), sea_orm::DbErr> {
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA foreign_keys = ON;".to_string())).await?;
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA journal_mode = WAL;".to_string())).await?;
-    db.execute(Statement::from_string(DbBackend::Sqlite, "PRAGMA synchronous = NORMAL;".to_string())).await?;
-    Ok(())
+    let pool = SqlitePoolOptions::new()
+        .max_connections(5)
+        .connect_with(connect_opts)
+        .await
+        .map_err(|e| sea_orm::DbErr::Conn(sea_orm::RuntimeErr::Internal(e.to_string())))?;
+
+    Ok(SqlxSqliteConnector::from_sqlx_sqlite_pool(pool))
 }
 
 /// Backups the database before running migrations, retaining the last 5 backups.
@@ -81,17 +101,10 @@ pub fn backup_database(db_path: &Path) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sea_orm::{MockDatabase, DbErr};
 
     #[tokio::test]
-    async fn test_configure_sqlite_pragmas_failure() {
-        let db = MockDatabase::new(sea_orm::DatabaseBackend::Sqlite)
-            .append_exec_errors(vec![
-                DbErr::Query(sea_orm::RuntimeErr::Internal("Mocked failure".to_string()))
-            ])
-            .into_connection();
-
-        let result = configure_sqlite_pragmas(&db).await;
-        assert!(result.is_err());
+    async fn test_establish_in_memory_connection() {
+        let result = establish_in_memory_connection().await;
+        assert!(result.is_ok(), "In-memory connection should succeed");
     }
 }
