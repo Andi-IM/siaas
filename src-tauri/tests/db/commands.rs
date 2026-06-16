@@ -548,3 +548,183 @@ async fn import_excel_invalid_header_should_fail() {
         let _ = std::fs::remove_file(temp_path);
     }
 }
+
+// ==========================================
+// ADDITIONAL COVERAGE TESTS
+// ==========================================
+
+use app_lib::db::error::AppError;
+
+#[test]
+fn category_weight_should_return_correct_values() {
+    assert_eq!(get_category_weight("Kelompok Umum"), 1);
+    assert_eq!(get_category_weight("Kelompok Kejuruan"), 2);
+    assert_eq!(get_category_weight("Unknown Category"), 99);
+    assert_eq!(get_category_weight(""), 99);
+}
+
+#[tokio::test]
+async fn get_batches_should_return_all_batches() {
+    let db = setup_test_db().await;
+    create_batch_core(&db, 2024).await.unwrap();
+    create_batch_core(&db, 2025).await.unwrap();
+
+    let batches = get_batches_core(&db).await.unwrap();
+    assert_eq!(batches.len(), 2);
+}
+
+#[tokio::test]
+async fn get_students_should_return_all_students() {
+    let db = setup_test_db().await;
+    let major = create_major_core(&db, "TKJ", "Teknik Komputer", None).await.unwrap();
+    
+    let mut s1 = make_test_student_payload(major.id.clone());
+    s1.nis = "001".into();
+    s1.nisn = "0011".into();
+    s1.full_name = "Budi".into();
+    
+    let mut s2 = make_test_student_payload(major.id.clone());
+    s2.nis = "002".into();
+    s2.nisn = "0022".into();
+    s2.full_name = "Ani".into();
+
+    create_student_core(&db, s1).await.unwrap();
+    create_student_core(&db, s2).await.unwrap();
+
+    let students = get_students_core(&db).await.unwrap();
+    assert!(students.len() >= 2);
+    let names: Vec<&str> = students.iter().map(|s| s.full_name.as_str()).collect();
+    assert!(names.contains(&"Budi"));
+    assert!(names.contains(&"Ani"));
+}
+
+#[tokio::test]
+async fn get_subjects_should_return_sorted_by_category_weight_then_sequence() {
+    let db = setup_test_db().await;
+    // Create subjects in random order
+    create_subject_core(&db, "KJ1", "Kejuruan 1", "Kelompok Kejuruan", "active", 1).await.unwrap();
+    create_subject_core(&db, "UM2", "Umum 2", "Kelompok Umum", "active", 2).await.unwrap();
+    create_subject_core(&db, "UM1", "Umum 1", "Kelompok Umum", "active", 1).await.unwrap();
+    create_subject_core(&db, "KJ2", "Kejuruan 2", "Kelompok Kejuruan", "active", 2).await.unwrap();
+
+    let subjects = get_subjects_core(&db).await.unwrap();
+    assert_eq!(subjects.len(), 4);
+    // Verify sort order: Umum (weight=1) before Kejuruan (weight=2), then by sequence
+    assert_eq!(subjects[0].code, "UM1");
+    assert_eq!(subjects[1].code, "UM2");
+    assert_eq!(subjects[2].code, "KJ1");
+    assert_eq!(subjects[3].code, "KJ2");
+}
+
+#[tokio::test]
+async fn get_curriculum_subjects_should_return_all_mappings() {
+    let db = setup_test_db().await;
+    let (major, batch, semester, subject, _) = setup_curriculum_and_grade_test_env(&db).await;
+    let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
+        .await
+        .unwrap();
+
+    let all_cs = get_curriculum_subjects_core(&db).await.unwrap();
+    assert!(!all_cs.is_empty());
+    assert!(all_cs.iter().any(|c| c.id == cs.id));
+}
+
+#[tokio::test]
+async fn get_subjects_by_major_should_group_semesters_and_sort() {
+    let db = setup_test_db().await;
+    let prog = create_program_core(&db, "P1").await.unwrap();
+    let major = create_major_core(&db, "RPL", "Rekayasa Perangkat Lunak", Some(prog.id)).await.unwrap();
+    
+    // Create semesters 1 and 2
+    create_semester_core(&db, "S1", "Semester 1", 1).await.unwrap();
+    create_semester_core(&db, "S2", "Semester 2", 2).await.unwrap();
+    
+    // Create 2 subjects: one mapped to 2 semesters, one to 1
+    let subj_a = create_subject_core(&db, "A", "Subject A", "Kelompok Umum", "active", 1).await.unwrap();
+    let subj_b = create_subject_core(&db, "B", "Subject B", "Kelompok Kejuruan", "active", 1).await.unwrap();
+    
+    // Assign subj_a to semesters 1 and 2, subj_b to semester 1
+    assign_subject_to_semesters_core(&db, &major.id, &subj_a.id, vec![1, 2]).await.unwrap();
+    assign_subject_to_semesters_core(&db, &major.id, &subj_b.id, vec![1]).await.unwrap();
+
+    let result = get_subjects_by_major_core(&db, &major.id).await.unwrap();
+    
+    assert_eq!(result.len(), 2);
+    // Sorted: Umum (A) before Kejuruan (B)
+    assert_eq!(result[0].code, "A");
+    assert_eq!(result[0].semesters, vec![1, 2]);
+    assert_eq!(result[1].code, "B");
+    assert_eq!(result[1].semesters, vec![1]);
+}
+
+#[tokio::test]
+async fn get_student_grades_should_return_all_grades() {
+    let db = setup_test_db().await;
+    let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+    
+    let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
+        .await
+        .unwrap();
+    
+    upsert_student_grade_core(&db, &student.nis, &cs.id, 85.0).await.unwrap();
+
+    let grades = get_student_grades_core(&db).await.unwrap();
+    assert_eq!(grades.len(), 1);
+    assert_eq!(grades[0].grade, 85.0);
+}
+
+#[tokio::test]
+async fn get_grades_by_filter_should_return_matching_grades() {
+    let db = setup_test_db().await;
+    let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+    
+    let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
+        .await
+        .unwrap();
+    
+    upsert_student_grade_core(&db, &student.nis, &cs.id, 90.0).await.unwrap();
+
+    let grades = get_grades_by_filter_core(&db, &major.id, 1).await.unwrap();
+    assert!(!grades.is_empty());
+    assert_eq!(grades[0].grade, 90.0);
+}
+
+#[tokio::test]
+async fn get_grades_by_filter_with_no_matching_semester_should_return_error() {
+    let db = setup_test_db().await;
+    let prog = create_program_core(&db, "P1").await.unwrap();
+    let major = create_major_core(&db, "TKJ", "Test", Some(prog.id)).await.unwrap();
+    
+    let result = get_grades_by_filter_core(&db, &major.id, 999).await;
+    assert!(result.is_err()); // Semester 999 not found
+}
+
+#[tokio::test]
+async fn update_program_nonexistent_should_return_not_found() {
+    let db = setup_test_db().await;
+    let result = update_program_core(&db, "nonexistent-id", "New Name").await;
+    assert!(matches!(result, Err(AppError::NotFound { entity: "Program", .. })));
+}
+
+#[tokio::test]
+async fn update_major_nonexistent_should_return_not_found() {
+    let db = setup_test_db().await;
+    let result = update_major_core(&db, "nonexistent-id", "New", "NEW", None).await;
+    assert!(matches!(result, Err(AppError::NotFound { entity: "Major", .. })));
+}
+
+#[tokio::test]
+async fn update_subject_nonexistent_should_return_not_found() {
+    let db = setup_test_db().await;
+    let result = update_subject_core(&db, "nonexistent-id", "N", "N", "N", "active", 1).await;
+    assert!(matches!(result, Err(AppError::NotFound { entity: "Subject", .. })));
+}
+
+#[tokio::test]
+async fn update_student_nonexistent_should_return_not_found() {
+    let db = setup_test_db().await;
+    let dummy = make_test_student_payload("dummy".to_string());
+    let result = update_student_core(&db, "nonexistent-nis", dummy).await;
+    assert!(matches!(result, Err(AppError::NotFound { entity: "Student", .. })));
+}
+

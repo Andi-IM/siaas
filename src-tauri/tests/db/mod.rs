@@ -37,3 +37,31 @@ async fn test_establish_connection_success() {
         let _ = std::fs::remove_file(db_path);
     }
 }
+
+#[test]
+fn io_error_should_convert_to_app_error() {
+    use app_lib::db::error::AppError;
+    let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+    let app_err: AppError = io_err.into();
+    let display = format!("{}", app_err);
+    assert!(display.contains("file not found"));
+}
+
+#[test]
+fn app_error_should_serialize_with_serde() {
+    use app_lib::db::error::AppError;
+    let err = AppError::Validation("test error".to_string());
+    let json = serde_json::to_string(&err).unwrap();
+    assert!(json.contains("test error"));
+}
+
+#[test]
+fn app_error_io_should_serialize_with_serde() {
+    use app_lib::db::error::AppError;
+    let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+    let err: AppError = io_err.into();
+    let json = serde_json::to_string(&err).unwrap();
+    assert!(json.contains("file not found"));
+}
+
+

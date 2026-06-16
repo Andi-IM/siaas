@@ -27,3 +27,20 @@ async fn test_migrations_applied() {
         assert_eq!(count, 1, "Table '{}' should exist in database schema", table);
     }
 }
+
+#[tokio::test]
+async fn migration_rollback_should_succeed() {
+    use app_lib::db::establish_in_memory_connection;
+    use app_lib::db::migrations::MigrationManager;
+
+    let db = establish_in_memory_connection().await.unwrap();
+    let manager = MigrationManager::new();
+    
+    // Run first
+    manager.run(&db).await.unwrap();
+    
+    // Then rollback
+    let result = manager.rollback(&db, 0).await;
+    assert!(result.is_ok());
+}
+
