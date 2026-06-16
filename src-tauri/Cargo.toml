@@ -34,3 +34,5 @@ rust_xlsxwriter = "0.64.0"
 
 [patch.crates-io]
 alloc-no-stdlib = { git = "https://github.com/dropbox/rust-alloc-no-stdlib", branch = "master" }
+
+

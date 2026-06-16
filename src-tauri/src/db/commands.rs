@@ -969,25 +969,13 @@ pub struct SubjectColumn {
     pub category: String,
 }
 
-#[tauri::command]
-pub async fn import_grades_from_excel(
-    state: State<'_, DatabaseConnection>,
+pub async fn import_grades_from_excel_core(
+    db: &DatabaseConnection,
+    path: &std::path::Path,
 ) -> Result<String, String> {
-    let db = state.inner();
-
-    // 1. Open File Dialog using rfd
-    let file_path = rfd::FileDialog::new()
-        .add_filter("Excel Files", &["xlsx"])
-        .pick_file();
-
-    let path = match file_path {
-        Some(p) => p,
-        None => return Err("Batal memilih berkas".to_string()),
-    };
-
     // 2. Open Workbook using calamine
     use calamine::{Reader, open_workbook_auto, Data};
-    let mut excel = open_workbook_auto(&path)
+    let mut excel = open_workbook_auto(path)
         .map_err(|e| format!("Gagal membuka berkas Excel: {}", e))?;
 
     let sheet_name = excel.sheet_names().first()
@@ -1145,7 +1133,7 @@ pub async fn import_grades_from_excel(
             _ => String::new(),
         };
 
-        if nis.is_empty() {
+        if name.is_empty() || nis.is_empty() {
             continue;
         }
 
@@ -1163,12 +1151,11 @@ pub async fn import_grades_from_excel(
                 let new_student = students::ActiveModel {
                     id: Set(id.clone()),
                     major_id: Set(major.id.clone()),
-                    full_name: Set(name),
+                    full_name: Set(name.clone()),
                     nis: Set(nis.clone()),
-                    nisn: Set(nisn),
+                    nisn: Set(nisn.clone()),
                     place_of_birth: Set(Some(tempat_lahir)),
                     date_of_birth: Set(Some(tanggal_lahir)),
-                    gender: Set(Some("L".to_string())),
                     created_at: Set(now.clone()),
                     updated_at: Set(now),
                     ..Default::default()
@@ -1238,20 +1225,20 @@ pub async fn import_grades_from_excel(
                 .await
                 .map_err(|e| e.to_string())?;
 
-            let now = chrono::Utc::now().to_rfc3339();
             match existing {
                 Some(record) => {
                     let mut active: student_grades::ActiveModel = record.into();
                     active.grade = Set(grade_val);
-                    active.updated_at = Set(now);
+                    active.updated_at = Set(chrono::Utc::now().to_rfc3339());
                     active.update(db).await.map_err(|e| e.to_string())?;
                 }
                 None => {
                     let id = uuid::Uuid::new_v4().to_string();
+                    let now = chrono::Utc::now().to_rfc3339();
                     let new_grade = student_grades::ActiveModel {
                         id: Set(id),
                         student_id: Set(student.id.clone()),
-                        curriculum_subject_id: Set(mapping.id.clone()),
+                        curriculum_subject_id: Set(mapping.id),
                         grade: Set(grade_val),
                         created_at: Set(now.clone()),
                         updated_at: Set(now),
@@ -1264,6 +1251,25 @@ pub async fn import_grades_from_excel(
     }
 
     Ok(format!("Berhasil mengimpor {} data siswa beserta nilainya dari berkas Excel untuk Konsentrasi Keahlian '{}'", import_count, major.name))
+}
+
+#[tauri::command]
+pub async fn import_grades_from_excel(
+    state: State<'_, DatabaseConnection>,
+) -> Result<String, String> {
+    let db = state.inner();
+
+    // 1. Open File Dialog using rfd
+    let file_path = rfd::FileDialog::new()
+        .add_filter("Excel Files", &["xlsx"])
+        .pick_file();
+
+    let path = match file_path {
+        Some(p) => p,
+        None => return Err("Batal memilih berkas".to_string()),
+    };
+
+    import_grades_from_excel_core(db, &path).await
 }
 
 fn populate_excel(
@@ -1518,12 +1524,11 @@ fn populate_excel(
 }
 
 #[tauri::command]
-pub async fn export_grades_to_excel(
-    state: State<'_, DatabaseConnection>,
+pub async fn export_grades_to_excel_core(
+    db: &DatabaseConnection,
     major_id: String,
+    path: &std::path::Path,
 ) -> Result<String, String> {
-    let db = state.inner();
-
     // 1. Fetch Major
     let major = majors::Entity::find_by_id(major_id)
         .one(db)
@@ -1541,17 +1546,6 @@ pub async fn export_grades_to_excel(
             .unwrap_or_else(|| "TEKNIK MESIN".to_string())
     } else {
         "TEKNIK MESIN".to_string()
-    };
-
-    // 3. Open Save File Dialog using rfd
-    let file_path = rfd::FileDialog::new()
-        .add_filter("Excel Files", &["xlsx"])
-        .set_file_name(&format!("rekap_nilai_{}.xlsx", major.name.replace(" ", "_")))
-        .save_file();
-
-    let path = match file_path {
-        Some(p) => p,
-        None => return Err("Batal menyimpan berkas".to_string()),
     };
 
     // 4. Fetch data from DB
@@ -1639,10 +1633,38 @@ pub async fn export_grades_to_excel(
         &grades,
     ).map_err(|e| format!("Gagal mengisi data Excel: {}", e))?;
 
-    workbook.save(&path)
+    workbook.save(path)
         .map_err(|e| format!("Gagal menyimpan berkas Excel: {}", e))?;
 
     Ok(format!("Berhasil mengekspor data ke {:?}", path.file_name().unwrap_or_default()))
+}
+
+#[tauri::command]
+pub async fn export_grades_to_excel(
+    state: State<'_, DatabaseConnection>,
+    major_id: String,
+) -> Result<String, String> {
+    let db = state.inner();
+
+    // 1. Fetch Major
+    let major = majors::Entity::find_by_id(major_id.clone())
+        .one(db)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or_else(|| "Konsentrasi Keahlian tidak ditemukan".to_string())?;
+
+    // 3. Open Save File Dialog using rfd
+    let file_path = rfd::FileDialog::new()
+        .add_filter("Excel Files", &["xlsx"])
+        .set_file_name(&format!("rekap_nilai_{}.xlsx", major.name.replace(" ", "_")))
+        .save_file();
+
+    let path = match file_path {
+        Some(p) => p,
+        None => return Err("Batal menyimpan berkas".to_string()),
+    };
+
+    export_grades_to_excel_core(db, major_id, &path).await
 }
 
 #[cfg(test)]
