@@ -1,12 +1,6 @@
 # Architecture Decision Records (ADR)
 
-This directory contains records of significant architecture decisions made in the SIAAS project.
-
-## Index
-
-# Architecture Decision Records (ADR)
-
-This directory contains records of significant architecture decisions made in the SIAAS project.
+This directory contains records of significant architecture decisions made in the SIAS project.
 
 ## Index
 
@@ -20,5 +14,9 @@ This directory contains records of significant architecture decisions made in th
 *   [0008: Abstract Core Logic from Tauri Commands for Test Coverage](0008-abstraksi-core-logic-tauri.md)
 *   [0009: SQLite Connection Consolidation and Success Path Testing](0009-konsolidasi-sqlite-pragma-dan-test-koneksi.md)
 *   [0010: Typed Error Handling, Generic Connection Traits, and Transaction Safety](0010-rust-error-handling-dan-transaction-safety.md)
+*   [0011: Coverage Gap Closure - Read Operations](0011-coverage-gap-closure-read-operations.md)
+*   [0012: Integration Testing Strategy for Sea-ORM Entities](0012-integration-testing-sea-orm.md)
 
 ## Lifecycle Status
+
+All ADRs in this directory follow the status lifecycle defined in ADR 0001.

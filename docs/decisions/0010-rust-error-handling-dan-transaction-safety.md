@@ -162,14 +162,14 @@ pub async fn assign_subject_to_semesters_core<C: ConnectionTrait>(
 
 ### Verification
 
-- [ ] `cargo build` compiles without errors
-- [ ] `cargo clippy --all-targets -- -D warnings` passes with no warnings
-- [ ] `cargo test` — all existing tests pass
-- [ ] No `.map_err(|e| e.to_string())` calls remain inside `core.rs` (only in `commands.rs`)
-- [ ] All `_core` functions use generic `<C: ConnectionTrait>` parameter
-- [ ] `assign_subject_to_semesters_core`, `batch_upsert_grades_core`, `import_grades_from_excel_core` use explicit transactions
-- [ ] `AppError` enum has at least variants: `Database`, `Validation`, `NotFound`, `Duplicate`, `Excel`
-- [ ] Integration tests assert on `AppError` variants (not string comparisons) where applicable
+- [x] `cargo build` compiles without errors
+- [x] `cargo clippy --all-targets -- -D warnings` passes with no warnings
+- [x] `cargo test` — all existing tests pass
+- [x] No `.map_err(|e| e.to_string())` calls remain inside `core.rs` (only in `commands.rs`)
+- [x] All `_core` functions use generic `<C: ConnectionTrait>` parameter
+- [x] `assign_subject_to_semesters_core`, `batch_upsert_grades_core`, `import_grades_from_excel_core` use explicit transactions
+- [x] `AppError` enum has at least variants: `Database`, `Validation`, `NotFound`, `Duplicate`, `Excel`
+- [x] Integration tests assert on `AppError` variants (not string comparisons) where applicable
 
 ## Alternatives Considered
 

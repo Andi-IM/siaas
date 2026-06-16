@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -25,8 +25,20 @@ jobs:
       - name: Run Lint
         run: npm run lint
 
-      - name: Run Tests with Coverage
-        run: npm run test:coverage
+      - name: Run Frontend Tests (Vitest)
+        run: npm test
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
+
+      - name: Run Backend Tests (Rust)
+        working-directory: ./src-tauri
+        run: cargo test
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4

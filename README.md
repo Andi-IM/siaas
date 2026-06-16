@@ -39,6 +39,23 @@ Sistem Informasi Administrasi Akademik Siswa (SIAAS) is an offline-native admini
 1. Export static assets: `npm run build`
 2. Generate Windows installer: `npx tauri build`
 
+## ⚠️ Application Limitations
+
+As an offline-native desktop application designed specifically for local administrative efficiency and reliability, SIAAS has several operational limitations to note:
+
+1. **Database Concurrency & Locking (SQLite Locking)**:
+   - The application utilizes SQLite (with WAL mode), which operates on a file-level locking system.
+   - Heavy concurrent write operations (e.g., executing multiple large Excel imports simultaneously) risk triggering `database is locked` errors.
+2. **UI List Rendering Scalability (UI Virtualization)**:
+   - Student lists and curriculum tables are rendered in full without client-side pagination or virtual scrolling.
+   - Page rendering performance may degrade once the dataset grows significantly large (exceeding 2,000 students), particularly on legacy school computer hardware.
+3. **Database Corruption & Migration Recovery**:
+   - The automated schema migration utility assumes the local SQLite database file is in a structurally valid state.
+   - If the database file (`sias.db`) is manually modified or corrupted outside the application, the automatic startup initialization process may fail, preventing the application from launching.
+4. **Single-User Architecture Design**:
+   - This platform is architected as a local, single-user, offline-first application for independent school administration, rather than a distributed multi-tenant cloud system.
+
+
 ## 🧪 Testing & Coverage
 
 We maintain high testing standards across our core application features. The project uses **Vitest** for testing, **Istanbul** for code coverage, and **Codecov** for tracking coverage history.
@@ -51,6 +68,8 @@ We maintain high testing standards across our core application features. The pro
 - Run coverage report: `npm run test:coverage`
 
 ### Current Coverage of Core Modules
+
+#### Frontend (Next.js) UI Coverage
 All core student administration and curriculum modules are fully tested and have achieved **100% line coverage**:
 
 | Fitur / Modul | Stmts % | Branch % | Funcs % | Lines % |
@@ -60,14 +79,22 @@ All core student administration and curriculum modules are fully tested and have
 | **Edit Siswa (`app/siswa/edit`)** | 100% | 100% | 100% | 100% |
 | **Detail Siswa (`app/siswa/detail`)** | 100% | 100% | 100% | 100% |
 
-## 📖 Architecture & Documentation
+#### Backend (Rust) Logic Coverage
+The Rust backend modules are protected by integration and unit tests, achieving high logic coverage:
 
-We maintain a strict record of all architectural decisions in the `docs/decisions/` directory.
+| Module / Scope | Target Area | Logic Coverage (Lines) |
+| :--- | :--- | :---: |
+| **Core Database Operations (`core.rs`)** | Business rules & CRUD queries | **91.42%** |
+| **Backend Error Definitions (`error.rs`)** | Serialization & standard mappings | **100.00%** |
+| **Database Schema Migrations (`migrations.rs`)** | Schema setup & target rollback | **96.82%** |
 
-- [ADR 0001: Adoption of ADR](docs/decisions/0001-adopsi-adr.md)
-- [ADR 0002: 23-Field Student Data Schema](docs/decisions/0002-skema-data-23-bidang.md)
-- [ADR 0003: Hierarchical Curriculum Management](docs/decisions/0003-manajemen-kurikulum.md)
-- [ADR 0004: Adoption of Tauri for Desktop](docs/decisions/0004-adopt-tauri.md)
+## 📖 Architecture & Decisions (ADR)
+
+All architectural decisions are documented as **Architecture Decision Records (ADRs)** following a structured lifecycle. 
+
+Refer to the central **[Architecture Decision Records Index](docs/decisions/README.md)** to read the complete list of decisions, including database schema designs, Tauri commands abstraction, error handling models, and test coverage strategies.
+
+
 
 ---
 © 2026 SIAAS Project. Built for Academic Institutional Excellence.

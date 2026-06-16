@@ -120,10 +120,10 @@ Test `MigrationManager::rollback` to verify it executes without error.
 
 ### Verification
 
-- [ ] `cargo test` — all new and existing tests pass
-- [ ] `cargo llvm-cov --json` — `core.rs` coverage ≥ 90%
-- [ ] `cargo clippy --all-targets -- -D warnings` — no new warnings
-- [ ] No regressions in existing test suite
+- [x] `cargo test` — all new and existing tests pass
+- [x] `cargo llvm-cov --json` — `core.rs` coverage ≥ 90%
+- [x] `cargo clippy --all-targets -- -D warnings` — no new warnings
+- [x] No regressions in existing test suite
 
 ## Alternatives Considered
 
