@@ -197,7 +197,7 @@ export default function CurriculumPage() {
               <button className="icon-btn" onClick={() => openModal("program")} title="Tambah Program"><Plus size={14} /></button>
             </div>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 4 }}>
-              {programs.map(p => (
+              {programs.length > 0 ? programs.map(p => (
                 <li key={p.id} style={{ display: "flex", gap: 4 }}>
                   <button 
                     onClick={() => setSelectedProgramId(p.id)}
@@ -214,7 +214,13 @@ export default function CurriculumPage() {
                   </button>
                   <button className="icon-btn" style={{ height: 36 }} onClick={() => openModal("program", p.id)}><Pencil size={12} /></button>
                 </li>
-              ))}
+              )) : (
+                <li>
+                  <p className="body-sm" style={{ color: "var(--on-surface-variant)", fontStyle: "italic", padding: "8px 12px" }} data-testid="empty-program">
+                    Belum ada program keahlian
+                  </p>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -247,7 +253,9 @@ export default function CurriculumPage() {
                 ))}
               </ul>
             ) : (
-              <p className="body-sm" style={{ color: "var(--on-surface-variant)", fontStyle: "italic" }}>{selectedProgramId ? "Belum ada konsentrasi" : "Pilih program keahlian"}</p>
+              <p className="body-sm" style={{ color: "var(--on-surface-variant)", fontStyle: "italic" }} data-testid="empty-konsentrasi">
+                {selectedProgramId ? "Belum ada konsentrasi" : "Pilih program keahlian"}
+              </p>
             )}
           </div>
         </aside>
@@ -321,7 +329,7 @@ export default function CurriculumPage() {
               </div>
             </div>
           ) : (
-            <div className="empty-state card" style={{ height: "400px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
+            <div className="empty-state card" style={{ height: "400px", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }} data-testid="empty-subjects">
                <LayoutGrid size={48} style={{ color: "var(--outline-variant)", marginBottom: 16 }} />
                <h2 className="headline-sm">Pilih Konsentrasi Keahlian</h2>
                <p className="body-md" style={{ color: "var(--on-surface-variant)" }}>Pilih salah satu konsentrasi di sebelah kiri untuk mengelola mata pelajaran.</p>

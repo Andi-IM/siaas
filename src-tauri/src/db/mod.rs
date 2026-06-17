@@ -9,6 +9,7 @@ pub mod migrations;
 pub mod commands;
 pub mod core;
 pub mod error;
+pub mod paths;
 
 /// Establishes an async connection pool to the SQLite database file.
 ///

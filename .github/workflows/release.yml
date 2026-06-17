@@ -28,10 +28,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install Frontend Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
