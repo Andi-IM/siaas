@@ -9,6 +9,9 @@ on:
 jobs:
   test:
     runs-on: windows-latest
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
 
     steps:
       - uses: actions/checkout@v4
@@ -43,10 +46,15 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           workspaces: "src-tauri"
+          cache-targets: true
+          shared-key: ${{ runner.os }}
+
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
 
       - name: Run Backend Tests (Rust)
         working-directory: ./src-tauri
-        run: cargo test
+        run: cargo nextest run --profile ci --locked
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
