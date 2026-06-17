@@ -15,7 +15,8 @@ Kami mengimplementasikan strategi seeding database menggunakan skrip SQL modular
     - Menginisialisasi data Program Keahlian, Jurusan (Majors), Batches (Angkatan 2024), Semesters (1-6 dan UKK), Subjects (Mata Pelajaran Kelompok Umum & Kejuruan).
     - Memetakan mata pelajaran ke kurikulum angkatan 2024 melalui tabel `curriculum_subjects`.
 2.  **Seed Students (`seed_students.sql`)**:
-    - Memasukkan 5 data siswa sampel dengan ID tetap dan profil valid yang terhubung ke jurusan Teknik Pemesinan (TP) dan Teknik Mekanik Industri (TMI).
+    - Memasukkan 5 data siswa sampel dengan ID tetap dan profil **lengkap** (seluruh 25 kolom terisi: data pribadi, akademik, orang tua, dan wali) yang terhubung ke jurusan Teknik Pemesinan (TP) dan Teknik Mekanik Industri (TMI).
+    - Data menggunakan lokasi realistis di Sumatera Barat (Padang, Bukittinggi, Solok, Payakumbuh, Pariaman) sesuai konteks SMK Negeri 1 Sumatera Barat.
 3.  **Seed Student Grades (`seed_grades.sql`)**:
     - Skrip yang di-generate secara otomatis untuk menghubungkan 5 siswa dengan seluruh 78 mata pelajaran kurikulum yang relevan dengan jurusan mereka.
     - Memasukkan total 390 entri nilai akademis (`student_grades`) dengan rentang nilai yang realistis dan bervariasi berdasarkan profil akademis masing-masing siswa (misalnya Ahmad Fauzi dengan profil nilai tinggi, Eko Prasetyo dengan profil nilai bervariasi).

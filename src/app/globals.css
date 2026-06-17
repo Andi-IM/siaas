@@ -1182,3 +1182,14 @@ select.form-input {
     flex-wrap: wrap;
   }
 }
+
+/* ── Spin Animation (loading indicators) ── */
+
+.spin {
+  animation: spin-rotate 1s linear infinite;
+}
+
+@keyframes spin-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
