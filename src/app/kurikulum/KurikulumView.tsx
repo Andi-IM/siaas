@@ -10,7 +10,7 @@ import {
 } from "@/lib/data";
 import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran } from "@/lib/types";
 
-type ModalType = "program" | "concentration" | "subject" | null;
+type ModalType = "program" | "concentration" | "subject" | "deleteSubject" | null;
 
 export default function CurriculumPage() {
   // Data State
@@ -22,6 +22,7 @@ export default function CurriculumPage() {
 
   // Modal State
   const [modal, setModal] = useState<{ type: ModalType; editId: string | null }>({ type: null, editId: null });
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; nama: string } | null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   // Form State
@@ -164,16 +165,22 @@ export default function CurriculumPage() {
     closeModal();
   };
 
-  const handleDeleteSubject = async (id: string) => {
-    if (confirm("Hapus mata pelajaran ini?")) {
-      try {
-        await deleteSubject(id);
-        const subjs = await getSubjects(selectedKonsentrasiId!);
-        setSubjects(subjs);
-      } catch (e) {
-        console.error("Failed to delete subject:", e);
-      }
+  const handleDeleteSubject = async () => {
+    if (!deleteTarget) return;
+    try {
+      await deleteSubject(deleteTarget.id);
+      const subjs = await getSubjects(selectedKonsentrasiId!);
+      setSubjects(subjs);
+    } catch (e) {
+      console.error("Failed to delete subject:", e);
     }
+    setDeleteTarget(null);
+    closeModal();
+  };
+
+  const openDeleteModal = (id: string, nama: string) => {
+    setDeleteTarget({ id, nama });
+    setModal({ type: "deleteSubject", editId: null });
   };
 
   return (
@@ -311,7 +318,7 @@ export default function CurriculumPage() {
                           <td className="table-data">
                             <div className="action-cell" style={{ justifyContent: "flex-end" }}>
                               <button className="icon-btn" title="Edit" onClick={() => openModal("subject", m.id)}><Pencil size={14} /></button>
-                              <button className="icon-btn icon-btn--danger" title="Hapus" onClick={() => handleDeleteSubject(m.id)}><Trash2 size={14} /></button>
+                              <button className="icon-btn icon-btn--danger" title="Hapus" onClick={() => openDeleteModal(m.id, m.nama)}><Trash2 size={14} /></button>
                             </div>
                           </td>
                         </tr>
@@ -443,6 +450,18 @@ export default function CurriculumPage() {
                 <button type="submit" className="btn btn--primary" disabled={subjectForm.semesters.length === 0}>Simpan Mapel</button>
               </div>
             </form>
+          )}
+        {modal.type === "deleteSubject" && (
+            <div className="confirm-dialog__inner">
+              <h2 className="headline-sm" style={{ marginBottom: "var(--gutter)" }}>Hapus Mata Pelajaran</h2>
+              <p className="body-md" style={{ marginBottom: "calc(var(--spacing-base) * 6)" }}>
+                Hapus mata pelajaran <strong>{deleteTarget?.nama}</strong>? Data yang sudah dihapus tidak dapat dikembalikan.
+              </p>
+              <div className="confirm-dialog__actions">
+                <button className="btn btn--danger" onClick={handleDeleteSubject}>Hapus</button>
+                <button className="btn btn--secondary" onClick={closeModal}>Batal</button>
+              </div>
+            </div>
           )}
         </div>
       </dialog>

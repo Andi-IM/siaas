@@ -97,6 +97,9 @@ Mata Pelajaran (Mapel) diatur spesifik berdasarkan Konsentrasi Keahlian.
 ### Menghapus Mata Pelajaran
 1. Cari mata pelajaran yang ingin dihapus pada tabel.
 2. Pada kolom "Aksi", klik tombol berikon tempat sampah (Hapus).
-3. Akan muncul dialog konfirmasi penghapusan. 
-4. Klik **OK** atau **Yes** untuk menyetujui penghapusan.
+3. Dialog konfirmasi akan muncul menampilkan nama mata pelajaran yang akan dihapus.
+
+![Modal Konfirmasi Hapus Mata Pelajaran](./images/kurikulum_hapus_mapel_modal.png)
+
+4. Klik **Hapus** untuk mengonfirmasi, atau klik **Batal** untuk membatalkan.
 5. Baris mata pelajaran akan dihapus dari daftar secara permanen.

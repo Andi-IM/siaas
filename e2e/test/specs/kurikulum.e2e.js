@@ -51,9 +51,10 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
-        await browser.saveScreenshot(path.join(imgDir, 'kurikulum_tambah_program_modal.png'));
-
+        // Wait for the form content to fully render inside the modal
         const inputField = await modal.$('input.form-input');
+        await expect(inputField).toBeDisplayed();
+        await browser.saveScreenshot(path.join(imgDir, 'kurikulum_tambah_program_modal.png'));
         await inputField.setValue(programName);
 
         const simpanBtn = await modal.$('button=Simpan Program');
@@ -78,9 +79,11 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
+        // Wait for the form content to fully render inside the modal
+        const inputField = await modal.$('input.form-input');
+        await expect(inputField).toBeDisplayed();
         await browser.saveScreenshot(path.join(imgDir, 'kurikulum_edit_program_modal.png'));
 
-        const inputField = await modal.$('input.form-input');
         await inputField.setValue(programNameEdited);
 
         const simpanBtn = await modal.$('button=Simpan Program');
@@ -106,9 +109,11 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
+        // Wait for the form content to fully render inside the modal
+        const inputField = await modal.$('input.form-input');
+        await expect(inputField).toBeDisplayed();
         await browser.saveScreenshot(path.join(imgDir, 'kurikulum_tambah_konsentrasi_modal.png'));
 
-        const inputField = await modal.$('input.form-input');
         await inputField.setValue(konsentrasiName);
 
         const simpanBtn = await modal.$('button=Simpan Konsentrasi');
@@ -136,9 +141,11 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
+        // Wait for the form content to fully render inside the modal
+        const inputField = await modal.$('input.form-input');
+        await expect(inputField).toBeDisplayed();
         await browser.saveScreenshot(path.join(imgDir, 'kurikulum_edit_konsentrasi_modal.png'));
 
-        const inputField = await modal.$('input.form-input');
         await inputField.setValue(konsentrasiNameEdited);
 
         const simpanBtn = await modal.$('button=Simpan Konsentrasi');
@@ -166,10 +173,15 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
+
+        // Wait for the form content to fully render inside the modal (3 inputs + checkboxes)
+        const inputs = await modal.$$('input.form-input');
+        await expect(inputs[0]).toBeDisplayed();
+        await expect(inputs[1]).toBeDisplayed();
+        await expect(inputs[2]).toBeDisplayed();
         await browser.saveScreenshot(path.join(imgDir, 'kurikulum_tambah_mapel_modal.png'));
 
         // Inputs: No Urut, Kode Mapel, Nama Mapel
-        const inputs = await modal.$$('input.form-input');
         await inputs[0].setValue('99');
         await inputs[1].setValue(mapelKode);
         await inputs[2].setValue(mapelNama);
@@ -205,9 +217,14 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const modal = await $('dialog[open]');
         await expect(modal).toBeDisplayed();
+
+        // Wait for the form content to fully render inside the modal
+        const inputs = await modal.$$('input.form-input');
+        await expect(inputs[0]).toBeDisplayed();
+        await expect(inputs[1]).toBeDisplayed();
+        await expect(inputs[2]).toBeDisplayed();
         await browser.saveScreenshot(path.join(imgDir, 'kurikulum_edit_mapel_modal.png'));
 
-        const inputs = await modal.$$('input.form-input');
         await inputs[2].setValue(mapelNamaEdited);
 
         const simpanBtn = await modal.$('button=Simpan Mapel');
@@ -228,15 +245,23 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
 
         const mapelRow = await $(`//tr[td[contains(text(), "${mapelKode}")]]`);
         const deleteBtn = await mapelRow.$('button[title="Hapus"]');
-
-        // Mock window.confirm BEFORE clicking
-        await browser.execute(() => {
-            window.confirm = () => true;
-        });
-
         await deleteBtn.click();
-        await browser.pause(500);
 
+        // Wait for the delete confirmation modal
+        const modal = await $('dialog[open]');
+        await expect(modal).toBeDisplayed();
+
+        // Verify modal content rendered — wait for heading
+        const modalHeading = await modal.$('h2*=Hapus Mata Pelajaran');
+        await expect(modalHeading).toBeDisplayed();
+        await browser.saveScreenshot(path.join(imgDir, 'kurikulum_hapus_mapel_modal.png'));
+
+        // Click the confirm delete button
+        const confirmBtn = await modal.$('button.btn--danger');
+        await confirmBtn.click();
+
+        // Wait for the modal to close and row to be removed
+        await expect(modal).not.toBeDisplayed();
         const deletedRow = await $(`//tr[td[contains(text(), "${mapelKode}")]]`);
         await expect(deletedRow).not.toBeExisting();
     });

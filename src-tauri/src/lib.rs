@@ -268,7 +268,11 @@ pub fn run() {
         db::commands::get_grades_by_student,
         db::commands::get_student_grades,
         db::commands::import_grades_from_excel,
-        db::commands::export_grades_to_excel
+        db::commands::import_grades_from_excel_test,
+        db::commands::export_grades_to_excel,
+        db::commands::export_grades_to_excel_test,
+        db::commands::export_transcript_pdf,
+        db::commands::export_transcript_pdf_test
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

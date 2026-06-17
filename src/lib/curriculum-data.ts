@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, Semester } from "./types";
+import type { ProgramKeahlian, KonsentrasiKeahlian, MataPelajaran, TranscriptGroup, Semester } from "./types";
 import { isTauri } from "./tauri-utils";
 import { programs, concentrations, subjects } from "./mock-data";
 
@@ -75,6 +75,7 @@ export async function getSubjects(konsentrasiId?: string): Promise<MataPelajaran
         nama: s.name,
         kode: s.code,
         kategori: s.kategori as any,
+        transcriptGroup: (s.transcript_group as TranscriptGroup) ?? "UMUM",
         sequence: s.sequence,
         semesters: s.semesters,
         status: s.status as any
@@ -171,6 +172,7 @@ export async function addSubject(subject: Omit<MataPelajaran, "id">): Promise<Ma
           name: subject.nama,
           category: subject.kategori,
           status: subject.status,
+          transcriptGroup: subject.transcriptGroup,
           sequence: subject.sequence
         });
         subjectId = res.id;
@@ -200,7 +202,7 @@ export async function addSubject(subject: Omit<MataPelajaran, "id">): Promise<Ma
 export async function updateSubject(id: string, data: Partial<MataPelajaran>): Promise<void> {
   if (isTauri()) {
     try {
-      if (data.nama || data.kode || data.kategori || data.status || data.sequence !== undefined) {
+      if (data.nama || data.kode || data.kategori || data.status || data.transcriptGroup || data.sequence !== undefined) {
         const all = await invoke<any[]>("get_subjects");
         const current = all.find(s => s.id === id);
         if (current) {
@@ -210,6 +212,7 @@ export async function updateSubject(id: string, data: Partial<MataPelajaran>): P
             code: data.kode || current.code,
             category: data.kategori || current.category,
             status: data.status || current.status,
+            transcriptGroup: data.transcriptGroup || current.transcript_group,
             sequence: data.sequence !== undefined ? data.sequence : current.sequence
           });
         }
