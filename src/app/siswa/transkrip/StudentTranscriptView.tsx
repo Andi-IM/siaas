@@ -124,7 +124,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       : 0;
   });
 
-  // --- Pendamping Ijazah Data ---
+  // --- Transkrip Nilai Data ---
 
   const pendampingCategories: PendampingCategory[] = React.useMemo(() => {
     // Build a map: subjectId → { name, sequence, transcriptGroup, grades: Map<semesterSeq, grade> }
@@ -301,7 +301,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
               onClick={() => setMode("pendamping")}
               style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0 }}
             >
-              Pendamping Ijazah
+              Transkrip Nilai
             </button>
           </div>
           <button className="btn btn--secondary" style={{ gap: 8 }}>
@@ -363,7 +363,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       </div>
       )}
 
-      {/* ── Pendamping Ijazah Screen View ── */}
+      {/* ── Transkrip Nilai Screen View ── */}
       {mode === "pendamping" && (
       <div className="table-container no-print">
         <table className="data-table">
@@ -487,7 +487,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       </div>
       )}
 
-      {/* ── Pendamping Ijazah Print Layout ── */}
+      {/* ── Transkrip Nilai Print Layout ── */}
       {mode === "pendamping" && (
       <div className="print-only" style={{ display: "none" }}>
         <h2 style={{ textAlign: "center", fontSize: "12pt", fontWeight: "bold", textDecoration: "underline", marginBottom: 4 }}>
