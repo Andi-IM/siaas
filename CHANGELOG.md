@@ -1,3 +1,14 @@
+# [1.2.0](https://github.com/Andi-IM/siaas/compare/v1.1.0...v1.2.0) (2026-06-17)
+
+
+### Features
+
+* add student seed data and implement StudentTranscriptView component ([9d2f23f](https://github.com/Andi-IM/siaas/commit/9d2f23f0376d0f44be839641efddc56d04998791))
+* implement student transcript view with multi-format PDF export support and project documentation ([a958ede](https://github.com/Andi-IM/siaas/commit/a958edeaa2ddf725880fb549f8bf1ae5dc6bf8da))
+* Merge pull request [#6](https://github.com/Andi-IM/siaas/issues/6) from Andi-IM/feat/student_transcript ([b67e051](https://github.com/Andi-IM/siaas/commit/b67e0515996ebbc61a95d67902f502f17f2a29cb))
+* Merge pull request [#7](https://github.com/Andi-IM/siaas/issues/7) from Andi-IM/dev ([66f0fa1](https://github.com/Andi-IM/siaas/commit/66f0fa15307cf673e0795da5dd31959a64505262))
+* Merge pull request [#8](https://github.com/Andi-IM/siaas/issues/8) from Andi-IM/test/student_transcript ([dc93ce8](https://github.com/Andi-IM/siaas/commit/dc93ce88d9ce53d9b847077f5c981587053add70))
+
 # [1.1.0](https://github.com/Andi-IM/siaas/compare/v1.0.0...v1.1.0) (2026-06-16)
 
 
