@@ -31,7 +31,7 @@ describe('Rekap Data Hasil Belajar E2E Tests', () => {
                     await browser.pause(500);
                 }
             }
-        } catch (e) {
+        } catch {
             // No dialog open, continue
         }
     });

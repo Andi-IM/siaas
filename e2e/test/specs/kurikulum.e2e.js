@@ -32,7 +32,7 @@ describe('Kurikulum (Curriculum) Full CRUD to Database', () => {
                     await browser.pause(500);
                 }
             }
-        } catch (e) {}
+        } catch {}
     });
 
     it('1. should navigate to Kurikulum page', async () => {

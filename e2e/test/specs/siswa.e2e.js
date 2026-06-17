@@ -32,7 +32,7 @@ describe('Siswa (Students) Full CRUD to Database', () => {
                     await browser.pause(500);
                 }
             }
-        } catch (e) {}
+        } catch {}
     });
 
     it('1. should navigate to Siswa page and verify list view', async () => {
