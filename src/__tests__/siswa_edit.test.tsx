@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import EditPage from "@/app/siswa/edit/page";
 import { EditFallback } from "@/app/siswa/edit/EditSiswaView";
 import { getStudentByNis, updateStudent } from "@/lib/data";
-import { getConcentrations } from "@/lib/curriculum-data";
 
 // Mock router and search params
 const mockPush = vi.fn();
