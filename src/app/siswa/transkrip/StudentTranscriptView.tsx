@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { ArrowLeft, Printer, Download } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ArrowLeft, Printer, Download, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { Student, MataPelajaran } from "@/lib/types";
 import { getStudentByNis, getGradesByStudent, getConcentrations, getSubjects } from "@/lib/data";
 import React from "react";
+import html2canvas from "html2canvas-pro";
+import { jsPDF } from "jspdf";
 
 interface TranscriptSubject {
   no: number;
@@ -38,6 +40,91 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
   const [grades, setGrades] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<TranscriptMode>("3-tahun");
+  const [exporting, setExporting] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
+
+  const handleExportPdf = useCallback(async () => {
+    const el = printRef.current;
+    if (!el || !student) return;
+
+    setExporting(true);
+    try {
+      // Temporarily make print layout visible off-screen for capture
+      el.style.display = "block";
+      el.style.position = "fixed";
+      el.style.left = "-9999px";
+      el.style.top = "0";
+      el.style.width = "210mm"; // A4 width
+      el.style.background = "#fff";
+      el.style.padding = "0.8cm 1cm";
+      el.style.fontFamily = "'Times New Roman', Times, serif";
+      el.style.color = "#000";
+      el.style.zIndex = "-1";
+
+      // Wait for layout paint
+      await new Promise(r => setTimeout(r, 100));
+
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      // Restore hidden state
+      el.style.display = "none";
+      el.style.position = "";
+      el.style.left = "";
+      el.style.top = "";
+      el.style.width = "";
+      el.style.background = "";
+      el.style.padding = "";
+      el.style.fontFamily = "";
+      el.style.color = "";
+      el.style.zIndex = "";
+
+      // Create A4 portrait PDF
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const margin = 8; // mm
+      const contentWidth = pageWidth - margin * 2;
+      const imgHeight = (canvas.height * contentWidth) / canvas.width;
+      const imgData = canvas.toDataURL("image/png");
+
+      // Handle multi-page if content is taller than one page
+      const maxContentHeight = pageHeight - margin * 2;
+      if (imgHeight <= maxContentHeight) {
+        pdf.addImage(imgData, "PNG", margin, margin, contentWidth, imgHeight);
+      } else {
+        // Multi-page: slice the canvas
+        let yOffset = 0;
+        const sliceHeightPx = (maxContentHeight / imgHeight) * canvas.height;
+        while (yOffset < canvas.height) {
+          const sliceCanvas = document.createElement("canvas");
+          sliceCanvas.width = canvas.width;
+          const currentSliceH = Math.min(sliceHeightPx, canvas.height - yOffset);
+          sliceCanvas.height = currentSliceH;
+          const ctx = sliceCanvas.getContext("2d")!;
+          ctx.drawImage(canvas, 0, yOffset, canvas.width, currentSliceH, 0, 0, canvas.width, currentSliceH);
+          const sliceData = sliceCanvas.toDataURL("image/png");
+          const sliceImgHeight = (currentSliceH * contentWidth) / canvas.width;
+          if (yOffset > 0) pdf.addPage();
+          pdf.addImage(sliceData, "PNG", margin, margin, contentWidth, sliceImgHeight);
+          yOffset += currentSliceH;
+        }
+      }
+
+      const modeLabel = mode === "3-tahun" ? "3-Tahun" : "Transkrip-Nilai";
+      const safeName = student.nama.replace(/[^a-zA-Z0-9]/g, "_");
+      pdf.save(`Transkrip_${modeLabel}_${safeName}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      alert("Gagal mengekspor PDF. Silakan coba lagi.");
+    } finally {
+      setExporting(false);
+    }
+  }, [student, mode]);
 
   useEffect(() => {
     let active = true;
@@ -304,9 +391,14 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
               Transkrip Nilai
             </button>
           </div>
-          <button className="btn btn--secondary" style={{ gap: 8 }}>
-            <Download size={18} />
-            Export Data
+          <button
+            className="btn btn--secondary"
+            style={{ gap: 8 }}
+            onClick={handleExportPdf}
+            disabled={exporting}
+          >
+            {exporting ? <Loader2 size={18} className="spin" /> : <Download size={18} />}
+            {exporting ? "Mengekspor..." : "Simpan PDF"}
           </button>
           <button className="btn btn--primary" onClick={() => window.print()} style={{ gap: 8 }}>
             <Printer size={18} />
@@ -410,7 +502,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
 
       {/* ── Official Print Layout (Excel-style — 3 Tahun) ── */}
       {mode === "3-tahun" && (
-      <div className="print-only" style={{ display: "none" }}>
+      <div ref={mode === "3-tahun" ? printRef : undefined} className="print-only" style={{ display: "none" }}>
         <h2 style={{ textAlign: "center", fontSize: "12pt", fontWeight: "bold", marginBottom: 12 }}>
           TRANSKRIP NILAI <br /> SEKOLAH MENENGAH KEJURUAN PROGRAM 3 TAHUN
         </h2>
@@ -489,7 +581,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
 
       {/* ── Transkrip Nilai Print Layout ── */}
       {mode === "pendamping" && (
-      <div className="print-only" style={{ display: "none" }}>
+      <div ref={mode === "pendamping" ? printRef : undefined} className="print-only" style={{ display: "none" }}>
         <h2 style={{ textAlign: "center", fontSize: "12pt", fontWeight: "bold", textDecoration: "underline", marginBottom: 4 }}>
           TRANSKRIP NILAI
         </h2>

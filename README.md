@@ -68,14 +68,28 @@ As an offline-native desktop application designed specifically for local adminis
 
 ## 🧪 Testing & Coverage
 
-We maintain high testing standards across our core application features. The project uses **Vitest** for testing, **Istanbul** for code coverage, and **Codecov** for tracking coverage history.
+We maintain high testing standards across our core application features. The project uses **Vitest** as the test runner, **React Testing Library** for component testing, and **Istanbul/V8** for code coverage reporting.
 
 [![codecov](https://codecov.io/gh/Andi-IM/siaas/graph/badge.svg?token=FHYTwuBZYh)](https://codecov.io/gh/Andi-IM/siaas)
 
-### Run Commands
-- Run all tests: `npm run test`
-- Run tests without coverage (fast): `npm run test:fast`
-- Run coverage report: `npm run test:coverage`
+### Test Commands
+- `npm run test` – Run all tests once (with coverage).
+- `npm run test:fast` – Run all tests once without coverage (recommended for quick feedback during development).
+- `npm run test:watch` – Run tests in watch mode, re-running on file changes.
+- `npm run test:coverage` – Run tests and generate a detailed coverage report.
+- `npm run test:coverage:full` – Run tests with coverage strictly limited to the `src/` directory.
+
+### Testing Stack
+- **Test Runner**: Vitest
+- **Component Testing**: `@testing-library/react` & `@testing-library/user-event`
+- **DOM Environment**: Happy DOM / jsdom (configured in `vitest.config.mts`)
+- **Assertions**: Vitest globals + `@testing-library/jest-dom`
+
+### Testing Conventions & Best Practices
+1. **File Naming**: Test files should be placed in `src/__tests__/` or alongside the component as `*.test.tsx` / `*.test.ts`.
+2. **Tauri API Mocking**: Since the app relies on Tauri's `invoke` for native operations, tests must mock `@tauri-apps/api/core`. Use `vi.mock("@tauri-apps/api/core")` and ensure `window.__TAURI_INTERNALS__` is explicitly set or deleted in `beforeEach`/`afterEach` hooks to prevent state leakage between Tauri and browser-mode tests.
+3. **User Interactions**: Prefer `@testing-library/user-event` over `fireEvent` for realistic user interaction simulation (e.g., typing, clicking).
+4. **Async State**: Always wrap assertions that depend on async state updates (like API calls or `setTimeout`) in `await waitFor(...)`.
 
 ### Current Coverage of Core Modules
 
@@ -88,6 +102,7 @@ All core student administration and curriculum modules are fully tested and have
 | **Tambah Siswa (`app/siswa/tambah`)** | 100% | 100% | 100% | 100% |
 | **Edit Siswa (`app/siswa/edit`)** | 100% | 100% | 100% | 100% |
 | **Detail Siswa (`app/siswa/detail`)** | 100% | 100% | 100% | 100% |
+| **Pengaturan (`app/pengaturan`)** | 100% | 100% | 100% | 100% |
 
 #### Backend (Rust) Logic Coverage
 The Rust backend modules are protected by integration and unit tests, achieving high logic coverage:

@@ -267,6 +267,9 @@ describe("PengaturanView", () => {
   });
 
   it("simulates database import in browser mode successfully when confirmed", async () => {
+    // Explicitly ensure confirm returns true to prevent state leakage from previous tests
+    window.confirm = vi.fn(() => true);
+    
     render(<PengaturanView />);
 
     const importBtn = screen.getByTestId("import-db-button");
