@@ -35,8 +35,11 @@ ENV RUSTUP_HOME=/usr/local/rustup \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable \
     && chmod -R a+w $RUSTUP_HOME $CARGO_HOME
 
-# 5. Install cargo-nextest untuk testing yang lebih cepat
-RUN cargo install cargo-nextest --locked
+# 5. Install cargo-binstall for faster binary installations
+RUN cargo install cargo-binstall --locked
+
+# 6. Install sccache and cargo-nextest menggunakan binstall
+RUN cargo binstall -y sccache cargo-nextest
 
 # Set working directory default
 WORKDIR /app
