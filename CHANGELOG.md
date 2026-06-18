@@ -1,3 +1,27 @@
+# [1.3.0](https://github.com/Andi-IM/siaas/compare/v1.2.0...v1.3.0) (2026-06-18)
+
+
+### Bug Fixes
+
+* **api:** update Dockerfile to use pnpm and node 22 to fix cloud run deployment ([7f2fc72](https://github.com/Andi-IM/siaas/commit/7f2fc7264963554f2f5f66145ab8424fe639c8c4))
+* **ci:** enable gtk3 feature for rfd to fix build on linux ([9a537d0](https://github.com/Andi-IM/siaas/commit/9a537d0e1e991776ae013dc2baf4a9537f76b6fe))
+* **ci:** update Cargo.lock to sync with rfd gtk3 feature ([7355f6e](https://github.com/Andi-IM/siaas/commit/7355f6e3ca35e65ae7b4e70d91a283aa22c8c646))
+
+
+### Features
+
+* add database performance benchmarks and system specification documentation ([39734de](https://github.com/Andi-IM/siaas/commit/39734de8f322535164bbb23e69180ee6f26e0c08))
+* add E2E test suites for Rekap, Siswa, and Kurikulum modules ([6707b1a](https://github.com/Andi-IM/siaas/commit/6707b1a892db54cb20d490cb27e4cdc5a3969ed4))
+* **ci:** optimize Rust compilation and test execution on Windows runner ([e5f1108](https://github.com/Andi-IM/siaas/commit/e5f1108df8f61831db283fae5cc55de6e623247b))
+* implement bug reporting modal, backend log retrieval commands, and associated documentation assets ([9b92f61](https://github.com/Andi-IM/siaas/commit/9b92f6100ce3f35467799aaf8f8f378874d187bf))
+* implement CI pipelines, add student edit testing, and introduce Kurikulum management modules ([73e684a](https://github.com/Andi-IM/siaas/commit/73e684aeb7f9d76e9afdea824503aafdb33d7583))
+* implement curriculum management features, student transcript views, and comprehensive end-to-end testing support with updated documentation. ([1464b14](https://github.com/Andi-IM/siaas/commit/1464b14b911a5f74acee0623536cf8bd3c9b539c))
+* implement global application shell layout and design system tokens ([9a556c7](https://github.com/Andi-IM/siaas/commit/9a556c738c26ca1383383203ef40a78fd1bb087b))
+* implement student transcript module with PDF export capabilities and expanded documentation ([c2dc984](https://github.com/Andi-IM/siaas/commit/c2dc984f1af2dfa4e3302d8f02b237621f71e742))
+* implement transcript layout with PDF export support, add API deployment pipeline, and expand frontend test coverage ([419dd46](https://github.com/Andi-IM/siaas/commit/419dd46bd01b3ef5eacccbe6d47232e67c22336b))
+* Merge pull request [#10](https://github.com/Andi-IM/siaas/issues/10) from Andi-IM/dev ([46257fa](https://github.com/Andi-IM/siaas/commit/46257fa3847e1184104882e8f04326e9234b9344))
+* Merge pull request [#11](https://github.com/Andi-IM/siaas/issues/11) from Andi-IM/dev ([2dd0d69](https://github.com/Andi-IM/siaas/commit/2dd0d6996d6bf6700984ea345dfb8ddbf4ccdb01))
+
 # [1.2.0](https://github.com/Andi-IM/siaas/compare/v1.1.0...v1.2.0) (2026-06-17)
 
 
