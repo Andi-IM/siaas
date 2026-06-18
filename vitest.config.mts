@@ -21,9 +21,11 @@ export default defineConfig({
         },
       },
     },
+    reporters: ["default", "junit"],
+    outputFile: "junit.xml",
     coverage: {
       provider: "istanbul",
-      reporter: ["text", "json", "html"],
+      reporter: ["text", "json", "html", "lcov"],
       include: ["src/app/**/*", "src/components/**/*"],
       exclude: [
         "src/**/*.d.ts",

@@ -2,13 +2,38 @@ name: SIAS CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, dev]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+      - '.releaserc.json'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.impeccable/**'
+      - '.qwen/**'
+      - '.agents/**'
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+      - '.releaserc.json'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.impeccable/**'
+      - '.qwen/**'
+      - '.agents/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: windows-latest
+    timeout-minutes: 30
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: 0
@@ -32,7 +57,7 @@ jobs:
         run: pnpm run lint
 
       - name: Run Frontend Tests (Vitest)
-        run: pnpm test
+        run: pnpm test --coverage
 
       - name: Install API dependencies
         working-directory: ./services/api
@@ -40,7 +65,7 @@ jobs:
 
       - name: Run API Tests (Vitest)
         working-directory: ./services/api
-        run: pnpm test
+        run: pnpm test --coverage
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -57,11 +82,18 @@ jobs:
 
       - name: Run Backend Tests (Rust)
         working-directory: ./src-tauri
-        run: cargo nextest run --profile ci --locked
+        run: cargo nextest run --profile ci --locked --junit-xml ../junit-rust.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          files: ./coverage/lcov.info,./services/api/coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit.xml,./services/api/junit.xml,./junit-rust.xml
           fail_ci_if_error: false
