@@ -13,7 +13,7 @@ permissions:
 jobs:
   release:
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: 0
@@ -25,14 +25,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.18.0
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
           cache: "pnpm"
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
 
       - name: Install Frontend Dependencies
         run: pnpm install --frozen-lockfile
