@@ -21,21 +21,7 @@ describe("PengaturanView", () => {
       delete (window as any).__TAURI_INTERNALS__;
       window.confirm = vi.fn(() => true);
     }
-    // Safe async timeout mock to avoid re-entrancy issues in Testing Library
-    vi.spyOn(global, "setTimeout").mockImplementation((cb: any, delay) => {
-      if (delay === 1000 || delay === 1200 || delay === 1500 || delay === 2000) {
-        return originalSetTimeout(cb, 50);
-      }
-      return originalSetTimeout(cb, delay);
-    });
-    if (typeof window !== "undefined") {
-      vi.spyOn(window, "setTimeout").mockImplementation((cb: any, delay) => {
-        if (delay === 1000 || delay === 1200 || delay === 1500 || delay === 2000) {
-          return originalSetTimeout(cb, 50);
-        }
-        return originalSetTimeout(cb, delay);
-      });
-    }
+    // Removed setTimeout mock to avoid breaking testing-library and missing intermediate DOM states.
   });
 
   afterEach(() => {
@@ -142,7 +128,7 @@ describe("PengaturanView", () => {
       expect(
         screen.getByText("[DEV MODE] Basis data disimulasikan berhasil direset.")
       ).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
 
     expect(mockInvoke).not.toHaveBeenCalledWith("reset_database");
   });
@@ -199,7 +185,7 @@ describe("PengaturanView", () => {
 
     await waitFor(() => {
       expect(screen.getByText("[DEV MODE] Basis data disimulasikan berhasil diekspor.")).toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it("handles cancelled export properly (does not show error)", async () => {
@@ -386,10 +372,10 @@ describe("PengaturanView", () => {
       expect(screen.getByTestId("bug-report-success")).toBeInTheDocument();
     });
 
-    // Should automatically close after timeout (mocked in beforeEach)
+    // Should automatically close after timeout
     await waitFor(() => {
       expect(screen.queryByText("Laporkan Bug / Kendala")).not.toBeInTheDocument();
-    });
+    }, { timeout: 3000 });
   });
 
   it("shows error message if bug report submission fails", async () => {
