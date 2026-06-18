@@ -2,6 +2,7 @@ mod migrations;
 mod entities;
 mod commands;
 mod validate_konsentrasi;
+mod perf;
 
 use app_lib::db::establish_in_memory_connection;
 use app_lib::db::migrations::MigrationManager;
