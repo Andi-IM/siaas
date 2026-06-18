@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { useSearchParams } from "next/navigation";
 import * as StudentTranscriptViewModule from "@/app/siswa/transkrip/StudentTranscriptView";
 import TranscriptPage from "@/app/siswa/transkrip/page";
@@ -12,18 +12,18 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(),
 }));
 
-// Mock StudentTranscriptView
-vi.mock("@/app/siswa/transkrip/StudentTranscriptView", () => ({
-  default: vi.fn(({ nis }: { nis: string }) => {
-    if (shouldSuspend) throw new Promise(() => {});
-    return <div data-testid="transcript-view">NIS: {nis}</div>;
-  }),
-}));
-
 describe("Transcript Page Wrapper", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     shouldSuspend = false;
+    vi.spyOn(StudentTranscriptViewModule, "default").mockImplementation(({ nis }: { nis: string }) => {
+      if (shouldSuspend) throw new Promise(() => {});
+      return <div data-testid="transcript-view">NIS: {nis}</div>;
+    });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it("renders TranscriptPage with NIS from search params", () => {
