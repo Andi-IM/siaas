@@ -25,10 +25,19 @@ done
 
 # Jalankan Check Rust jika ada perubahan Rust
 if [ "$RUST_CHANGES" = true ]; then
-  echo "🦀 Rust changes detected. Running Rust tests..."
+  echo "🦀 Rust changes detected. Running Rust checks..."
+  
+  echo "🔍 Running Rust Linting (Clippy)..."
+  cargo clippy --manifest-path src-tauri/Cargo.toml -- -D warnings || exit 1
+  
+  echo "🔍 Running Rust Format Check..."
+  cargo fmt --manifest-path src-tauri/Cargo.toml -- --check || exit 1
+
+  echo "🧪 Running Rust tests..."
   # Menggunakan --quiet untuk mengurangi output jika berhasil
   cargo test --manifest-path src-tauri/Cargo.toml --quiet || exit 1
-  echo "✅ Rust tests passed!"
+  
+  echo "✅ Rust checks passed!"
 fi
 
 # Jalankan Check Frontend jika ada perubahan TS/JS

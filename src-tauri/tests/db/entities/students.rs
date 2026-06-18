@@ -1,6 +1,6 @@
 use crate::db::setup_test_db;
 use app_lib::db::entities::{majors, students};
-use sea_orm::{EntityTrait, ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 #[tokio::test]
 async fn test_students_crud() {
@@ -17,7 +17,10 @@ async fn test_students_crud() {
         program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Create
     students::ActiveModel {
@@ -50,10 +53,17 @@ async fn test_students_crud() {
         graduation_date: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Read
-    let student = students::Entity::find_by_id(student_id.clone()).one(&db).await.unwrap().unwrap();
+    let student = students::Entity::find_by_id(student_id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(student.full_name, "John Doe");
 
     // Update
@@ -61,11 +71,21 @@ async fn test_students_crud() {
     active.full_name = Set("John Doe Updated".to_string());
     active.update(&db).await.unwrap();
 
-    let updated = students::Entity::find_by_id(student_id.clone()).one(&db).await.unwrap().unwrap();
+    let updated = students::Entity::find_by_id(student_id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(updated.full_name, "John Doe Updated");
 
     // Delete
-    students::Entity::delete_by_id(student_id.clone()).exec(&db).await.unwrap();
-    let deleted = students::Entity::find_by_id(student_id.clone()).one(&db).await.unwrap();
+    students::Entity::delete_by_id(student_id.clone())
+        .exec(&db)
+        .await
+        .unwrap();
+    let deleted = students::Entity::find_by_id(student_id.clone())
+        .one(&db)
+        .await
+        .unwrap();
     assert!(deleted.is_none());
 }

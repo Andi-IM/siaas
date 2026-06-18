@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `programs` table.
-/// 
+///
 /// A program represents a broad vocational field of study (e.g., Teknik Mesin, Bisnis dan Manajemen).
 /// It contains multiple specific concentrations (Majors).
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]

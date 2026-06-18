@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `subjects` table.
-/// 
+///
 /// A subject represents an academic course of study offered by the school (e.g., Matematika, Fisika).
 /// It is referenced within the curriculum mapping.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]

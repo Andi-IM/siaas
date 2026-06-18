@@ -1,6 +1,6 @@
 use crate::db::setup_test_db;
 use app_lib::db::entities::majors;
-use sea_orm::{EntityTrait, ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 #[tokio::test]
 async fn test_majors_crud() {
@@ -16,10 +16,17 @@ async fn test_majors_crud() {
         program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Read
-    let major = majors::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let major = majors::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(major.code, "TI");
     assert_eq!(major.name, "Teknik Informatika");
 
@@ -28,11 +35,21 @@ async fn test_majors_crud() {
     active.name = Set("TI Updated".to_string());
     active.update(&db).await.unwrap();
 
-    let updated = majors::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let updated = majors::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(updated.name, "TI Updated");
 
     // Delete
-    majors::Entity::delete_by_id(id.clone()).exec(&db).await.unwrap();
-    let deleted = majors::Entity::find_by_id(id.clone()).one(&db).await.unwrap();
+    majors::Entity::delete_by_id(id.clone())
+        .exec(&db)
+        .await
+        .unwrap();
+    let deleted = majors::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap();
     assert!(deleted.is_none());
 }

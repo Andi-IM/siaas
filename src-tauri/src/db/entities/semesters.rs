@@ -2,8 +2,8 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `semesters` table.
-/// 
-/// Semesters represent the academic terms or levels within the school curriculum 
+///
+/// Semesters represent the academic terms or levels within the school curriculum
 /// (e.g., Semester 1, Semester 2). They have sequence indices to maintain ordering.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "semesters")]

@@ -1,6 +1,6 @@
 use crate::db::setup_test_db;
-use app_lib::db::entities::{majors, batches, semesters, subjects, curriculum_subjects};
-use sea_orm::{EntityTrait, ActiveModelTrait, Set};
+use app_lib::db::entities::{batches, curriculum_subjects, majors, semesters, subjects};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 #[tokio::test]
 async fn test_curriculum_subjects_crud() {
@@ -20,14 +20,20 @@ async fn test_curriculum_subjects_crud() {
         program_id: Set(None),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     batches::ActiveModel {
         id: Set(batch_id.clone()),
         year: Set(2026),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     semesters::ActiveModel {
         id: Set(semester_id.clone()),
@@ -36,7 +42,10 @@ async fn test_curriculum_subjects_crud() {
         sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     subjects::ActiveModel {
         id: Set(subject_id.clone()),
@@ -48,7 +57,10 @@ async fn test_curriculum_subjects_crud() {
         sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Create
     curriculum_subjects::ActiveModel {
@@ -59,14 +71,27 @@ async fn test_curriculum_subjects_crud() {
         subject_id: Set(subject_id.clone()),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Read
-    let cs = curriculum_subjects::Entity::find_by_id(cs_id.clone()).one(&db).await.unwrap().unwrap();
+    let cs = curriculum_subjects::Entity::find_by_id(cs_id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(cs.major_id, major_id);
 
     // Delete
-    curriculum_subjects::Entity::delete_by_id(cs_id.clone()).exec(&db).await.unwrap();
-    let deleted = curriculum_subjects::Entity::find_by_id(cs_id.clone()).one(&db).await.unwrap();
+    curriculum_subjects::Entity::delete_by_id(cs_id.clone())
+        .exec(&db)
+        .await
+        .unwrap();
+    let deleted = curriculum_subjects::Entity::find_by_id(cs_id.clone())
+        .one(&db)
+        .await
+        .unwrap();
     assert!(deleted.is_none());
 }

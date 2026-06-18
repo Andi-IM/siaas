@@ -1,7 +1,7 @@
 use super::setup_test_db;
 use app_lib::db::core::*;
-use app_lib::db::entities::{students, curriculum_subjects};
-use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
+use app_lib::db::entities::{curriculum_subjects, students};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 // ==========================================
 // PROGRAM TESTS
@@ -39,11 +39,14 @@ async fn program_lifecycle_should_work() {
 #[tokio::test]
 async fn duplicate_program_creation_should_fail() {
     let db = setup_test_db().await;
-    
+
     create_program_core(&db, "Teknik Sipil").await.unwrap();
     let dup_prog = create_program_core(&db, "Teknik Sipil").await;
-    
-    assert!(dup_prog.is_err(), "Expected duplicate program creation to fail");
+
+    assert!(
+        dup_prog.is_err(),
+        "Expected duplicate program creation to fail"
+    );
 }
 
 // ==========================================
@@ -67,9 +70,7 @@ async fn major_lifecycle_should_work() {
     assert_eq!(major.code, "TK");
 
     // List
-    let majors_list = get_majors_core(&db)
-        .await
-        .expect("Failed to get majors");
+    let majors_list = get_majors_core(&db).await.expect("Failed to get majors");
     assert!(!majors_list.is_empty());
 
     // Update
@@ -223,13 +224,9 @@ async fn student_update_should_succeed() {
 
     let mut update_payload = created_student.clone();
     update_payload.full_name = "Budi Santoso Updated".to_string();
-    let updated_student = update_student_core(
-        &db,
-        &created_student.nis,
-        update_payload,
-    )
-    .await
-    .expect("Failed to update student");
+    let updated_student = update_student_core(&db, &created_student.nis, update_payload)
+        .await
+        .expect("Failed to update student");
     assert_eq!(updated_student.full_name, "Budi Santoso Updated");
 }
 
@@ -257,49 +254,60 @@ async fn student_deletion_non_existent_should_return_false() {
 // CURRICULUM & GRADE TESTS
 // ==========================================
 
-async fn setup_curriculum_and_grade_test_env(db: &sea_orm::DatabaseConnection) -> (
+async fn setup_curriculum_and_grade_test_env(
+    db: &sea_orm::DatabaseConnection,
+) -> (
     app_lib::db::entities::majors::Model,
     app_lib::db::entities::batches::Model,
     app_lib::db::entities::semesters::Model,
     app_lib::db::entities::subjects::Model,
-    students::Model
+    students::Model,
 ) {
     let prog = create_program_core(db, "P1").await.unwrap();
-    let major = create_major_core(db, "M1", "Major 1", Some(prog.id)).await.unwrap();
+    let major = create_major_core(db, "M1", "Major 1", Some(prog.id))
+        .await
+        .unwrap();
     let batch = create_batch_core(db, 2024).await.unwrap();
     let semester = create_semester_core(db, "S1", "Sem 1", 1).await.unwrap();
-    let subject = create_subject_core(db, "SUB1", "Subj 1", "A", "active", "UMUM", 1).await.unwrap();
-    let student = create_student_core(db, students::Model {
-        id: "".into(),
-        nis: "S001".into(),
-        full_name: "S1".into(),
-        major_id: major.id.clone(),
-        nisn: "".into(),
-        place_of_birth: None,
-        date_of_birth: None,
-        gender: None,
-        religion: None,
-        family_status: None,
-        child_order: None,
-        home_address: None,
-        telephone: None,
-        previous_school: None,
-        admission_grade: None,
-        admission_date: None,
-        father_name: None,
-        mother_name: None,
-        parent_address: None,
-        father_occupation: None,
-        mother_occupation: None,
-        guardian_name: None,
-        guardian_address: None,
-        guardian_phone_number: None,
-        guardian_occupation: None,
-        diploma_number: None,
-        graduation_date: None,
-        created_at: "".into(),
-        updated_at: "".into(),
-    }).await.unwrap();
+    let subject = create_subject_core(db, "SUB1", "Subj 1", "A", "active", "UMUM", 1)
+        .await
+        .unwrap();
+    let student = create_student_core(
+        db,
+        students::Model {
+            id: "".into(),
+            nis: "S001".into(),
+            full_name: "S1".into(),
+            major_id: major.id.clone(),
+            nisn: "".into(),
+            place_of_birth: None,
+            date_of_birth: None,
+            gender: None,
+            religion: None,
+            family_status: None,
+            child_order: None,
+            home_address: None,
+            telephone: None,
+            previous_school: None,
+            admission_grade: None,
+            admission_date: None,
+            father_name: None,
+            mother_name: None,
+            parent_address: None,
+            father_occupation: None,
+            mother_occupation: None,
+            guardian_name: None,
+            guardian_address: None,
+            guardian_phone_number: None,
+            guardian_occupation: None,
+            diploma_number: None,
+            graduation_date: None,
+            created_at: "".into(),
+            updated_at: "".into(),
+        },
+    )
+    .await
+    .unwrap();
     (major, batch, semester, subject, student)
 }
 
@@ -338,7 +346,8 @@ async fn grade_upsert_should_succeed() {
 #[tokio::test]
 async fn grade_batch_upsert_should_succeed() {
     let db = setup_test_db().await;
-    let (major, _batch, _semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+    let (major, _batch, _semester, subject, student) =
+        setup_curriculum_and_grade_test_env(&db).await;
 
     // Assign multiple semesters
     assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1, 2])
@@ -363,7 +372,8 @@ async fn grade_batch_upsert_should_succeed() {
 #[tokio::test]
 async fn grade_retrieval_by_student_should_succeed() {
     let db = setup_test_db().await;
-    let (major, _batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+    let (major, _batch, semester, subject, student) =
+        setup_curriculum_and_grade_test_env(&db).await;
 
     // Assign semesters
     assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1])
@@ -392,17 +402,28 @@ async fn grade_retrieval_by_student_should_succeed() {
 // EXCEL TESTS
 // ==========================================
 
-async fn setup_excel_test_env(db: &sea_orm::DatabaseConnection) -> app_lib::db::entities::majors::Model {
+async fn setup_excel_test_env(
+    db: &sea_orm::DatabaseConnection,
+) -> app_lib::db::entities::majors::Model {
     let prog = create_program_core(db, "Teknik Mesin").await.unwrap();
-    let major = create_major_core(db, "TP", "TEKNIK PEMESINAN", Some(prog.id)).await.unwrap();
-    
+    let major = create_major_core(db, "TP", "TEKNIK PEMESINAN", Some(prog.id))
+        .await
+        .unwrap();
+
     for seq in 1..=6 {
-        create_semester_core(db, format!("S{}", seq), format!("Sem {}", seq), seq).await.unwrap();
+        create_semester_core(db, format!("S{}", seq), format!("Sem {}", seq), seq)
+            .await
+            .unwrap();
     }
 
-    let codes = vec!["PAPB", "PPKn", "B.IND", "PJOK", "SEJ", "SENBUD", "MULOK", "MTK", "B.ING", "TI", "IPAS", "DDK", "GTM", "BUBUT", "GRD", "FRAIS", "CNC", "MAPIL", "PKWU", "PKL"];
+    let codes = vec![
+        "PAPB", "PPKn", "B.IND", "PJOK", "SEJ", "SENBUD", "MULOK", "MTK", "B.ING", "TI", "IPAS",
+        "DDK", "GTM", "BUBUT", "GRD", "FRAIS", "CNC", "MAPIL", "PKWU", "PKL",
+    ];
     for code in codes {
-        create_subject_core(db, code, code, "A", "active", "UMUM", 1).await.unwrap();
+        create_subject_core(db, code, code, "A", "active", "UMUM", 1)
+            .await
+            .unwrap();
     }
     major
 }
@@ -414,7 +435,7 @@ async fn excel_import_should_succeed() {
 
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let import_path = manifest_dir.join("tests/test_excel.xlsx");
-    
+
     let result = import_grades_from_excel_core(&db, &import_path).await;
     assert!(result.is_ok());
 }
@@ -426,7 +447,7 @@ async fn excel_export_should_succeed() {
 
     let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let import_path = manifest_dir.join("tests/test_excel.xlsx");
-    
+
     let import_result = import_grades_from_excel_core(&db, &import_path).await;
     assert!(import_result.is_ok());
 
@@ -460,18 +481,25 @@ async fn upsert_grade_invalid_value_should_fail() {
     // Try too high
     let result_high = upsert_student_grade_core(&db, &student.nis, &cs.id, 105.0).await;
     assert!(result_high.is_err());
-    assert_eq!(result_high.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(
+        result_high.unwrap_err().to_string(),
+        "Nilai harus berada di antara 0 dan 100"
+    );
 
     // Try too low
     let result_low = upsert_student_grade_core(&db, &student.nis, &cs.id, -5.0).await;
     assert!(result_low.is_err());
-    assert_eq!(result_low.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(
+        result_low.unwrap_err().to_string(),
+        "Nilai harus berada di antara 0 dan 100"
+    );
 }
 
 #[tokio::test]
 async fn batch_upsert_grades_invalid_value_should_fail() {
     let db = setup_test_db().await;
-    let (major, _batch, _semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
+    let (major, _batch, _semester, subject, student) =
+        setup_curriculum_and_grade_test_env(&db).await;
 
     assign_subject_to_semesters_core(&db, &major.id, &subject.id, vec![1])
         .await
@@ -485,7 +513,10 @@ async fn batch_upsert_grades_invalid_value_should_fail() {
     };
     let result_high = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_high]).await;
     assert!(result_high.is_err());
-    assert_eq!(result_high.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(
+        result_high.unwrap_err().to_string(),
+        "Nilai harus berada di antara 0 dan 100"
+    );
 
     // Grade too low
     let batch_gs_low = GradeSummary {
@@ -495,7 +526,10 @@ async fn batch_upsert_grades_invalid_value_should_fail() {
     };
     let result_low = batch_upsert_grades_core(&db, &major.id, 1, vec![batch_gs_low]).await;
     assert!(result_low.is_err());
-    assert_eq!(result_low.unwrap_err().to_string(), "Nilai harus berada di antara 0 dan 100");
+    assert_eq!(
+        result_low.unwrap_err().to_string(),
+        "Nilai harus berada di antara 0 dan 100"
+    );
 }
 
 #[tokio::test]
@@ -506,7 +540,7 @@ async fn import_excel_invalid_structure_should_fail() {
     use rust_xlsxwriter::Workbook;
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
-    
+
     // Write less than 8 rows to trigger the "Berkas Excel tidak valid (minimal harus 8 baris)" error
     worksheet.write_string(0, 0, "Short Excel").unwrap();
 
@@ -516,7 +550,10 @@ async fn import_excel_invalid_structure_should_fail() {
 
     let result = import_grades_from_excel_core(&db, &temp_path).await;
     assert!(result.is_err());
-    assert_eq!(result.unwrap_err().to_string(), "Berkas Excel tidak valid (minimal harus 8 baris)");
+    assert_eq!(
+        result.unwrap_err().to_string(),
+        "Berkas Excel tidak valid (minimal harus 8 baris)"
+    );
 
     if temp_path.exists() {
         let _ = std::fs::remove_file(temp_path);
@@ -531,7 +568,7 @@ async fn import_excel_invalid_header_should_fail() {
     use rust_xlsxwriter::Workbook;
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
-    
+
     // Write 10 rows to establish a valid height >= 8
     for r in 0..10 {
         worksheet.write_string(r, 0, "Dummy").unwrap();
@@ -582,13 +619,15 @@ async fn get_batches_should_return_all_batches() {
 #[tokio::test]
 async fn get_students_should_return_all_students() {
     let db = setup_test_db().await;
-    let major = create_major_core(&db, "TKJ", "Teknik Komputer", None).await.unwrap();
-    
+    let major = create_major_core(&db, "TKJ", "Teknik Komputer", None)
+        .await
+        .unwrap();
+
     let mut s1 = make_test_student_payload(major.id.clone());
     s1.nis = "001".into();
     s1.nisn = "0011".into();
     s1.full_name = "Budi".into();
-    
+
     let mut s2 = make_test_student_payload(major.id.clone());
     s2.nis = "002".into();
     s2.nisn = "0022".into();
@@ -608,10 +647,34 @@ async fn get_students_should_return_all_students() {
 async fn get_subjects_should_return_sorted_by_category_weight_then_sequence() {
     let db = setup_test_db().await;
     // Create subjects in random order
-    create_subject_core(&db, "KJ1", "Kejuruan 1", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 1).await.unwrap();
-    create_subject_core(&db, "UM2", "Umum 2", "Kelompok Umum", "active", "UMUM", 2).await.unwrap();
-    create_subject_core(&db, "UM1", "Umum 1", "Kelompok Umum", "active", "UMUM", 1).await.unwrap();
-    create_subject_core(&db, "KJ2", "Kejuruan 2", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 2).await.unwrap();
+    create_subject_core(
+        &db,
+        "KJ1",
+        "Kejuruan 1",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_UMUM",
+        1,
+    )
+    .await
+    .unwrap();
+    create_subject_core(&db, "UM2", "Umum 2", "Kelompok Umum", "active", "UMUM", 2)
+        .await
+        .unwrap();
+    create_subject_core(&db, "UM1", "Umum 1", "Kelompok Umum", "active", "UMUM", 1)
+        .await
+        .unwrap();
+    create_subject_core(
+        &db,
+        "KJ2",
+        "Kejuruan 2",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_UMUM",
+        2,
+    )
+    .await
+    .unwrap();
 
     let subjects = get_subjects_core(&db).await.unwrap();
     assert_eq!(subjects.len(), 4);
@@ -639,22 +702,44 @@ async fn get_curriculum_subjects_should_return_all_mappings() {
 async fn get_subjects_by_major_should_group_semesters_and_sort() {
     let db = setup_test_db().await;
     let prog = create_program_core(&db, "P1").await.unwrap();
-    let major = create_major_core(&db, "RPL", "Rekayasa Perangkat Lunak", Some(prog.id)).await.unwrap();
-    
+    let major = create_major_core(&db, "RPL", "Rekayasa Perangkat Lunak", Some(prog.id))
+        .await
+        .unwrap();
+
     // Create semesters 1 and 2
-    create_semester_core(&db, "S1", "Semester 1", 1).await.unwrap();
-    create_semester_core(&db, "S2", "Semester 2", 2).await.unwrap();
-    
+    create_semester_core(&db, "S1", "Semester 1", 1)
+        .await
+        .unwrap();
+    create_semester_core(&db, "S2", "Semester 2", 2)
+        .await
+        .unwrap();
+
     // Create 2 subjects: one mapped to 2 semesters, one to 1
-    let subj_a = create_subject_core(&db, "A", "Subject A", "Kelompok Umum", "active", "UMUM", 1).await.unwrap();
-    let subj_b = create_subject_core(&db, "B", "Subject B", "Kelompok Kejuruan", "active", "KEJURUAN_UMUM", 1).await.unwrap();
-    
+    let subj_a = create_subject_core(&db, "A", "Subject A", "Kelompok Umum", "active", "UMUM", 1)
+        .await
+        .unwrap();
+    let subj_b = create_subject_core(
+        &db,
+        "B",
+        "Subject B",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_UMUM",
+        1,
+    )
+    .await
+    .unwrap();
+
     // Assign subj_a to semesters 1 and 2, subj_b to semester 1
-    assign_subject_to_semesters_core(&db, &major.id, &subj_a.id, vec![1, 2]).await.unwrap();
-    assign_subject_to_semesters_core(&db, &major.id, &subj_b.id, vec![1]).await.unwrap();
+    assign_subject_to_semesters_core(&db, &major.id, &subj_a.id, vec![1, 2])
+        .await
+        .unwrap();
+    assign_subject_to_semesters_core(&db, &major.id, &subj_b.id, vec![1])
+        .await
+        .unwrap();
 
     let result = get_subjects_by_major_core(&db, &major.id).await.unwrap();
-    
+
     assert_eq!(result.len(), 2);
     // Sorted: Umum (A) before Kejuruan (B)
     assert_eq!(result[0].code, "A");
@@ -669,12 +754,14 @@ async fn get_subjects_by_major_should_group_semesters_and_sort() {
 async fn get_student_grades_should_return_all_grades() {
     let db = setup_test_db().await;
     let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
-    
+
     let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
         .await
         .unwrap();
-    
-    upsert_student_grade_core(&db, &student.nis, &cs.id, 85.0).await.unwrap();
+
+    upsert_student_grade_core(&db, &student.nis, &cs.id, 85.0)
+        .await
+        .unwrap();
 
     let grades = get_student_grades_core(&db).await.unwrap();
     assert_eq!(grades.len(), 1);
@@ -685,12 +772,14 @@ async fn get_student_grades_should_return_all_grades() {
 async fn get_grades_by_filter_should_return_matching_grades() {
     let db = setup_test_db().await;
     let (major, batch, semester, subject, student) = setup_curriculum_and_grade_test_env(&db).await;
-    
+
     let cs = create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
         .await
         .unwrap();
-    
-    upsert_student_grade_core(&db, &student.nis, &cs.id, 90.0).await.unwrap();
+
+    upsert_student_grade_core(&db, &student.nis, &cs.id, 90.0)
+        .await
+        .unwrap();
 
     let grades = get_grades_by_filter_core(&db, &major.id, 1).await.unwrap();
     assert!(!grades.is_empty());
@@ -701,8 +790,10 @@ async fn get_grades_by_filter_should_return_matching_grades() {
 async fn get_grades_by_filter_with_no_matching_semester_should_return_error() {
     let db = setup_test_db().await;
     let prog = create_program_core(&db, "P1").await.unwrap();
-    let major = create_major_core(&db, "TKJ", "Test", Some(prog.id)).await.unwrap();
-    
+    let major = create_major_core(&db, "TKJ", "Test", Some(prog.id))
+        .await
+        .unwrap();
+
     let result = get_grades_by_filter_core(&db, &major.id, 999).await;
     assert!(result.is_err()); // Semester 999 not found
 }
@@ -711,14 +802,26 @@ async fn get_grades_by_filter_with_no_matching_semester_should_return_error() {
 async fn update_program_nonexistent_should_return_not_found() {
     let db = setup_test_db().await;
     let result = update_program_core(&db, "nonexistent-id", "New Name").await;
-    assert!(matches!(result, Err(AppError::NotFound { entity: "Program", .. })));
+    assert!(matches!(
+        result,
+        Err(AppError::NotFound {
+            entity: "Program",
+            ..
+        })
+    ));
 }
 
 #[tokio::test]
 async fn update_major_nonexistent_should_return_not_found() {
     let db = setup_test_db().await;
     let result = update_major_core(&db, "nonexistent-id", "New", "NEW", None).await;
-    assert!(matches!(result, Err(AppError::NotFound { entity: "Major", .. })));
+    assert!(matches!(
+        result,
+        Err(AppError::NotFound {
+            entity: "Major",
+            ..
+        })
+    ));
 }
 
 #[tokio::test]
@@ -737,7 +840,13 @@ async fn update_subject_nonexistent_should_return_not_found() {
         },
     )
     .await;
-    assert!(matches!(result, Err(AppError::NotFound { entity: "Subject", .. })));
+    assert!(matches!(
+        result,
+        Err(AppError::NotFound {
+            entity: "Subject",
+            ..
+        })
+    ));
 }
 
 #[tokio::test]
@@ -745,5 +854,11 @@ async fn update_student_nonexistent_should_return_not_found() {
     let db = setup_test_db().await;
     let dummy = make_test_student_payload("dummy".to_string());
     let result = update_student_core(&db, "nonexistent-nis", dummy).await;
-    assert!(matches!(result, Err(AppError::NotFound { entity: "Student", .. })));
+    assert!(matches!(
+        result,
+        Err(AppError::NotFound {
+            entity: "Student",
+            ..
+        })
+    ));
 }

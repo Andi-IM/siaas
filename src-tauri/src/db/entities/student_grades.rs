@@ -2,7 +2,7 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `student_grades` table.
-/// 
+///
 /// This table stores the academic grade a student receives in a specific curriculum subject.
 /// It enforces a composite unique constraint linking one student to one curriculum subject entry.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Serialize, Deserialize)]
@@ -30,7 +30,7 @@ pub struct Model {
 }
 
 /// Relations mapped for the `student_grades` entity.
-/// All relationships are configured to cascade delete: if the student or the curriculum subject 
+/// All relationships are configured to cascade delete: if the student or the curriculum subject
 /// is deleted, the corresponding grade entry is automatically removed.
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {

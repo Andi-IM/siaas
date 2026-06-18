@@ -1,6 +1,6 @@
 use crate::db::setup_test_db;
 use app_lib::db::entities::subjects;
-use sea_orm::{EntityTrait, ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 #[tokio::test]
 async fn test_subjects_crud() {
@@ -19,10 +19,17 @@ async fn test_subjects_crud() {
         sequence: Set(1),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Read
-    let subject = subjects::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let subject = subjects::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(subject.code, "CS101");
 
     // Update
@@ -30,11 +37,21 @@ async fn test_subjects_crud() {
     active.name = Set("Intro to Programming".to_string());
     active.update(&db).await.unwrap();
 
-    let updated = subjects::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let updated = subjects::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(updated.name, "Intro to Programming");
 
     // Delete
-    subjects::Entity::delete_by_id(id.clone()).exec(&db).await.unwrap();
-    let deleted = subjects::Entity::find_by_id(id.clone()).one(&db).await.unwrap();
+    subjects::Entity::delete_by_id(id.clone())
+        .exec(&db)
+        .await
+        .unwrap();
+    let deleted = subjects::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap();
     assert!(deleted.is_none());
 }

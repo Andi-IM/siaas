@@ -2,8 +2,8 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `majors` table.
-/// 
-/// A major represents an academic department or specialization path in the school system 
+///
+/// A major represents an academic department or specialization path in the school system
 /// (e.g., Teknik Informatika, Akuntansi). It is linked to student records and curriculum subjects.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "majors")]

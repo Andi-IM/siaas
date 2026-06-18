@@ -1,4 +1,4 @@
-use sea_orm::{ConnectionTrait, DatabaseConnection, DbErr, Statement, DbBackend, TransactionTrait};
+use sea_orm::{ConnectionTrait, DatabaseConnection, DbBackend, DbErr, Statement, TransactionTrait};
 
 pub struct MigrationManager {
     migrations: Vec<Migration>,
@@ -207,13 +207,17 @@ impl MigrationManager {
                 version INTEGER PRIMARY KEY,
                 name TEXT NOT NULL,
                 applied_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            )".to_string()
-        )).await?;
+            )"
+            .to_string(),
+        ))
+        .await?;
 
-        let query_res = db.query_one(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations".to_string()
-        )).await?;
+        let query_res = db
+            .query_one(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations".to_string(),
+            ))
+            .await?;
 
         let current_version: i32 = match query_res {
             Some(res) => res.try_get::<i32>("", "version").unwrap_or(0),
@@ -222,15 +226,22 @@ impl MigrationManager {
 
         for migration in &self.migrations {
             if migration.version > current_version {
-                println!("Running migration {}: {}", migration.version, migration.name);
+                println!(
+                    "Running migration {}: {}",
+                    migration.version, migration.name
+                );
 
                 let txn = db.begin().await?;
-                txn.execute(Statement::from_string(DbBackend::Sqlite, migration.up.to_string())).await?;
-                
+                txn.execute(Statement::from_string(
+                    DbBackend::Sqlite,
+                    migration.up.to_string(),
+                ))
+                .await?;
+
                 let insert_stmt = Statement::from_sql_and_values(
                     DbBackend::Sqlite,
                     "INSERT INTO schema_migrations (version, name) VALUES (?, ?)",
-                    vec![migration.version.into(), migration.name.into()]
+                    vec![migration.version.into(), migration.name.into()],
                 );
                 txn.execute(insert_stmt).await?;
                 txn.commit().await?;
@@ -241,11 +252,17 @@ impl MigrationManager {
     }
 
     /// Rolls back migrations to the target version.
-    pub async fn rollback(&self, db: &DatabaseConnection, target_version: i32) -> Result<(), DbErr> {
-        let query_res = db.query_one(Statement::from_string(
-            DbBackend::Sqlite,
-            "SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations".to_string()
-        )).await?;
+    pub async fn rollback(
+        &self,
+        db: &DatabaseConnection,
+        target_version: i32,
+    ) -> Result<(), DbErr> {
+        let query_res = db
+            .query_one(Statement::from_string(
+                DbBackend::Sqlite,
+                "SELECT COALESCE(MAX(version), 0) as version FROM schema_migrations".to_string(),
+            ))
+            .await?;
 
         let current_version: i32 = match query_res {
             Some(res) => res.try_get::<i32>("", "version").unwrap_or(0),
@@ -254,15 +271,22 @@ impl MigrationManager {
 
         for migration in self.migrations.iter().rev() {
             if migration.version > target_version && migration.version <= current_version {
-                println!("Rolling back migration {}: {}", migration.version, migration.name);
+                println!(
+                    "Rolling back migration {}: {}",
+                    migration.version, migration.name
+                );
 
                 let txn = db.begin().await?;
-                txn.execute(Statement::from_string(DbBackend::Sqlite, migration.down.to_string())).await?;
+                txn.execute(Statement::from_string(
+                    DbBackend::Sqlite,
+                    migration.down.to_string(),
+                ))
+                .await?;
 
                 let delete_stmt = Statement::from_sql_and_values(
                     DbBackend::Sqlite,
                     "DELETE FROM schema_migrations WHERE version = ?",
-                    vec![migration.version.into()]
+                    vec![migration.version.into()],
                 );
                 txn.execute(delete_stmt).await?;
                 txn.commit().await?;

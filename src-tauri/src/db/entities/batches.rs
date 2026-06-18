@@ -2,8 +2,8 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `batches` table.
-/// 
-/// A batch represents a student admission intake year group (e.g., 2024, 2025). 
+///
+/// A batch represents a student admission intake year group (e.g., 2024, 2025).
 /// It organizes the subjects that belong to the curriculum corresponding to that year.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "batches")]
