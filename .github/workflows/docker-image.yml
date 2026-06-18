@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'docker/ci-runner.Dockerfile'
+      - '.github/workflows/docker-image.yml'
     branches:
       - main
       - dev
