@@ -34,7 +34,7 @@ jobs:
   test:
     runs-on: ubuntu-22.04
     container:
-      image: ghcr.io/${{ github.repository }}/ci-runner:latest
+      image: ghcr.io/andi-im/siaas/ci-runner:latest
     timeout-minutes: 30
     env:
       CARGO_INCREMENTAL: 0
