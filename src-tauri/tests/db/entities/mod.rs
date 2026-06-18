@@ -1,9 +1,9 @@
-mod programs;
-mod majors;
 mod batches;
-mod semesters;
-mod subjects;
-mod students;
 mod curriculum_subjects;
-mod student_grades;
+mod majors;
+mod programs;
 mod security;
+mod semesters;
+mod student_grades;
+mod students;
+mod subjects;

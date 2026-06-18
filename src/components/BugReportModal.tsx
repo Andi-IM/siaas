@@ -2,6 +2,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 import styles from './BugReportModal.module.css';
 
+const safeInvoke = async <T,>(cmd: string, args?: any): Promise<T> => {
+  if (typeof window !== "undefined" && (window as any).__E2E_MOCK_INVOKE__) {
+    return (window as any).__E2E_MOCK_INVOKE__(cmd, args);
+  }
+  if (args !== undefined) {
+    return invoke<T>(cmd, args);
+  }
+  return invoke<T>(cmd);
+};
+
 export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -44,8 +54,8 @@ export function BugReportModal({ isOpen, onClose }: { isOpen: boolean, onClose: 
     try {
       let logs = 'No logs available';
       try {
-        if (typeof window !== 'undefined' && (window as any).__TAURI_INTERNALS__) {
-          logs = await invoke<string>('get_app_logs');
+        if (typeof window !== 'undefined' && ((window as any).__TAURI_INTERNALS__ || (window as any).__E2E_MOCK_INVOKE__)) {
+          logs = await safeInvoke<string>('get_app_logs');
         }
       } catch (err) {
         console.error('Failed to retrieve system logs:', err);

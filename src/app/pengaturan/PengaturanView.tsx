@@ -4,6 +4,17 @@ import React, { useState, useEffect } from "react";
 import { BugReportModal } from "@/components/BugReportModal";
 import { Database, Bug, AlertTriangle, RefreshCw, Download, Upload } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
+import { filePicker } from "@/lib/dialog-utils";
+
+const safeInvoke = async <T,>(cmd: string, args?: any): Promise<T> => {
+  if (typeof window !== "undefined" && (window as any).__E2E_MOCK_INVOKE__) {
+    return (window as any).__E2E_MOCK_INVOKE__(cmd, args);
+  }
+  if (args !== undefined) {
+    return invoke<T>(cmd, args);
+  }
+  return invoke<T>(cmd);
+};
 
 export default function PengaturanView() {
   const [appVersion, setAppVersion] = useState("Memuat...");
@@ -17,8 +28,8 @@ export default function PengaturanView() {
   useEffect(() => {
     const fetchVersion = async () => {
       try {
-        if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-          const ver = await invoke<string>("get_app_version");
+        if (typeof window !== "undefined" && ((window as any).__TAURI_INTERNALS__ || (window as any).__E2E_MOCK_INVOKE__)) {
+          const ver = await safeInvoke<string>("get_app_version");
           setAppVersion(ver);
         } else {
           setAppVersion("0.1.0 (Development)");
@@ -35,8 +46,16 @@ export default function PengaturanView() {
     setLoadingExport(true);
     setStatusMsg(null);
     try {
-      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        await invoke("export_database");
+      if (typeof window !== "undefined" && ((window as any).__TAURI_INTERNALS__ || (window as any).__E2E_MOCK_INVOKE__)) {
+        const file = await filePicker.saveFile(
+          "Ekspor Basis Data",
+          [{ name: "Database Files", extensions: ["db"] }],
+          "sias.db"
+        );
+        if (!file) {
+          throw "Batal memilih lokasi penyimpanan";
+        }
+        await safeInvoke("export_database", { path: file.path });
         setStatusMsg({
           type: "success",
           text: "Basis data berhasil diekspor!"
@@ -71,8 +90,12 @@ export default function PengaturanView() {
     setLoadingImport(true);
     setStatusMsg(null);
     try {
-      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        await invoke("import_database");
+      if (typeof window !== "undefined" && ((window as any).__TAURI_INTERNALS__ || (window as any).__E2E_MOCK_INVOKE__)) {
+        const file = await filePicker.pickDatabase();
+        if (!file) {
+          throw "Batal memilih berkas database";
+        }
+        await safeInvoke("import_database", { path: file.path });
         setStatusMsg({
           type: "success",
           text: "Basis data berhasil diimpor!"
@@ -102,8 +125,8 @@ export default function PengaturanView() {
     setLoadingReset(true);
     setStatusMsg(null);
     try {
-      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
-        await invoke("reset_database");
+      if (typeof window !== "undefined" && ((window as any).__TAURI_INTERNALS__ || (window as any).__E2E_MOCK_INVOKE__)) {
+        await safeInvoke("reset_database");
         setStatusMsg({
           type: "success",
           text: "Basis data berhasil direset dan dibuat ulang dari awal!"

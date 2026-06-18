@@ -20,7 +20,7 @@ This document tracks known technical limitations, architectural "shortcuts," and
 
 ---
 
-## 🟧 Moderate Priority: Environment & Testing
+## 🟧 Moderate Priority: Architecture & Testing
 
 ### 3. Headless vs. Real Browser Testing
 - **Current State**: Frontend tests use `happy-dom` (simulated browser).
@@ -28,17 +28,35 @@ This document tracks known technical limitations, architectural "shortcuts," and
 - **Business Impact**: Visual bugs that may look unprofessional to clients on different screens.
 - **Mitigation**: Integrate **Playwright** for E2E testing in real browser environments for mission-critical routes.
 
+### 4. Client-Side Data Caching (State Management)
+- **Current State**: Direct `useEffect` fetch from Tauri backend on every component mount without a caching layer.
+- **Risk**: UI flickering and redundant SQLite I/O during navigation, degrading the "fluid" app experience.
+- **Business Impact**: Reduced perceived quality compared to modern desktop/web applications.
+- **Mitigation**: Implement a caching layer (e.g., `TanStack Query` or `SWR`) to persist data within the session.
+
+### 5. Form Logic & Validation Redundancy
+- **Current State**: Manual state handling and validation logic in every `View.tsx` component.
+- **Risk**: High maintenance overhead and inconsistent validation behavior across different modules.
+- **Business Impact**: Slower feature delivery and increased risk of bugs as the number of forms grows.
+- **Mitigation**: Standardize form management using a library like `React Hook Form` with `Zod` for schema-based validation.
+
+### 6. Component Hierarchy & Prop Drilling
+- **Current State**: Heavy reliance on localized state within View components without a global sharing mechanism.
+- **Risk**: Deeply nested components will require "prop drilling," making the code rigid and difficult to refactor.
+- **Business Impact**: Increased complexity and regression risk during UI evolution.
+- **Mitigation**: Introduce `React Context` for shared concerns (e.g., global filters or user session data).
+
 ---
 
 ## 🟦 Low Priority: Maintenance & Maintenance
 
-### 4. Migration Error Recovery
+### 7. Migration Error Recovery
 - **Current State**: Migrations assume a clean or valid state.
 - **Risk**: If a user manually edits the `sias.db` file and corrupts the schema, the auto-migration tool may fail and prevent the app from starting.
 - **Business Impact**: High support ticket volume for "Database Corrupted" issues.
 - **Mitigation**: Implement a database "Repair/Reset" utility and automated daily backups within the app.
 
-### 5. Code Coverage "Ghost Lines"
+### 8. Code Coverage "Ghost Lines"
 - **Current State**: Sea-ORM entities show 0% coverage despite being tested.
 - **Risk**: Reliance on line coverage metrics may mask a lack of actual behavioral testing for new entities.
 - **Business Impact**: False sense of security if coverage targets are met while behavioral tests are skipped.
@@ -56,9 +74,9 @@ This document tracks known technical limitations, architectural "shortcuts," and
 
 ## 📈 Decision Guidance for Management
 
-- **Short Term (0-3 Months)**: Focus on **Constraint #2** (List Performance / Pagination) as the school starts populating data.
-- **Mid Term (3-9 Months)**: Focus on **Constraint #1** (SQLite Concurrency & Locking) to ensure reliability under heavy concurrent workloads.
-- **Long Term**: Transition to Playwright for high-fidelity E2E visual assurance.
+- **Short Term (0-3 Months)**: Focus on **Constraint #2** (Pagination) and **Constraint #5** (Form Standardization) as the school starts populating data to ensure dev speed.
+- **Mid Term (3-9 Months)**: Focus on **Constraint #1** (SQLite Concurrency) and **Constraint #4** (Caching) to ensure reliability and fluidity under load.
+- **Long Term**: Transition to Playwright for high-fidelity E2E visual assurance and address **Constraint #6** (Global State) as features scale.
 
 ---
-*Last Updated: Tuesday, June 16, 2026*
+*Last Updated: Thursday, June 18, 2026*

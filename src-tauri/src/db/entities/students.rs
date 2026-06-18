@@ -2,9 +2,9 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `students` table.
-/// 
-/// This table holds a comprehensive student record containing administrative fields 
-/// (including personal details, admission data, parent info, guardian info, and graduation status) 
+///
+/// This table holds a comprehensive student record containing administrative fields
+/// (including personal details, admission data, parent info, guardian info, and graduation status)
 /// as specified in the Academic Administrative Core schema.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "students")]

@@ -2,9 +2,9 @@ use sea_orm::entity::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SeaORM Entity representing the `curriculum_subjects` table.
-/// 
-/// This is a junction table mapping Majors, Batches, Semesters, and Subjects 
-/// together to construct the school's curriculum map. It enforces a composite 
+///
+/// This is a junction table mapping Majors, Batches, Semesters, and Subjects
+/// together to construct the school's curriculum map. It enforces a composite
 /// unique constraint to prevent duplicate curriculum subject assignments.
 #[derive(Clone, Debug, PartialEq, DeriveEntityModel, Eq, Serialize, Deserialize)]
 #[sea_orm(table_name = "curriculum_subjects")]
@@ -33,7 +33,7 @@ pub struct Model {
 }
 
 /// Relations mapped for the `curriculum_subjects` entity.
-/// All relationships are configured to cascade delete: if a parent (Major, Batch, Semester, Subject) 
+/// All relationships are configured to cascade delete: if a parent (Major, Batch, Semester, Subject)
 /// is deleted, the corresponding curriculum mapping is automatically removed.
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
 pub enum Relation {

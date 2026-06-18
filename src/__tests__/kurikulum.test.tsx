@@ -44,7 +44,6 @@ describe("CurriculumPage - Unit Tests", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => {});
-    window.confirm = vi.fn();
     
     (getPrograms as any).mockResolvedValue(mockPrograms);
     (getConcentrations as any).mockResolvedValue(mockConcentrations);
@@ -526,26 +525,53 @@ describe("CurriculumPage - Unit Tests", () => {
     const row = screen.getByText("Matematika").closest("tr")!;
     const deleteBtn = within(row).getByTitle("Hapus");
 
-    // Case 1: Cancel deletion
-    (window.confirm as any).mockReturnValue(false);
+    // Case 1: Cancel deletion via modal
     await userEvent.click(deleteBtn);
 
-    expect(window.confirm).toHaveBeenCalledWith("Hapus mata pelajaran ini?");
+    let dialog = document.querySelector("dialog")!;
+    expect(dialog).toHaveAttribute("open");
+    expect(screen.getByText("Hapus Mata Pelajaran")).toBeInTheDocument();
+    expect(within(dialog).getByText(/Matematika/)).toBeInTheDocument();
+
+    const batalBtn = within(dialog).getByRole("button", { name: "Batal" });
+    await userEvent.click(batalBtn);
+
+    await waitFor(() => {
+      expect(dialog).not.toHaveAttribute("open");
+    });
     expect(deleteSubject).not.toHaveBeenCalled();
 
     // Case 2: Confirm deletion
-    (window.confirm as any).mockReturnValue(true);
     await userEvent.click(deleteBtn);
 
-    expect(deleteSubject).toHaveBeenCalledWith("sub-1");
+    dialog = document.querySelector("dialog")!;
+    expect(dialog).toHaveAttribute("open");
+
+    const hapusBtn = within(dialog).getByRole("button", { name: "Hapus" });
+    await userEvent.click(hapusBtn);
+
+    await waitFor(() => {
+      expect(deleteSubject).toHaveBeenCalledWith("sub-1");
+    });
     expect(getSubjects).toHaveBeenCalledWith("con-1");
+    await waitFor(() => {
+      expect(dialog).not.toHaveAttribute("open");
+    });
 
     // Case 3: Error during deletion
     (deleteSubject as any).mockRejectedValueOnce(new Error("Delete failed"));
     await userEvent.click(deleteBtn);
 
+    dialog = document.querySelector("dialog")!;
+    expect(dialog).toHaveAttribute("open");
+    const hapusBtn2 = within(dialog).getByRole("button", { name: "Hapus" });
+    await userEvent.click(hapusBtn2);
+
     await waitFor(() => {
       expect(console.error).toHaveBeenCalledWith("Failed to delete subject:", expect.any(Error));
+    });
+    await waitFor(() => {
+      expect(dialog).not.toHaveAttribute("open");
     });
   });
 
@@ -586,13 +612,19 @@ describe("CurriculumPage - Unit Tests", () => {
     const row = screen.getByText("Matematika").closest("tr")!;
     const deleteBtn = within(row).getByTitle("Hapus");
 
-    (window.confirm as any).mockReturnValue(true);
+    await userEvent.click(deleteBtn);
+
+    const dialog = document.querySelector("dialog")!;
+    expect(dialog).toHaveAttribute("open");
+
     let resolveDelete: any;
     (deleteSubject as any).mockImplementationOnce(() => new Promise((resolve) => {
       resolveDelete = resolve;
     }));
 
-    await userEvent.click(deleteBtn);
+    const hapusBtn = within(dialog).getByRole("button", { name: "Hapus" });
+    await userEvent.click(hapusBtn);
+
     expect(deleteSubject).toHaveBeenCalledWith("sub-1");
 
     (getConcentrations as any).mockResolvedValueOnce([]);

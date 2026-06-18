@@ -1,6 +1,6 @@
 use crate::db::setup_test_db;
 use app_lib::db::entities::programs;
-use sea_orm::{EntityTrait, ActiveModelTrait, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 
 #[tokio::test]
 async fn test_programs_crud() {
@@ -14,10 +14,17 @@ async fn test_programs_crud() {
         name: Set("Teknik Mesin".to_string()),
         created_at: Set(now.clone()),
         updated_at: Set(now.clone()),
-    }.insert(&db).await.unwrap();
+    }
+    .insert(&db)
+    .await
+    .unwrap();
 
     // Read
-    let program = programs::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let program = programs::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(program.name, "Teknik Mesin");
 
     // Update
@@ -25,11 +32,21 @@ async fn test_programs_crud() {
     active.name = Set("Teknik Mesin Updated".to_string());
     active.update(&db).await.unwrap();
 
-    let updated = programs::Entity::find_by_id(id.clone()).one(&db).await.unwrap().unwrap();
+    let updated = programs::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(updated.name, "Teknik Mesin Updated");
 
     // Delete
-    programs::Entity::delete_by_id(id.clone()).exec(&db).await.unwrap();
-    let deleted = programs::Entity::find_by_id(id.clone()).one(&db).await.unwrap();
+    programs::Entity::delete_by_id(id.clone())
+        .exec(&db)
+        .await
+        .unwrap();
+    let deleted = programs::Entity::find_by_id(id.clone())
+        .one(&db)
+        .await
+        .unwrap();
     assert!(deleted.is_none());
 }

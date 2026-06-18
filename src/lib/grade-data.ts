@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { StudentGrade } from "./types";
 import { isTauri } from "./tauri-utils";
+import { filePicker } from "./dialog-utils";
 
 export async function getStudentGradesByFilter(majorId: string, semester: number): Promise<StudentGrade[]> {
   if (isTauri()) {
@@ -58,14 +59,22 @@ export async function getGradesByStudent(nis: string): Promise<any[]> {
 
 export async function importGradesFromExcel(): Promise<string> {
   if (isTauri()) {
-    return await invoke<string>("import_grades_from_excel");
+    const file = await filePicker.pickExcel();
+    if (!file) return "Batal memilih berkas";
+    return await invoke<string>("import_grades_from_excel", { path: file.path });
   }
   throw new Error("Tauri API is not available");
 }
 
 export async function exportGradesToExcel(majorId: string): Promise<string> {
   if (isTauri()) {
-    return await invoke<string>("export_grades_to_excel", { majorId });
+    const file = await filePicker.saveFile(
+      "Simpan Rekap Nilai",
+      [{ name: "Excel Files", extensions: ["xlsx"] }],
+      `rekap_nilai_${majorId}.xlsx`
+    );
+    if (!file) return "Batal menyimpan berkas";
+    return await invoke<string>("export_grades_to_excel", { majorId, path: file.path });
   }
   throw new Error("Tauri API is not available");
 }

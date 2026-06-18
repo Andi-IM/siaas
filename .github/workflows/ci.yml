@@ -2,55 +2,106 @@ name: SIAS CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, dev]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+      - '.releaserc.json'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.impeccable/**'
+      - '.qwen/**'
+      - '.agents/**'
   pull_request:
-    branches: [main]
+    branches: [main, dev]
+    paths-ignore:
+      - 'docs/**'
+      - '**.md'
+      - '.gitignore'
+      - '.releaserc.json'
+      - '.vscode/**'
+      - '.husky/**'
+      - '.impeccable/**'
+      - '.qwen/**'
+      - '.agents/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
-    runs-on: windows-latest
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/andi-im/siaas/ci-runner:dev
+    timeout-minutes: 30
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_TEST_DEBUG: 0
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
         with:
-          node-version: "22"
-          cache: "npm"
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run Lint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run Frontend Tests (Vitest)
-        run: npm test
+        run: pnpm test --coverage
 
       - name: Install API dependencies
         working-directory: ./services/api
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run API Tests (Vitest)
         working-directory: ./services/api
-        run: npm test
-
-      - name: Setup Rust Toolchain
-        uses: dtolnay/rust-toolchain@stable
+        run: pnpm test --coverage
 
       - name: Rust Cache
         uses: swatinem/rust-cache@v2
         with:
           workspaces: "src-tauri"
+          cache-targets: true
+          shared-key: ${{ runner.os }}
 
       - name: Run Backend Tests (Rust)
         working-directory: ./src-tauri
-        run: cargo test
+        run: cargo nextest run --profile ci --locked
+
+      - name: Run Rust Format Check
+        working-directory: ./src-tauri
+        run: cargo fmt -- --check
+
+      - name: Run Rust Lint (Clippy)
+        working-directory: ./src-tauri
+        run: cargo clippy -- -D warnings
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          files: ./coverage/lcov.info,./services/api/coverage/lcov.info
+          fail_ci_if_error: false
+
+      - name: Upload test results to Codecov
+        uses: codecov/test-results-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./junit.xml,./services/api/junit.xml,./junit-rust.xml
           fail_ci_if_error: false

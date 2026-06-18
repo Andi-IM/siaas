@@ -10,13 +10,11 @@ Validates the synchronization between Rust ActiveModels and SQLite tables.
 | `test_students_crud` | Students | UUID, 23-field profile (NIS, NISN, Parents, etc.) | Success (Row created/updated/deleted) | Nullable optional fields, very long addresses, invalid date formats. |
 | `test_programs_crud` | Programs | UUID, Name: "Teknik Mesin" | Success | Duplicate names (Unique constraint), empty names. |
 | `test_student_grades_crud` | Grades | StudentID, CSID, Grade: 95.5 | Success | Decimal points (float precision), maximum value (100.0), minimum value (0.0). |
+| `test_db_performance` | Core | 1000+ Write/Read ops | Execution < 3s | Large transaction volume, index utilization validation. |
 
-### 🔍 Technical Deep Dive: Student CRUD
-- **Input Example**: `{ id: "uuid-v4", nis: "12345", full_name: "John Doe", ... }`
-- **Output Success**: `Result::Ok(Model)` returned from database with matching fields.
-- **Edge Case Validation**:
-    - **Missing Optional Data**: Tested by sending `None` for guardian information. System must persist successfully.
-    - **ID Conflict**: Attempting to insert two students with the same ID returns a `DbErr::ConstraintViolation`.
+### 🔍 Technical Deep Dive: Database Performance
+- **Input Example**: Parallel insertion of 500 student records followed by a complex join query for grades.
+- **Output Success**: Total execution time stays within predefined threshold, ensuring UI responsiveness for large schools.
 
 ---
 
@@ -27,6 +25,7 @@ Ensures data stays consistent and safe from malicious input.
 | :--- | :--- | :--- | :--- | :--- |
 | `test_sql_injection` | Security | `' OR '1'='1`, `; DROP TABLE;` | Data saved as literal text | Malicious characters treated as string, NOT executed as command. |
 | `test_foreign_keys` | Integrity | Delete Major with linked Student | `Err(DbErr::Constraint)` | Prevents "Orphan Data" where students belong to a non-existent major. |
+| `test_rollback` | Migration | `down` then `up` command | Schema restored to V-1 | Data loss prevention, constraint reconstruction. |
 
 ### 🔍 Technical Deep Dive: SQL Injection
 - **Input Example**: Name set to `"Hacker'; DROP TABLE students; --"`

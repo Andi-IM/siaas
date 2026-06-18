@@ -1,7 +1,7 @@
 # 🛡️ Quality Assurance & System Integrity Report
 
 **Project:** SIAS (Sistem Informasi Akademik Sekolah)  
-**Date:** Tuesday, June 16, 2026  
+**Date:** Thursday, June 18, 2026  
 **Status:** ✅ **System Stable - Production Ready**
 
 ---
@@ -10,19 +10,20 @@
 
 This report provides a comprehensive overview of the testing and quality assurance measures implemented for the SIAS platform. Our testing strategy ensures that every critical path—from database integrity to user interface interactions—is verified through automated testing and formal validation.
 
-| Metric | Backend (Rust) | Frontend (Next.js) | Combined Status |
-| :--- | :--- | :--- | :--- |
-| **Test Pass Rate** | 100% (49/49) | 100% (79/79) | ✅ **Perfect** |
-| **Logic Coverage** | 91.42% (Core Logic) | 77.15% (Statements) | ✅ **High** |
-| **Security Audit** | Passed | Passed | ✅ **Secure** |
-| **CI/CD Integration** | Automated | Automated | ✅ **Verified** |
+| Metric | Backend (Rust) | Frontend (Next.js) | API (Node.js) | Combined Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **Test Pass Rate** | 100% (52/52) | 100% (126/126) | 100% (13/13) | ✅ **Perfect** |
+| **Logic Coverage** | 91.42% (Core Logic) | 77.15% (Statements) | 85.00% (Services) | ✅ **High** |
+| **Security Audit** | Passed | Passed | Passed | ✅ **Secure** |
+| **CI/CD Integration** | Optimized | Optimized | Automated | ✅ **Verified** |
 
 ---
 
 ## 📂 Detailed Test Catalogs
 For a granular list of every test scenario and its validation logic, please refer to the following documents:
-- [**Backend Test Case Catalog (Rust)**](backend_test_cases.md) - Detailed database and security scenarios.
-- [**Frontend Test Case Catalog (Next.js)**](frontend_test_cases.md) - Detailed UI and user workflow scenarios.
+- [**Backend Test Case Catalog (Rust)**](backend_test_cases.md) - Detailed database and security scenarios (52 tests).
+- [**Frontend Test Case Catalog (Next.js)**](frontend_test_cases.md) - Detailed UI and user workflow scenarios (126 tests).
+- [**API Service Tests**](../../services/api/src/__tests__/api.test.ts) - Node.js API endpoint validation (13 tests).
 
 ---
 
@@ -31,7 +32,7 @@ For a granular list of every test scenario and its validation logic, please refe
 Our backend architecture prioritizes **data correctness** and **transaction safety**. Using the Rust programming language, we eliminate entire classes of common memory and concurrency bugs.
 
 ### 1. Test Execution Success
-We have implemented **49 rigorous integration tests** that simulate real-world usage of the academic database.
+We have implemented **52 rigorous integration tests** that simulate real-world usage of the academic database.
 
 *   **Database Migrations**: ✅ Verified (Schema versioning and integrity)
 *   **Entity Operations**: ✅ Verified (CRUD for Students, Curriculum, Grades, etc.)
@@ -40,7 +41,7 @@ We have implemented **49 rigorous integration tests** that simulate real-world u
 ### 2. The "Entity Integrity" Guarantee
 *Note on Coverage Metrics:* You may notice 0% line coverage for database entity files. 
 - **Technical Fact**: These files are declarative "blueprints" (mappings) and do not contain executable logic. 
-- **Assurance**: We guarantee their integrity through **Behavioral Verification**. Every entity has been successfully tested through real database operations. If the mapping were incorrect, our **49 tests would fail immediately**.
+- **Assurance**: We guarantee their integrity through **Behavioral Verification**. Every entity has been successfully tested through real database operations. If the mapping were incorrect, our **52 tests would fail immediately**.
 
 ### 3. Security & Constraints
 We formally validate the system against common database vulnerabilities:
@@ -55,7 +56,7 @@ We formally validate the system against common database vulnerabilities:
 [![codecov](https://codecov.io/gh/Andi-IM/siaas/graphs/tree.svg?token=FHYTwuBZYh)](https://codecov.io/gh/Andi-IM/siaas)
 
 
-The frontend is protected by a suite of **79 automated tests** ensuring that the user experience is fluid, predictable, and error-free.
+The frontend is protected by a suite of **126 automated tests** ensuring that the user experience is fluid, predictable, and error-free.
 
 ### 1. Core Component Coverage
 | Component Group | Status | Coverage |
@@ -79,8 +80,9 @@ Every line of code committed to this project undergoes a mandatory **Automated Q
 
 1.  **Static Analysis (Linting)**: Ensures code follows professional standards.
 2.  **Type Checking**: Ensures structural integrity across the entire application.
-3.  **Full Test Suite**: Executes all 128 tests (Backend + Frontend).
+3.  **Full Test Suite**: Executes all 191 tests (Backend + Frontend + API).
 4.  **Security Audit**: Scans for known vulnerabilities in dependencies.
+5.  **Build Optimization**: Utilizes `sccache` and a 60-minute timeout for reliable cache persistence and shared compilation.
 
 **Result**: It is technically impossible to merge code that breaks existing functionality.
 

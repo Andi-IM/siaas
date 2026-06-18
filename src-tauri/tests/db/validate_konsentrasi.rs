@@ -1,10 +1,10 @@
-use app_lib::db::{establish_in_memory_connection, migrations::MigrationManager};
-use app_lib::db::entities::{curriculum_subjects, students};
 use app_lib::db::core::{
-    create_subject_core, create_semester_core, create_curriculum_subject_core,
-    upsert_student_grade_core, create_student_core, create_major_core, create_batch_core
+    create_batch_core, create_curriculum_subject_core, create_major_core, create_semester_core,
+    create_student_core, create_subject_core, upsert_student_grade_core,
 };
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
+use app_lib::db::entities::{curriculum_subjects, students};
+use app_lib::db::{establish_in_memory_connection, migrations::MigrationManager};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use uuid::Uuid;
 
 #[tokio::test]
@@ -14,24 +14,94 @@ async fn validate_konsentrasi_keahlian_formula() {
     manager.run(&db).await.unwrap();
 
     // Create a major and batch
-    let major = create_major_core(&db, "TP", "Teknik Pemesinan", None).await.unwrap();
+    let major = create_major_core(&db, "TP", "Teknik Pemesinan", None)
+        .await
+        .unwrap();
     let batch = create_batch_core(&db, 2024).await.unwrap();
 
     // Create semesters 3, 4, 6, and UKK (99)
-    let smt3 = create_semester_core(&db, "SEM3", "Semester 3", 3).await.unwrap();
-    let smt4 = create_semester_core(&db, "SEM4", "Semester 4", 4).await.unwrap();
-    let smt6 = create_semester_core(&db, "SEM6", "Semester 6", 6).await.unwrap();
-    let smt_ukk = create_semester_core(&db, "UKK", "Uji Kompetensi Keahlian", 99).await.unwrap();
+    let smt3 = create_semester_core(&db, "SEM3", "Semester 3", 3)
+        .await
+        .unwrap();
+    let smt4 = create_semester_core(&db, "SEM4", "Semester 4", 4)
+        .await
+        .unwrap();
+    let smt6 = create_semester_core(&db, "SEM6", "Semester 6", 6)
+        .await
+        .unwrap();
+    let smt_ukk = create_semester_core(&db, "UKK", "Uji Kompetensi Keahlian", 99)
+        .await
+        .unwrap();
 
     // Create KEJURUAN_KONSENTRASI subjects (GTM, BUBUT, CNC, GRD, FRAIS)
-    let gtm = create_subject_core(&db, "GTM", "Gambar Teknik Manufaktur", "Kelompok Kejuruan", "active", "KEJURUAN_KONSENTRASI", 1).await.unwrap();
-    let bubut = create_subject_core(&db, "BUBUT", "Teknik Pemesinan Bubut", "Kelompok Kejuruan", "active", "KEJURUAN_KONSENTRASI", 2).await.unwrap();
-    let cnc = create_subject_core(&db, "CNC", "Teknik Pemesinan NC/CNC dan CAM", "Kelompok Kejuruan", "active", "KEJURUAN_KONSENTRASI", 3).await.unwrap();
-    let grd = create_subject_core(&db, "GRD", "Teknik Pemesinan Gerinda", "Kelompok Kejuruan", "active", "KEJURUAN_KONSENTRASI", 4).await.unwrap();
-    let frais = create_subject_core(&db, "FRAIS", "Teknik Pemesinan Frais", "Kelompok Kejuruan", "active", "KEJURUAN_KONSENTRASI", 5).await.unwrap();
+    let gtm = create_subject_core(
+        &db,
+        "GTM",
+        "Gambar Teknik Manufaktur",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_KONSENTRASI",
+        1,
+    )
+    .await
+    .unwrap();
+    let bubut = create_subject_core(
+        &db,
+        "BUBUT",
+        "Teknik Pemesinan Bubut",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_KONSENTRASI",
+        2,
+    )
+    .await
+    .unwrap();
+    let cnc = create_subject_core(
+        &db,
+        "CNC",
+        "Teknik Pemesinan NC/CNC dan CAM",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_KONSENTRASI",
+        3,
+    )
+    .await
+    .unwrap();
+    let grd = create_subject_core(
+        &db,
+        "GRD",
+        "Teknik Pemesinan Gerinda",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_KONSENTRASI",
+        4,
+    )
+    .await
+    .unwrap();
+    let frais = create_subject_core(
+        &db,
+        "FRAIS",
+        "Teknik Pemesinan Frais",
+        "Kelompok Kejuruan",
+        "active",
+        "KEJURUAN_KONSENTRASI",
+        5,
+    )
+    .await
+    .unwrap();
 
     // Create UKK subject
-    let ukk = create_subject_core(&db, "UKK", "Uji Kompetensi Keahlian", "Kelompok Kejuruan", "active", "UKK", 6).await.unwrap();
+    let ukk = create_subject_core(
+        &db,
+        "UKK",
+        "Uji Kompetensi Keahlian",
+        "Kelompok Kejuruan",
+        "active",
+        "UKK",
+        6,
+    )
+    .await
+    .unwrap();
 
     // Map subjects to semesters
     let konsentrasi_subjects = vec![&gtm, &bubut, &cnc, &grd, &frais];
@@ -39,12 +109,16 @@ async fn validate_konsentrasi_keahlian_formula() {
 
     for subject in &konsentrasi_subjects {
         for semester in &semesters_for_konsentrasi {
-            create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id).await.unwrap();
+            create_curriculum_subject_core(&db, &major.id, &batch.id, &semester.id, &subject.id)
+                .await
+                .unwrap();
         }
     }
 
     // Map UKK to UKK semester
-    create_curriculum_subject_core(&db, &major.id, &batch.id, &smt_ukk.id, &ukk.id).await.unwrap();
+    create_curriculum_subject_core(&db, &major.id, &batch.id, &smt_ukk.id, &ukk.id)
+        .await
+        .unwrap();
 
     // Create a student
     let student = students::Model {
@@ -92,7 +166,9 @@ async fn validate_konsentrasi_keahlian_formula() {
             .await
             .unwrap()
             .unwrap();
-        upsert_student_grade_core(&db, &student.id, &mapping.id, smt3_grades[i]).await.unwrap();
+        upsert_student_grade_core(&db, &student.id, &mapping.id, smt3_grades[i])
+            .await
+            .unwrap();
     }
 
     // Semester 4: GTM=87, BUBUT=92, CNC=90, GRD=89, FRAIS=94 → avg = 90.4
@@ -106,7 +182,9 @@ async fn validate_konsentrasi_keahlian_formula() {
             .await
             .unwrap()
             .unwrap();
-        upsert_student_grade_core(&db, &student.id, &mapping.id, smt4_grades[i]).await.unwrap();
+        upsert_student_grade_core(&db, &student.id, &mapping.id, smt4_grades[i])
+            .await
+            .unwrap();
     }
 
     // Semester 6: GTM=89, BUBUT=94, CNC=92, GRD=91, FRAIS=96 → avg = 92.4
@@ -120,7 +198,9 @@ async fn validate_konsentrasi_keahlian_formula() {
             .await
             .unwrap()
             .unwrap();
-        upsert_student_grade_core(&db, &student.id, &mapping.id, smt6_grades[i]).await.unwrap();
+        upsert_student_grade_core(&db, &student.id, &mapping.id, smt6_grades[i])
+            .await
+            .unwrap();
     }
 
     // UKK grade: 85
@@ -132,7 +212,9 @@ async fn validate_konsentrasi_keahlian_formula() {
         .await
         .unwrap()
         .unwrap();
-    upsert_student_grade_core(&db, &student.id, &ukk_mapping.id, 85.0).await.unwrap();
+    upsert_student_grade_core(&db, &student.id, &ukk_mapping.id, 85.0)
+        .await
+        .unwrap();
 
     // Manual calculation
     let avg_smt3 = smt3_grades.iter().sum::<f64>() / smt3_grades.len() as f64;
@@ -155,17 +237,38 @@ async fn validate_konsentrasi_keahlian_formula() {
     println!("UKK score: {:.2}", ukk_score);
     println!();
     println!("Formula: (avg_smt3 + avg_smt4 + avg_smt6 + ukk_score) / 4");
-    println!("       = ({:.2} + {:.2} + {:.2} + {:.2}) / 4", avg_smt3, avg_smt4, avg_smt6, ukk_score);
-    println!("       = {:.2} / 4", avg_smt3 + avg_smt4 + avg_smt6 + ukk_score);
+    println!(
+        "       = ({:.2} + {:.2} + {:.2} + {:.2}) / 4",
+        avg_smt3, avg_smt4, avg_smt6, ukk_score
+    );
+    println!(
+        "       = {:.2} / 4",
+        avg_smt3 + avg_smt4 + avg_smt6 + ukk_score
+    );
     println!("       = {:.2}", expected_konsentrasi);
     println!();
-    println!("Expected Konsentrasi Keahlian score: {:.2}", expected_konsentrasi);
+    println!(
+        "Expected Konsentrasi Keahlian score: {:.2}",
+        expected_konsentrasi
+    );
 
     // Verify the calculation
-    assert!((avg_smt3 - 88.4).abs() < 0.01, "Smt 3 average should be 88.4");
-    assert!((avg_smt4 - 90.4).abs() < 0.01, "Smt 4 average should be 90.4");
-    assert!((avg_smt6 - 92.4).abs() < 0.01, "Smt 6 average should be 92.4");
-    assert!((expected_konsentrasi - 89.05).abs() < 0.01, "Konsentrasi Keahlian should be 89.05");
+    assert!(
+        (avg_smt3 - 88.4).abs() < 0.01,
+        "Smt 3 average should be 88.4"
+    );
+    assert!(
+        (avg_smt4 - 90.4).abs() < 0.01,
+        "Smt 4 average should be 90.4"
+    );
+    assert!(
+        (avg_smt6 - 92.4).abs() < 0.01,
+        "Smt 6 average should be 92.4"
+    );
+    assert!(
+        (expected_konsentrasi - 89.05).abs() < 0.01,
+        "Konsentrasi Keahlian should be 89.05"
+    );
 
     println!("\n✓ Formula validation passed!\n");
 }

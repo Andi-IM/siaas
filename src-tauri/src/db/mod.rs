@@ -4,11 +4,12 @@ use std::path::Path;
 use std::str::FromStr;
 use std::time::Duration;
 
-pub mod entities;
-pub mod migrations;
 pub mod commands;
 pub mod core;
+pub mod entities;
 pub mod error;
+pub mod migrations;
+pub mod paths;
 
 /// Establishes an async connection pool to the SQLite database file.
 ///
@@ -76,14 +77,18 @@ pub fn backup_database(db_path: &Path) -> std::io::Result<()> {
     let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
     let backup_file_name = format!("sias_backup_{}.db", timestamp);
     let backup_path = backup_dir.join(backup_file_name);
-    
+
     std::fs::copy(db_path, &backup_path)?;
 
     let mut backups: Vec<_> = std::fs::read_dir(&backup_dir)?
         .filter_map(Result::ok)
         .filter(|e| {
             let p = e.path();
-            p.is_file() && p.file_name().unwrap_or_default().to_string_lossy().starts_with("sias_backup_")
+            p.is_file()
+                && p.file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy()
+                    .starts_with("sias_backup_")
         })
         .collect();
 

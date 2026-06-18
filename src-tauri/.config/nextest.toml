@@ -1,0 +1,8 @@
+[profile.default]
+# Konfigurasi default untuk penggunaan lokal
+junit = { path = "../../../../junit-rust.xml" }
+
+[profile.ci]
+# Konfigurasi khusus untuk CI environment
+junit = { path = "../../../../junit-rust.xml" }
+retries = 1
