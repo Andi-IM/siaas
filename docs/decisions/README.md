@@ -20,6 +20,7 @@ This directory contains records of significant architecture decisions made in th
 *   [0014: Pelaporan Bug Otomatis dengan Log Diagnostik](0014-pelaporan-bug-dan-log-diagnostik.md)
 *   [0015: Seeding Database untuk Pengembangan dan Pengujian](0015-seeding-database-pengembangan-dan-pengujian.md)
 *   [0016: Layout Transkrip Nilai & Transcript Group Schema](0016-layout-transkrip-pendamping-ijazah.md)
+*   [0017: Presentasi Transkrip Multi-Format & Ekspor PDF Frontend](0017-presentasi-transkrip-multi-format-dan-pdf.md)
 
 
 ## Lifecycle Status

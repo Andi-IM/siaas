@@ -4,6 +4,7 @@ import "./globals.css";
 import { Sidebar } from "@/components/sidebar";
 import { Logo } from "@/components/logo";
 import { MobileNav } from "@/components/mobile-nav";
+import { HeaderStatus } from "@/components/header-status";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -42,14 +43,7 @@ export default function RootLayout({
                 <Logo variant="full" theme="light" height={32} />
               </div>
               <div className="topbar-right">
-                <label htmlFor="global-search" className="sr-only">Cari siswa, kelas</label>
-                <input
-                  id="global-search"
-                  type="search"
-                  placeholder="Cari siswa, kelas..."
-                  className="search-input"
-                />
-                <div className="avatar" title="Admin" aria-hidden="true">A</div>
+                <HeaderStatus />
               </div>
             </header>
 

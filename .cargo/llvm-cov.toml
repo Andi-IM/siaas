@@ -1,6 +1,0 @@
-[profile.default]
-ignore_filename_regex = [
-    "src/db/entities/.*",
-    "src/main\\.rs",
-    "src/lib\\.rs"
-]

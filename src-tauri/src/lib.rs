@@ -1,5 +1,6 @@
 use tauri::Manager;
 use sea_orm::DatabaseConnection;
+use crate::db::paths::{DbPathProvider, AppPathProvider};
 
 pub mod db;
 
@@ -30,21 +31,20 @@ async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 async fn reset_database(
   app_handle: tauri::AppHandle,
-  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>,
+  path_provider: tauri::State<'_, AppPathProvider>
 ) -> Result<(), String> {
   // Close the database connection to release the lock on sias.db
   let mut db_conn = db_conn_state.write().await;
   db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
-  // Resolve database path
-  let app_data_dir = app_handle.path().app_data_dir()
-    .map_err(|e| e.to_string())?;
-  let db_path = app_data_dir.join("sias.db");
-
+  // Resolve database path using provider
+  let db_path = path_provider.get_db_path(&app_handle)?;
+  
   // Delete database files (sias.db, sias.db-wal, sias.db-shm)
-  let wal_path = app_data_dir.join("sias.db-wal");
-  let shm_path = app_data_dir.join("sias.db-shm");
+  let wal_path = db_path.with_extension("db-wal");
+  let shm_path = db_path.with_extension("db-shm");
   
   // Solusi 1: Lakukan beberapa kali percobaan dengan jeda waktu karena OS (Windows) membutuhkan waktu untuk melepas file handle
   let mut deleted = false;
@@ -83,10 +83,11 @@ async fn reset_database(
 }
 
 #[tauri::command]
-async fn export_database(app_handle: tauri::AppHandle) -> Result<(), String> {
-  let app_data_dir = app_handle.path().app_data_dir()
-    .map_err(|e| e.to_string())?;
-  let db_path = app_data_dir.join("sias.db");
+async fn export_database(
+  app_handle: tauri::AppHandle,
+  path_provider: tauri::State<'_, AppPathProvider>
+) -> Result<(), String> {
+  let db_path = path_provider.get_db_path(&app_handle)?;
 
   if !db_path.exists() {
     return Err("Berkas database tidak ditemukan.".to_string());
@@ -111,7 +112,8 @@ async fn export_database(app_handle: tauri::AppHandle) -> Result<(), String> {
 #[tauri::command]
 async fn import_database(
   app_handle: tauri::AppHandle,
-  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>
+  db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>,
+  path_provider: tauri::State<'_, AppPathProvider>
 ) -> Result<(), String> {
   let file_path = rfd::FileDialog::new()
     .add_filter("SQLite Database", &["db"])
@@ -127,12 +129,10 @@ async fn import_database(
   db_conn.close_by_ref().await
     .map_err(|e| e.to_string())?;
 
-  // Resolve database path
-  let app_data_dir = app_handle.path().app_data_dir()
-    .map_err(|e| e.to_string())?;
-  let db_path = app_data_dir.join("sias.db");
-  let wal_path = app_data_dir.join("sias.db-wal");
-  let shm_path = app_data_dir.join("sias.db-shm");
+  // Resolve database path using provider
+  let db_path = path_provider.get_db_path(&app_handle)?;
+  let wal_path = db_path.with_extension("db-wal");
+  let shm_path = db_path.with_extension("db-shm");
 
   // Solusi 1: Lakukan beberapa kali percobaan dengan jeda waktu karena OS (Windows) membutuhkan waktu untuk melepas file handle
   let mut deleted = false;
@@ -151,7 +151,7 @@ async fn import_database(
     return Err("Gagal menghapus berkas basis data lama karena masih terkunci oleh sistem.".to_string());
   }
 
-  // Copy imported file to sias.db
+  // Copy imported file to current db path
   std::fs::copy(&src_path, &db_path)
     .map_err(|e| e.to_string())?;
 
@@ -187,19 +187,28 @@ pub fn run() {
           .build(),
       )?;
 
-      // Resolve application data directory and create if it doesn't exist
-      let app_data_dir = app.path().app_data_dir()?;
-      std::fs::create_dir_all(&app_data_dir)?;
-      let db_path = app_data_dir.join("sias.db");
+      // Register path provider
+      let provider = AppPathProvider;
+      let db_path = provider.get_db_path(app.handle())
+          .map_err(|e| tauri::Error::from(std::io::Error::other(e)))?;
+      app.manage(provider);
+
+      // Ensure directory exists if it's in AppData
+      if let Some(parent) = db_path.parent() {
+          if !parent.as_os_str().is_empty() {
+              std::fs::create_dir_all(parent)?;
+          }
+      }
+
       if !db_path.exists() {
         std::fs::File::create(&db_path)?;
       }
 
-      // Clean up stale WAL/SHM files from a previous crashed session.
-      // These files can cause "database is locked" (code: 5) on startup
-      // because SQLite WAL recovery conflicts with new connection setup.
-      let _ = std::fs::remove_file(app_data_dir.join("sias.db-wal"));
-      let _ = std::fs::remove_file(app_data_dir.join("sias.db-shm"));
+      // Clean up stale WAL/SHM files
+      let wal_path = db_path.with_extension("db-wal");
+      let shm_path = db_path.with_extension("db-shm");
+      let _ = std::fs::remove_file(wal_path);
+      let _ = std::fs::remove_file(shm_path);
       
       // Backup database before running migrations
       if let Err(e) = db::backup_database(&db_path) {
@@ -259,7 +268,11 @@ pub fn run() {
         db::commands::get_grades_by_student,
         db::commands::get_student_grades,
         db::commands::import_grades_from_excel,
-        db::commands::export_grades_to_excel
+        db::commands::import_grades_from_excel_test,
+        db::commands::export_grades_to_excel,
+        db::commands::export_grades_to_excel_test,
+        db::commands::export_transcript_pdf,
+        db::commands::export_transcript_pdf_test
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
