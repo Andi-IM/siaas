@@ -184,50 +184,7 @@ describe('Transkrip Nilai Siswa E2E Tests', () => {
         await expect(avgCells.length).toBeGreaterThan(0);
     });
 
-    // ── Simpan PDF ──────────────────────────────────────────
-    it('should handle Simpan PDF', async () => {
-        const outputPath = path.resolve(__dirname, '../../../src-tauri/tests/transkrip_test.pdf');
 
-        // Navigate to transkrip page
-        await browser.url('http://tauri.localhost/siswa/transkrip?nis=10001');
-
-        const transkripHeading = await $('h1*=Transkrip Nilai');
-        await expect(transkripHeading).toBeDisplayed();
-
-        // Verify the Simpan PDF button exists and is visible
-        const simpanPdfBtn = await $('button*=Simpan PDF');
-        await expect(simpanPdfBtn).toBeDisplayed();
-        await expect(simpanPdfBtn).toBeEnabled();
-
-        // Invoke the Tauri command directly to bypass the file dialog
-        const result = await browser.execute(async (filePath) => {
-            return await window.__TAURI_INTERNALS__.invoke('export_transcript_pdf_test', {
-                nis: '10001',
-                path: filePath,
-            });
-        }, outputPath);
-
-        await expect(result).toContain('Berhasil');
-
-        // Verify the PDF file was created
-        const fileExists = fs.existsSync(outputPath);
-        expect(fileExists).toBe(true);
-
-        // Verify file size is reasonable (> 1KB)
-        if (fileExists) {
-            const stats = fs.statSync(outputPath);
-            expect(stats.size).toBeGreaterThan(1000);
-        }
-
-        // Cleanup
-        if (fileExists) {
-            fs.unlinkSync(outputPath);
-        }
-
-        // Verify the Download icon is present
-        const downloadIcon = await simpanPdfBtn.$('svg.lucide-download');
-        await expect(downloadIcon).toBeDisplayed();
-    });
 
     // ─ Cetak Transkrip (Print Preview) ─────────────────────
     it('should handle Cetak Transkrip (print preview)', async () => {

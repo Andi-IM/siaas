@@ -115,7 +115,7 @@ describe('Rekap Data Hasil Belajar E2E Tests', () => {
     // ── Import Excel (without UI picker) ─────────────────────
     it('should handle Import Excel without UI picker', async () => {
         const result = await browser.execute(async (filePath) => {
-            return await window.__TAURI_INTERNALS__.invoke('import_grades_from_excel_test', { path: filePath });
+            return await window.__TAURI_INTERNALS__.invoke('import_grades_from_excel', { path: filePath });
         }, excelInputPath);
 
         await expect(result).toContain('Berhasil');
@@ -148,7 +148,7 @@ describe('Rekap Data Hasil Belajar E2E Tests', () => {
         const majorId = await (await $('#select-konsentrasi')).getValue();
 
         const result = await browser.execute(async (mid, filePath) => {
-            return await window.__TAURI_INTERNALS__.invoke('export_grades_to_excel_test', { majorId: mid, path: filePath });
+            return await window.__TAURI_INTERNALS__.invoke('export_grades_to_excel', { majorId: mid, path: filePath });
         }, majorId, excelOutputPath);
 
         await expect(result).toContain('Berhasil');

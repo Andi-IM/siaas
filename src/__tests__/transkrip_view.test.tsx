@@ -5,24 +5,7 @@ import React from "react";
 import StudentTranscriptView from "@/app/siswa/transkrip/StudentTranscriptView";
 import { getStudentByNis, getGradesByStudent, getConcentrations, getSubjects } from "@/lib/data";
 
-vi.mock("html2canvas-pro", () => ({
-  default: vi.fn().mockResolvedValue({
-    width: 800,
-    height: 600,
-    toDataURL: () => "data:image/png;base64,abc",
-  }),
-}));
 
-vi.mock("jspdf", () => {
-  function mockJsPdf() {
-    return {
-      addImage: vi.fn(),
-      addPage: vi.fn(),
-      save: vi.fn(),
-    };
-  }
-  return { jsPDF: mockJsPdf };
-});
 
 vi.mock("@/lib/data", () => ({
   getStudentByNis: vi.fn(),
@@ -212,31 +195,5 @@ describe("StudentTranscriptView", () => {
     await userEvent.click(printBtn);
 
     expect(window.print).toHaveBeenCalled();
-  });
-
-  it("completes PDF export flow and resets exporting state", async () => {
-    (getStudentByNis as any).mockResolvedValue({
-      nis: "11111", nisn: "000111", nama: "Alice Smith",
-      kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
-      nomorIjazah: "IJ-001", tanggalKelulusan: "2026-06-14",
-    });
-    (getConcentrations as any).mockResolvedValue([]);
-    (getSubjects as any).mockResolvedValue([]);
-    (getGradesByStudent as any).mockResolvedValue([]);
-
-    render(<StudentTranscriptView nis="11111" />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Alice Smith/)).toBeInTheDocument();
-    });
-
-    const exportBtn = screen.getByRole("button", { name: /Simpan PDF/ });
-    expect(exportBtn).toHaveTextContent("Simpan PDF");
-
-    await userEvent.click(exportBtn);
-
-    await waitFor(() => {
-      expect(exportBtn).toHaveTextContent("Simpan PDF");
-    });
   });
 });

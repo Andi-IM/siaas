@@ -21,7 +21,21 @@ describe("PengaturanView", () => {
       delete (window as any).__TAURI_INTERNALS__;
       window.confirm = vi.fn(() => true);
     }
-    // Removed setTimeout mock to avoid breaking testing-library and missing intermediate DOM states.
+    // Safe async timeout mock to avoid re-entrancy issues in Testing Library
+    vi.spyOn(global, "setTimeout").mockImplementation((cb: any, delay) => {
+      if (delay === 1000 || delay === 1200 || delay === 1500 || delay === 2000) {
+        return originalSetTimeout(cb, 50);
+      }
+      return originalSetTimeout(cb, delay);
+    });
+    if (typeof window !== "undefined") {
+      vi.spyOn(window, "setTimeout").mockImplementation((cb: any, delay) => {
+        if (delay === 1000 || delay === 1200 || delay === 1500 || delay === 2000) {
+          return originalSetTimeout(cb, 50);
+        }
+        return originalSetTimeout(cb, delay);
+      });
+    }
   });
 
   afterEach(() => {
@@ -161,7 +175,10 @@ describe("PengaturanView", () => {
 
   it("exports database inside Tauri environment successfully", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
-    mockInvoke.mockResolvedValue(undefined);
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "save_file_dialog") return { path: "/mock/path/sias.db", name: "sias.db" };
+      return undefined;
+    });
 
     render(<PengaturanView />);
 
@@ -169,7 +186,8 @@ describe("PengaturanView", () => {
     await userEvent.click(exportBtn);
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("export_database");
+      expect(mockInvoke).toHaveBeenCalledWith("save_file_dialog", expect.any(Object));
+      expect(mockInvoke).toHaveBeenCalledWith("export_database", { path: "/mock/path/sias.db" });
     });
 
     await waitFor(() => {
@@ -190,7 +208,10 @@ describe("PengaturanView", () => {
 
   it("handles cancelled export properly (does not show error)", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
-    mockInvoke.mockRejectedValue("Batal memilih lokasi penyimpanan");
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "save_file_dialog") return null;
+      return undefined;
+    });
 
     render(<PengaturanView />);
 
@@ -198,8 +219,10 @@ describe("PengaturanView", () => {
     await userEvent.click(exportBtn);
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("export_database");
+      expect(mockInvoke).toHaveBeenCalledWith("save_file_dialog", expect.any(Object));
     });
+
+    expect(mockInvoke).not.toHaveBeenCalledWith("export_database", expect.any(Object));
 
     // Should not show error or success message
     expect(screen.queryByTestId("status-message")).not.toBeInTheDocument();
@@ -207,7 +230,11 @@ describe("PengaturanView", () => {
 
   it("shows error alert if database export fails in Tauri", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
-    mockInvoke.mockRejectedValue(new Error("Disk full"));
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "save_file_dialog") return { path: "/mock/path/sias.db", name: "sias.db" };
+      if (cmd === "export_database") throw new Error("Disk full");
+      return undefined;
+    });
     const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     render(<PengaturanView />);
@@ -225,7 +252,10 @@ describe("PengaturanView", () => {
 
   it("imports database inside Tauri environment successfully when confirmed", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
-    mockInvoke.mockResolvedValue(undefined);
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "open_file_dialog") return { path: "/mock/import/sias.db", name: "sias.db" };
+      return undefined;
+    });
 
     render(<PengaturanView />);
 
@@ -237,7 +267,8 @@ describe("PengaturanView", () => {
     );
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("import_database");
+      expect(mockInvoke).toHaveBeenCalledWith("open_file_dialog", expect.any(Object));
+      expect(mockInvoke).toHaveBeenCalledWith("import_database", { path: "/mock/import/sias.db" });
     });
 
     await waitFor(() => {
@@ -256,7 +287,7 @@ describe("PengaturanView", () => {
     await userEvent.click(importBtn);
 
     expect(window.confirm).toHaveBeenCalled();
-    expect(mockInvoke).not.toHaveBeenCalledWith("import_database");
+    expect(mockInvoke).not.toHaveBeenCalledWith("import_database", expect.any(Object));
     expect(screen.queryByTestId("status-message")).not.toBeInTheDocument();
   });
 
@@ -276,7 +307,10 @@ describe("PengaturanView", () => {
 
   it("handles cancelled import properly (does not show error)", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
-    mockInvoke.mockRejectedValue("Batal memilih berkas database");
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "open_file_dialog") return null;
+      return undefined;
+    });
 
     render(<PengaturanView />);
 
@@ -284,15 +318,17 @@ describe("PengaturanView", () => {
     await userEvent.click(importBtn);
 
     await waitFor(() => {
-      expect(mockInvoke).toHaveBeenCalledWith("import_database");
+      expect(mockInvoke).toHaveBeenCalledWith("open_file_dialog", expect.any(Object));
     });
 
+    expect(mockInvoke).not.toHaveBeenCalledWith("import_database", expect.any(Object));
     expect(screen.queryByTestId("status-message")).not.toBeInTheDocument();
   });
 
   it("shows error alert if database import fails in Tauri", async () => {
     (window as any).__TAURI_INTERNALS__ = {};
     mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === "open_file_dialog") return { path: "/mock/import/sias.db", name: "sias.db" };
       if (cmd === "import_database") throw new Error("Invalid schema");
       return undefined;
     });

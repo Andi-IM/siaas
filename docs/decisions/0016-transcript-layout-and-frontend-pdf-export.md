@@ -1,6 +1,6 @@
 # 0016: Transcript Layout and Frontend PDF Export
 
-**Status:** accepted
+**Status:** accepted (PDF Export removed)
 **Date:** 2026-06-16
 **Updated:** 2026-06-18 (Consolidated with ADR 0017 and translated to English)
 
@@ -56,4 +56,13 @@ We have implemented a cross-stack solution:
 - [x] Database schema verified via SQLite CLI.
 - [x] Test cases in `src/__tests__/transkrip_view.test.tsx` validate aggregation formulas (especially KEJURUAN_DASAR and Konsentrasi Keahlian).
 - [x] 100% coverage for the page wrapper in `src/__tests__/transkrip_wrapper.test.tsx`.
-- [x] Visual validation of PDF exports across various student data profiles.
+
+## Update: PDF Export Removal (2026-06-18)
+
+The PDF export feature has been deprecated and completely removed from the codebase.
+- **Reasoning**: To keep the application lightweight, avoid heavy client-side/backend dependencies (`html2canvas-pro` and `jspdf` on the frontend, and `printpdf` on the backend), and rely solely on the browser/system print engine (native printer dialog), which delivers 100% vector-accurate rendering and selectable text.
+- **Changes**:
+  - Removed `printpdf` dependency in `Cargo.toml`.
+  - Removed PDF generation command `export_transcript_pdf` from `commands.rs`.
+  - Removed "Simpan PDF" button, handlers, and package imports from `StudentTranscriptView.tsx`.
+  - Cleared all associated unit tests and E2E tests.

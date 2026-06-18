@@ -347,16 +347,21 @@ pub async fn get_subjects_core<C: ConnectionTrait>(
     Ok(sorted)
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct SubjectParams {
+    pub name: String,
+    pub code: String,
+    pub category: String,
+    pub status: String,
+    pub transcript_group: String,
+    pub sequence: i32,
+}
+
 /// Memperbarui data mata pelajaran.
 pub async fn update_subject_core<C: ConnectionTrait>(
     db: &C,
     id: &str,
-    name: impl Into<String>,
-    code: impl Into<String>,
-    category: impl Into<String>,
-    status: impl Into<String>,
-    transcript_group: impl Into<String>,
-    sequence: i32,
+    params: SubjectParams,
 ) -> Result<subjects::Model, AppError> {
     let existing = subjects::Entity::find_by_id(id)
         .one(db)
@@ -365,12 +370,12 @@ pub async fn update_subject_core<C: ConnectionTrait>(
 
     let now = chrono::Utc::now().to_rfc3339();
     let mut active: subjects::ActiveModel = existing.into();
-    active.name = Set(name.into());
-    active.code = Set(code.into());
-    active.category = Set(category.into());
-    active.status = Set(status.into());
-    active.transcript_group = Set(transcript_group.into());
-    active.sequence = Set(sequence);
+    active.name = Set(params.name);
+    active.code = Set(params.code);
+    active.category = Set(params.category);
+    active.status = Set(params.status);
+    active.transcript_group = Set(params.transcript_group);
+    active.sequence = Set(params.sequence);
     active.updated_at = Set(now);
 
     let updated = active.update(db).await?;

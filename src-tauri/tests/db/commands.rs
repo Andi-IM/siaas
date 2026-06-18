@@ -142,12 +142,14 @@ async fn subject_lifecycle_should_work() {
     let updated_subject = update_subject_core(
         &db,
         &subject.id,
-        "Matematika Dasar Lanjut",
-        "MAT01-U",
-        "Kelompok A",
-        "active",
-        "KEJURUAN_UMUM",
-        2,
+        SubjectParams {
+            name: "Matematika Dasar Lanjut".to_string(),
+            code: "MAT01-U".to_string(),
+            category: "Kelompok A".to_string(),
+            status: "active".to_string(),
+            transcript_group: "KEJURUAN_UMUM".to_string(),
+            sequence: 2,
+        },
     )
     .await
     .expect("Failed to update subject");
@@ -722,7 +724,19 @@ async fn update_major_nonexistent_should_return_not_found() {
 #[tokio::test]
 async fn update_subject_nonexistent_should_return_not_found() {
     let db = setup_test_db().await;
-    let result = update_subject_core(&db, "nonexistent-id", "N", "N", "N", "active", "UMUM", 1).await;
+    let result = update_subject_core(
+        &db,
+        "nonexistent-id",
+        SubjectParams {
+            name: "N".to_string(),
+            code: "N".to_string(),
+            category: "N".to_string(),
+            status: "active".to_string(),
+            transcript_group: "UMUM".to_string(),
+            sequence: 1,
+        },
+    )
+    .await;
     assert!(matches!(result, Err(AppError::NotFound { entity: "Subject", .. })));
 }
 

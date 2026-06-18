@@ -306,6 +306,9 @@ describe("Rekap Data Page - Dialog Modal Alerts", () => {
     });
 
     const konsentrasiSelect = screen.getByLabelText("Konsentrasi Keahlian");
+    await waitFor(() => {
+      expect(within(konsentrasiSelect).getByText("Teknik Pengelasan")).toBeInTheDocument();
+    });
     await userEvent.selectOptions(konsentrasiSelect, "con-2");
 
     await waitFor(() => {

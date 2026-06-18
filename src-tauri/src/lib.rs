@@ -3,6 +3,10 @@ use sea_orm::DatabaseConnection;
 use crate::db::paths::{DbPathProvider, AppPathProvider};
 
 pub mod db;
+pub mod services;
+
+use crate::services::file_dialog::{FileDialogService, NativeFileDialog};
+use std::sync::Arc;
 
 #[tauri::command]
 async fn get_app_logs(app_handle: tauri::AppHandle) -> Result<String, String> {
@@ -85,7 +89,8 @@ async fn reset_database(
 #[tauri::command]
 async fn export_database(
   app_handle: tauri::AppHandle,
-  path_provider: tauri::State<'_, AppPathProvider>
+  path_provider: tauri::State<'_, AppPathProvider>,
+  path: String
 ) -> Result<(), String> {
   let db_path = path_provider.get_db_path(&app_handle)?;
 
@@ -93,17 +98,7 @@ async fn export_database(
     return Err("Berkas database tidak ditemukan.".to_string());
   }
 
-  let file_path = rfd::FileDialog::new()
-    .add_filter("SQLite Database", &["db"])
-    .set_file_name("sias_export.db")
-    .save_file();
-
-  let dest_path = match file_path {
-    Some(p) => p,
-    None => return Err("Batal memilih lokasi penyimpanan".to_string()),
-  };
-
-  std::fs::copy(&db_path, &dest_path)
+  std::fs::copy(&db_path, std::path::Path::new(&path))
     .map_err(|e| e.to_string())?;
 
   Ok(())
@@ -113,16 +108,13 @@ async fn export_database(
 async fn import_database(
   app_handle: tauri::AppHandle,
   db_conn_state: tauri::State<'_, tokio::sync::RwLock<DatabaseConnection>>,
-  path_provider: tauri::State<'_, AppPathProvider>
+  path_provider: tauri::State<'_, AppPathProvider>,
+  path: String
 ) -> Result<(), String> {
-  let file_path = rfd::FileDialog::new()
-    .add_filter("SQLite Database", &["db"])
-    .pick_file();
-
-  let src_path = match file_path {
-    Some(p) => p,
-    None => return Err("Batal memilih berkas database".to_string()),
-  };
+  let src_file = std::path::Path::new(&path);
+  if !src_file.exists() {
+    return Err("Berkas database sumber tidak ditemukan.".to_string());
+  }
 
   // Close the database connection to release the lock on sias.db
   let mut db_conn = db_conn_state.write().await;
@@ -152,7 +144,7 @@ async fn import_database(
   }
 
   // Copy imported file to current db path
-  std::fs::copy(&src_path, &db_path)
+  std::fs::copy(src_file, &db_path)
     .map_err(|e| e.to_string())?;
 
   // Establish new connection
@@ -173,6 +165,25 @@ async fn import_database(
 #[tauri::command]
 fn get_app_version(app_handle: tauri::AppHandle) -> String {
   app_handle.package_info().version.to_string()
+}
+
+#[tauri::command]
+async fn open_file_dialog(
+  file_service: tauri::State<'_, Arc<dyn FileDialogService>>,
+  title: String,
+  filters: Vec<(String, Vec<String>)>
+) -> Result<Option<crate::services::file_dialog::SelectedFile>, String> {
+  Ok(file_service.pick_file(&title, filters))
+}
+
+#[tauri::command]
+async fn save_file_dialog(
+  file_service: tauri::State<'_, Arc<dyn FileDialogService>>,
+  title: String,
+  filters: Vec<(String, Vec<String>)>,
+  default_name: Option<String>
+) -> Result<Option<crate::services::file_dialog::SelectedFile>, String> {
+  Ok(file_service.save_file(&title, filters, default_name))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -230,6 +241,9 @@ pub fn run() {
       // Manage database connection in Tauri state
       app.manage(tokio::sync::RwLock::new(db_conn));
 
+      // Register file dialog service
+      app.manage(Arc::new(NativeFileDialog) as Arc<dyn FileDialogService>);
+
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
@@ -238,6 +252,8 @@ pub fn run() {
         export_database,
         import_database,
         get_app_version,
+        open_file_dialog,
+        save_file_dialog,
         db::commands::create_program,
         db::commands::get_programs,
         db::commands::update_program,
@@ -268,11 +284,7 @@ pub fn run() {
         db::commands::get_grades_by_student,
         db::commands::get_student_grades,
         db::commands::import_grades_from_excel,
-        db::commands::import_grades_from_excel_test,
-        db::commands::export_grades_to_excel,
-        db::commands::export_grades_to_excel_test,
-        db::commands::export_transcript_pdf,
-        db::commands::export_transcript_pdf_test
+        db::commands::export_grades_to_excel
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
