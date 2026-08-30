@@ -21,6 +21,8 @@ This directory contains records of significant architecture decisions made in th
 *   [0015: Seeding Database untuk Pengembangan dan Pengujian](0015-seeding-database-pengembangan-dan-pengujian.md)
 *   [0016: Transcript Layout and Frontend PDF Export](0016-transcript-layout-and-frontend-pdf-export.md)
 *   [0017: Standardizing Commit Messages using Conventional Commits](0017-standard-commit-message.md)
+*   [0018: Revisi Kategori Transcript Group dan Aturan Tampilan Transkrip Nilai](0018-revisi-kategori-transkrip-dan-aturan-tampilan.md)
+*   [0019: Penyesuaian Penamaan Kategori Transcript Group PKK Menjadi KIK](0019-rename-kategori-pkk-ke-kik.md)
 
 
 ## Lifecycle Status

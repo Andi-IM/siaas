@@ -66,9 +66,9 @@ VALUES
 ('a0f7b1e1-1234-4bc1-9011-000000000006', 'SEM6', 'Semester 6', 6),
 ('ebc58d04-1b3c-4e55-8889-f54497a7a372', 'UKK', 'Uji Kompetensi Keahlian', 99);
 
--- 6. Memasukkan data Mata Pelajaran Khusus UKK / PKK
+-- 6. Memasukkan data Mata Pelajaran Khusus UKK / KIK
 INSERT OR IGNORE INTO subjects (id, code, name, category, status, transcript_group, sequence)
-VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 'PKK', 27);
+VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 'KIK', 27);
 
 -- 7. Memetakan Mata Pelajaran ke Kurikulum Angkatan 2024
 INSERT OR IGNORE INTO curriculum_subjects (id, major_id, batch_id, semester_id, subject_id)

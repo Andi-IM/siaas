@@ -51,7 +51,7 @@ export type TranscriptGroup =
   | "KEJURUAN_UMUM"
   | "KEJURUAN_DASAR"
   | "KEJURUAN_KONSENTRASI"
-  | "PKK"
+  | "KIK"
   | "PKL"
   | "PILIHAN";
 

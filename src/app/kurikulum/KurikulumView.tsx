@@ -447,7 +447,7 @@ export default function CurriculumPage() {
                     <option value="KEJURUAN_UMUM">Kejuruan Umum</option>
                     <option value="KEJURUAN_DASAR">Dasar Kejuruan</option>
                     <option value="KEJURUAN_KONSENTRASI">Konsentrasi Keahlian</option>
-                    <option value="PKK">Penilaian Keahlian Kejuruan (PKK)</option>
+                    <option value="KIK">KIK (Kreativitas, Inovasi, dan Kewirausahaan)</option>
                     <option value="PKL">Praktik Kerja Lapangan (PKL)</option>
                     <option value="PILIHAN">Mata Pelajaran Pilihan</option>
                   </select>

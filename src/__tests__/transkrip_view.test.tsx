@@ -69,7 +69,7 @@ describe("StudentTranscriptView", () => {
       { id: "sub-2", nama: "Fisika", kode: "FSK", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_UMUM", sequence: 2, status: "active" },
       { id: "sub-3", nama: "Dasar Teknik Mesin", kode: "DTM", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_DASAR", sequence: 3, status: "active" },
       { id: "sub-4", nama: "Bubut", kode: "BBT", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_KONSENTRASI", sequence: 4, status: "active" },
-      { id: "sub-5", nama: "PKK", kode: "PKK", kategori: "Kelompok Kejuruan", transcriptGroup: "PKK", sequence: 5, status: "active" },
+      { id: "sub-5", nama: "KIK", kode: "KIK", kategori: "Kelompok Kejuruan", transcriptGroup: "KIK", sequence: 5, status: "active" },
     ]);
     (getGradesByStudent as any).mockResolvedValue([
       { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
@@ -103,7 +103,7 @@ describe("StudentTranscriptView", () => {
     expect(within(kkRow).getByText("88.75")).toBeInTheDocument();
   });
 
-  it("hides PKK from 3-Year transcript while aggregating it into Konsentrasi Keahlian", async () => {
+  it("hides KIK from 3-Year transcript while aggregating it into Konsentrasi Keahlian", async () => {
     (getStudentByNis as any).mockResolvedValue({
       nis: "11111", nisn: "000111", nama: "Alice Smith",
       kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
@@ -112,19 +112,19 @@ describe("StudentTranscriptView", () => {
     (getConcentrations as any).mockResolvedValue([{ id: "con-1", nama: "Teknik Pemesinan" }]);
     (getSubjects as any).mockResolvedValue([
       { id: "sub-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, status: "active" },
-      { id: "sub-pkk", nama: "Uji Kompetensi Keahlian", kode: "PKK", kategori: "Kelompok Kejuruan", transcriptGroup: "PKK", sequence: 99, status: "active" },
+      { id: "sub-kik", nama: "Kreativitas, Inovasi, dan Kewirausahaan", kode: "KIK", kategori: "Kelompok Kejuruan", transcriptGroup: "KIK", sequence: 99, status: "active" },
     ]);
     (getGradesByStudent as any).mockResolvedValue([
       { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
-      { subject_id: "sub-pkk", semester_sequence: 99, grade: 90, category: "Kelompok Kejuruan" },
+      { subject_id: "sub-kik", semester_sequence: 99, grade: 90, category: "Kelompok Kejuruan" },
     ]);
 
     const { container } = render(<StudentTranscriptView nis="11111" />);
     await waitFor(() => expect(screen.getByText(/Alice Smith/)).toBeInTheDocument());
 
     const tableContainer = container.querySelector(".table-container.no-print")!;
-    // PKK subject must NOT be rendered in 3-Year transcript table
-    expect(within(tableContainer as HTMLElement).queryByText("Uji Kompetensi Keahlian")).not.toBeInTheDocument();
+    // KIK subject must NOT be rendered in 3-Year transcript table
+    expect(within(tableContainer as HTMLElement).queryByText("Kreativitas, Inovasi, dan Kewirausahaan")).not.toBeInTheDocument();
   });
 
   it("displays PILIHAN subject with actual name in 3-Year mode and as 'Mata Pelajaran Pilihan' in Transkrip Nilai mode", async () => {

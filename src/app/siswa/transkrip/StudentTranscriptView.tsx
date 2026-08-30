@@ -83,9 +83,9 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
     "Kelompok Kejuruan": {}
   };
 
-  // 1. Initialize with all subjects (exclude PKK / UKK — it's aggregated into Konsentrasi Keahlian)
+  // 1. Initialize with all subjects (exclude KIK / PKK / UKK — it's aggregated into Konsentrasi Keahlian)
   subjects.forEach(s => {
-    if (s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK") return;
+    if (s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK") return;
     const cat = s.kategori === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
     categoryMap[cat][s.id] = {
       no: s.sequence,
@@ -162,7 +162,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
 
     // Compute Konsentrasi Keahlian aggregated row
     const konsentrasiIds = subjects.filter(s => s.transcriptGroup === "KEJURUAN_KONSENTRASI").map(s => s.id);
-    const pkkId = subjects.find(s => s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK")?.id;
+    const kikId = subjects.find(s => s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK")?.id;
 
     let konsentrasiScore = 0;
     if (konsentrasiIds.length > 0) {
@@ -178,8 +178,8 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       const avgS3 = s3Scores.length > 0 ? s3Scores.reduce((a, b) => a + b, 0) / s3Scores.length : 0;
       const avgS4 = s4Scores.length > 0 ? s4Scores.reduce((a, b) => a + b, 0) / s4Scores.length : 0;
       const avgS6 = s6Scores.length > 0 ? s6Scores.reduce((a, b) => a + b, 0) / s6Scores.length : 0;
-      const pkkScore = pkkId ? (subjectGradeMap[pkkId]?.grades.get(99) ?? 0) : 0;
-      konsentrasiScore = (avgS3 + avgS4 + avgS6 + pkkScore) / 4;
+      const kikScore = kikId ? (subjectGradeMap[kikId]?.grades.get(99) ?? 0) : 0;
+      konsentrasiScore = (avgS3 + avgS4 + avgS6 + kikScore) / 4;
     }
 
     // Categorize: UMUM subjects → Kelompok Umum
@@ -197,7 +197,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       })
       .forEach(s => {
         if (s.transcriptGroup === "KEJURUAN_KONSENTRASI") return;
-        if (s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK") return; // already included in Konsentrasi Keahlian formula
+        if (s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK") return; // already included in Konsentrasi Keahlian formula
 
         let nilai: number;
         if (s.transcriptGroup === "KEJURUAN_DASAR") {
