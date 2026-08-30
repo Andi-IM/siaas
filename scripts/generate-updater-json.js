@@ -14,27 +14,52 @@ if (!version) {
 const owner = process.env.GITHUB_REPO_OWNER || 'Andi-IM';
 const repo = process.env.GITHUB_REPO_NAME || 'siaas';
 
-const bundleDir = path.join(__dirname, '..', 'src-tauri', 'target', 'release', 'bundle', 'msi');
+const baseBundleDir = path.join(__dirname, '..', 'src-tauri', 'target', 'release', 'bundle');
 const rootUpdaterPath = path.join(__dirname, '..', 'updater.json');
 
-// Find signature file and bundle file in bundleDir
+// Helper to recursively find files
+function findFilesRecursive(dir, filter) {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results = results.concat(findFilesRecursive(fullPath, filter));
+    } else if (filter(entry.name, fullPath)) {
+      results.push(fullPath);
+    }
+  }
+  return results;
+}
+
 let signature = '';
 let targetFileName = `sias_${version}_x64_en-US.msi.zip`;
 
-if (fs.existsSync(bundleDir)) {
-  const files = fs.readdirSync(bundleDir);
-  
-  // Look for .sig file
-  const sigFile = files.find(f => f.endsWith('.sig'));
-  if (sigFile) {
-    signature = fs.readFileSync(path.join(bundleDir, sigFile), 'utf8').trim();
-    // Corresponding archive is sigFile without .sig
-    targetFileName = sigFile.replace(/\.sig$/, '');
+// 1. Check if Tauri generated latest.json
+const latestJsonFiles = findFilesRecursive(baseBundleDir, (name) => name === 'latest.json' || name === 'updater.json');
+if (latestJsonFiles.length > 0) {
+  try {
+    const content = JSON.parse(fs.readFileSync(latestJsonFiles[0], 'utf8'));
+    if (content.platforms && content.platforms['windows-x86_64'] && content.platforms['windows-x86_64'].signature) {
+      signature = content.platforms['windows-x86_64'].signature;
+    }
+  } catch (err) {
+    console.warn('Could not parse existing latest.json:', err);
+  }
+}
+
+// 2. If no signature yet, search for any .sig file
+if (!signature) {
+  const sigFiles = findFilesRecursive(baseBundleDir, (name) => name.endsWith('.sig'));
+  if (sigFiles.length > 0) {
+    signature = fs.readFileSync(sigFiles[0], 'utf8').trim();
+    targetFileName = path.basename(sigFiles[0]).replace(/\.sig$/, '');
   } else {
-    // If no .zip exists, check for .msi
-    const msiFile = files.find(f => f.endsWith('.msi'));
-    if (msiFile) {
-      targetFileName = msiFile;
+    // If no .sig file, check for .msi
+    const msiFiles = findFilesRecursive(baseBundleDir, (name) => name.endsWith('.msi'));
+    if (msiFiles.length > 0) {
+      targetFileName = path.basename(msiFiles[0]);
     }
   }
 }
@@ -55,3 +80,8 @@ const updaterManifest = {
 
 fs.writeFileSync(rootUpdaterPath, JSON.stringify(updaterManifest, null, 2) + '\n');
 console.log(`Successfully generated updater.json for version ${version} with download url: ${downloadUrl}`);
+if (signature) {
+  console.log(`Signature attached (${signature.substring(0, 15)}...)`);
+} else {
+  console.log('Note: No signature file found (run in CI with TAURI_PRIVATE_KEY configured).');
+}
