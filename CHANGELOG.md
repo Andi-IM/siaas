@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/Andi-IM/siaas/compare/v1.4.0...v1.5.0) (2026-08-30)
+
+
+### Features
+
+* **ci:** generate and publish updater.json manifest in release assets ([4d58caf](https://github.com/Andi-IM/siaas/commit/4d58caf2e70b553724771bb77d4c24de1170bf3c))
+
 # [1.4.0](https://github.com/Andi-IM/siaas/compare/v1.3.0...v1.4.0) (2026-08-30)
 
 
