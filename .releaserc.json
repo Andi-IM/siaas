@@ -10,7 +10,7 @@
       "npmPublish": false
     }],
     ["@semantic-release/exec", {
-      "prepareCmd": "node scripts/bump-tauri-version.js ${nextRelease.version} && npx tauri build"
+      "prepareCmd": "node scripts/bump-tauri-version.js ${nextRelease.version} && npx tauri build && node scripts/generate-updater-json.js ${nextRelease.version}"
     }],
     ["@semantic-release/git", {
       "assets": ["package.json", "package-lock.json", "src-tauri/tauri.conf.json", "CHANGELOG.md"],
@@ -18,7 +18,10 @@
     }],
     ["@semantic-release/github", {
       "assets": [
-        {"path": "src-tauri/target/release/bundle/msi/*.msi", "label": "SIAAS Windows Installer (MSI)"}
+        {"path": "src-tauri/target/release/bundle/msi/*.msi", "label": "SIAAS Windows Installer (MSI)"},
+        {"path": "src-tauri/target/release/bundle/msi/*.msi.zip", "label": "SIAAS Windows Update Archive (ZIP)"},
+        {"path": "src-tauri/target/release/bundle/msi/*.msi.zip.sig", "label": "SIAAS Windows Update Signature"},
+        {"path": "updater.json", "label": "Tauri Updater Manifest"}
       ]
     }]
   ]
