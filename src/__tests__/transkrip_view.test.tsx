@@ -69,7 +69,7 @@ describe("StudentTranscriptView", () => {
       { id: "sub-2", nama: "Fisika", kode: "FSK", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_UMUM", sequence: 2, status: "active" },
       { id: "sub-3", nama: "Dasar Teknik Mesin", kode: "DTM", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_DASAR", sequence: 3, status: "active" },
       { id: "sub-4", nama: "Bubut", kode: "BBT", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_KONSENTRASI", sequence: 4, status: "active" },
-      { id: "sub-5", nama: "UKK", kode: "UKK", kategori: "Kelompok Kejuruan", transcriptGroup: "UKK", sequence: 5, status: "active" },
+      { id: "sub-5", nama: "PKK", kode: "PKK", kategori: "Kelompok Kejuruan", transcriptGroup: "PKK", sequence: 5, status: "active" },
     ]);
     (getGradesByStudent as any).mockResolvedValue([
       { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
@@ -103,6 +103,62 @@ describe("StudentTranscriptView", () => {
     expect(within(kkRow).getByText("88.75")).toBeInTheDocument();
   });
 
+  it("hides PKK from 3-Year transcript while aggregating it into Konsentrasi Keahlian", async () => {
+    (getStudentByNis as any).mockResolvedValue({
+      nis: "11111", nisn: "000111", nama: "Alice Smith",
+      kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
+      nomorIjazah: "IJ-001", tanggalKelulusan: "2026-06-14",
+    });
+    (getConcentrations as any).mockResolvedValue([{ id: "con-1", nama: "Teknik Pemesinan" }]);
+    (getSubjects as any).mockResolvedValue([
+      { id: "sub-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, status: "active" },
+      { id: "sub-pkk", nama: "Uji Kompetensi Keahlian", kode: "PKK", kategori: "Kelompok Kejuruan", transcriptGroup: "PKK", sequence: 99, status: "active" },
+    ]);
+    (getGradesByStudent as any).mockResolvedValue([
+      { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
+      { subject_id: "sub-pkk", semester_sequence: 99, grade: 90, category: "Kelompok Kejuruan" },
+    ]);
+
+    const { container } = render(<StudentTranscriptView nis="11111" />);
+    await waitFor(() => expect(screen.getByText(/Alice Smith/)).toBeInTheDocument());
+
+    const tableContainer = container.querySelector(".table-container.no-print")!;
+    // PKK subject must NOT be rendered in 3-Year transcript table
+    expect(within(tableContainer as HTMLElement).queryByText("Uji Kompetensi Keahlian")).not.toBeInTheDocument();
+  });
+
+  it("displays PILIHAN subject with actual name in 3-Year mode and as 'Mata Pelajaran Pilihan' in Transkrip Nilai mode", async () => {
+    (getStudentByNis as any).mockResolvedValue({
+      nis: "11111", nisn: "000111", nama: "Alice Smith",
+      kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
+      nomorIjazah: "IJ-001", tanggalKelulusan: "2026-06-14",
+    });
+    (getConcentrations as any).mockResolvedValue([{ id: "con-1", nama: "Teknik Pemesinan" }]);
+    (getSubjects as any).mockResolvedValue([
+      { id: "sub-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, status: "active" },
+      { id: "sub-pil", nama: "Melukis", kode: "MLK", kategori: "Kelompok Kejuruan", transcriptGroup: "PILIHAN", sequence: 2, status: "active" },
+    ]);
+    (getGradesByStudent as any).mockResolvedValue([
+      { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
+      { subject_id: "sub-pil", semester_sequence: 1, grade: 88, category: "Kelompok Kejuruan" },
+    ]);
+
+    const { container } = render(<StudentTranscriptView nis="11111" />);
+    await waitFor(() => expect(screen.getByText(/Alice Smith/)).toBeInTheDocument());
+
+    // In 3-Year mode: displays actual name "Melukis"
+    const tableContainer3Yr = container.querySelector(".table-container.no-print")!;
+    expect(within(tableContainer3Yr as HTMLElement).getByText("Melukis")).toBeInTheDocument();
+
+    // Switch to Transkrip Nilai (Supplement) mode
+    await userEvent.click(screen.getByRole("button", { name: "Transkrip Nilai" }));
+
+    // In Supplement mode: displays generic label "Mata Pelajaran Pilihan"
+    const tableContainerSupp = container.querySelector(".table-container.no-print")!;
+    expect(within(tableContainerSupp as HTMLElement).getByText("Mata Pelajaran Pilihan")).toBeInTheDocument();
+    expect(within(tableContainerSupp as HTMLElement).queryByText("Melukis")).not.toBeInTheDocument();
+  });
+
   it("switches back to 'Transkrip 3 Tahun' mode from supplement mode", async () => {
     (getStudentByNis as any).mockResolvedValue({
       nis: "11111", nisn: "000111", nama: "Alice Smith",
@@ -129,7 +185,7 @@ describe("StudentTranscriptView", () => {
     expect(screen.queryByRole("button", { name: /Transkrip Nilai/ })).toHaveClass("btn--secondary");
   });
 
-  it("reorders MAPIL subject to the end in supplement mode", async () => {
+  it("reorders MAPIL / PILIHAN subject to the end in supplement mode", async () => {
     (getStudentByNis as any).mockResolvedValue({
       nis: "11111", nisn: "000111", nama: "Alice Smith",
       kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
@@ -138,7 +194,7 @@ describe("StudentTranscriptView", () => {
     (getConcentrations as any).mockResolvedValue([{ id: "con-1", nama: "Teknik Pemesinan" }]);
     (getSubjects as any).mockResolvedValue([
       { id: "sub-1", nama: "Matematika", kode: "MTK", kategori: "Kelompok Umum", transcriptGroup: "UMUM", sequence: 1, status: "active" },
-      { id: "sub-mp", nama: "MAPIL", kode: "MAPIL", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_UMUM", sequence: 2, status: "active" },
+      { id: "sub-mp", nama: "MAPIL", kode: "MAPIL", kategori: "Kelompok Kejuruan", transcriptGroup: "PILIHAN", sequence: 2, status: "active" },
       { id: "sub-7", nama: "DDK", kode: "DDK", kategori: "Kelompok Kejuruan", transcriptGroup: "KEJURUAN_DASAR", sequence: 7, status: "active" },
     ]);
     (getGradesByStudent as any).mockResolvedValue([
@@ -153,12 +209,12 @@ describe("StudentTranscriptView", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Transkrip Nilai" }));
 
-    const subjectNames = ["Matematika", "MAPIL", "DDK"];
+    const subjectNames = ["Matematika", "Mata Pelajaran Pilihan", "DDK"];
     const tableContainer = container.querySelector(".table-container.no-print")!;
     const cells = within(tableContainer as HTMLElement).getAllByRole("cell");
     const visibleSubjects = cells.filter((cell) => subjectNames.includes(cell.textContent?.trim() || ""));
     const names = visibleSubjects.map((cell) => cell.textContent?.trim());
-    const mapilIndex = names.indexOf("MAPIL");
+    const mapilIndex = names.indexOf("Mata Pelajaran Pilihan");
     expect(mapilIndex).toBeGreaterThan(-1);
     expect(mapilIndex).toBe(names.length - 1);
   });

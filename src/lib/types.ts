@@ -51,7 +51,9 @@ export type TranscriptGroup =
   | "KEJURUAN_UMUM"
   | "KEJURUAN_DASAR"
   | "KEJURUAN_KONSENTRASI"
-  | "UKK";
+  | "PKK"
+  | "PKL"
+  | "PILIHAN";
 
 export interface MataPelajaran {
   id: string;

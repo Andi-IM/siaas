@@ -195,6 +195,14 @@ impl MigrationManager {
                          UPDATE subjects SET transcript_group = 'UKK' WHERE code = 'UKK';",
                     down: "UPDATE subjects SET transcript_group = 'UMUM';",
                 },
+                Migration {
+                    version: 14,
+                    name: "update_transcript_groups_pkk_pkl",
+                    up: "UPDATE subjects SET transcript_group = 'PKK' WHERE transcript_group = 'UKK';
+                         UPDATE subjects SET transcript_group = 'PKL' WHERE code = 'PKL';",
+                    down: "UPDATE subjects SET transcript_group = 'UKK' WHERE transcript_group = 'PKK';
+                           UPDATE subjects SET transcript_group = 'KEJURUAN_UMUM' WHERE transcript_group = 'PKL';",
+                },
             ],
         }
     }

@@ -83,9 +83,9 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
     "Kelompok Kejuruan": {}
   };
 
-  // 1. Initialize with all subjects (exclude UKK — it's aggregated into Konsentrasi Keahlian)
+  // 1. Initialize with all subjects (exclude PKK / UKK — it's aggregated into Konsentrasi Keahlian)
   subjects.forEach(s => {
-    if (s.transcriptGroup === "UKK") return;
+    if (s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK") return;
     const cat = s.kategori === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
     categoryMap[cat][s.id] = {
       no: s.sequence,
@@ -162,7 +162,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
 
     // Compute Konsentrasi Keahlian aggregated row
     const konsentrasiIds = subjects.filter(s => s.transcriptGroup === "KEJURUAN_KONSENTRASI").map(s => s.id);
-    const ukkId = subjects.find(s => s.transcriptGroup === "UKK")?.id;
+    const pkkId = subjects.find(s => s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK")?.id;
 
     let konsentrasiScore = 0;
     if (konsentrasiIds.length > 0) {
@@ -178,12 +178,12 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       const avgS3 = s3Scores.length > 0 ? s3Scores.reduce((a, b) => a + b, 0) / s3Scores.length : 0;
       const avgS4 = s4Scores.length > 0 ? s4Scores.reduce((a, b) => a + b, 0) / s4Scores.length : 0;
       const avgS6 = s6Scores.length > 0 ? s6Scores.reduce((a, b) => a + b, 0) / s6Scores.length : 0;
-      const ukkScore = ukkId ? (subjectGradeMap[ukkId]?.grades.get(99) ?? 0) : 0;
-      konsentrasiScore = (avgS3 + avgS4 + avgS6 + ukkScore) / 4;
+      const pkkScore = pkkId ? (subjectGradeMap[pkkId]?.grades.get(99) ?? 0) : 0;
+      konsentrasiScore = (avgS3 + avgS4 + avgS6 + pkkScore) / 4;
     }
 
     // Categorize: UMUM subjects → Kelompok Umum
-    // KEJURUAN_UMUM, KEJURUAN_DASAR, KEJURUAN_KONSENTRASI → Kelompok Kejuruan
+    // KEJURUAN_*, PKL, PILIHAN → Kelompok Kejuruan
     const umumSubjects: PendampingSubject[] = [];
     const kejuruanSubjects: PendampingSubject[] = [];
 
@@ -197,7 +197,7 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       })
       .forEach(s => {
         if (s.transcriptGroup === "KEJURUAN_KONSENTRASI") return;
-        if (s.transcriptGroup === "UKK") return; // already included in Konsentrasi Keahlian formula
+        if (s.transcriptGroup === "PKK" || (s.transcriptGroup as string) === "UKK") return; // already included in Konsentrasi Keahlian formula
 
         let nilai: number;
         if (s.transcriptGroup === "KEJURUAN_DASAR") {
@@ -206,7 +206,10 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
           nilai = computeAverage(s.id);
         }
 
-        const entry: PendampingSubject = { no: 0, nama: s.nama, nilai };
+        // Rule B: In Transkrip Nilai, PILIHAN / MAPIL is displayed with the generic label "Mata Pelajaran Pilihan"
+        const displayName = (s.transcriptGroup === "PILIHAN" || s.kode === "MAPIL") ? "Mata Pelajaran Pilihan" : s.nama;
+
+        const entry: PendampingSubject = { no: 0, nama: displayName, nilai };
 
         if (s.kategori === "Kelompok Umum") {
           umumSubjects.push(entry);
@@ -224,14 +227,14 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       return subj?.transcriptGroup === "KEJURUAN_DASAR";
     });
 
-    // Move MAPIL to the end
-    const mapilIndex = kejuruanSubjects.findIndex(s => {
-      const subj = subjects.find(x => x.nama === s.nama);
-      return subj?.kode === "MAPIL";
+    // Move PILIHAN / MAPIL to the end
+    const pilihanIndex = kejuruanSubjects.findIndex(s => {
+      const subj = subjects.find(x => x.nama === s.nama || ((x.transcriptGroup === "PILIHAN" || x.kode === "MAPIL") && s.nama === "Mata Pelajaran Pilihan"));
+      return subj?.transcriptGroup === "PILIHAN" || subj?.kode === "MAPIL";
     });
-    if (mapilIndex !== -1) {
-      const [mapil] = kejuruanSubjects.splice(mapilIndex, 1);
-      kejuruanSubjects.push(mapil);
+    if (pilihanIndex !== -1) {
+      const [pilihan] = kejuruanSubjects.splice(pilihanIndex, 1);
+      kejuruanSubjects.push(pilihan);
     }
 
     // Insert Konsentrasi Keahlian after DDK

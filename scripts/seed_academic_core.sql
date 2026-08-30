@@ -35,9 +35,9 @@ VALUES
 ('0b445f06-7b45-4bbb-b179-8bd7d4765ce4', 'GRD', 'Teknik Pemesinan Gerinda', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 15),
 ('ee44354b-2aca-4ba1-8bef-2f2fe7a10759', 'CNC', 'Teknik Pemesinan NC/CNC dan CAM', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 16),
 ('c3e6e379-9117-4403-a650-a64ca898857e', 'FRAIS', 'Teknik Pemesinan Frais', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 17),
-('8905187d-ccdb-4689-978f-304ca478e61f', 'MAPIL', 'Mata Pelajaran Pilihan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 18),
+('8905187d-ccdb-4689-978f-304ca478e61f', 'MAPIL', 'Mata Pelajaran Pilihan', 'Kelompok Kejuruan', 'active', 'PILIHAN', 18),
 ('fb35e104-c0d7-404f-9f38-fd14b7ad9473', 'PKWU', 'Projek Kreatif dan Kewirausahaan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 19),
-('3f8bf210-3d6c-4d81-bc17-247004c0fa18', 'PKL', 'Praktik Kerja Lapangan', 'Kelompok Kejuruan', 'active', 'KEJURUAN_UMUM', 20),
+('3f8bf210-3d6c-4d81-bc17-247004c0fa18', 'PKL', 'Praktik Kerja Lapangan', 'Kelompok Kejuruan', 'active', 'PKL', 20),
 
 -- Kelompok Kejuruan (Khusus Teknik Mekanik Industri / TMI)
 ('b6f2b48e-f11a-4c20-a681-37f2a1b9e281', 'S.ELKA', 'Sistem Elektronika', 'Kelompok Kejuruan', 'active', 'KEJURUAN_KONSENTRASI', 21),
@@ -66,9 +66,9 @@ VALUES
 ('a0f7b1e1-1234-4bc1-9011-000000000006', 'SEM6', 'Semester 6', 6),
 ('ebc58d04-1b3c-4e55-8889-f54497a7a372', 'UKK', 'Uji Kompetensi Keahlian', 99);
 
--- 6. Memasukkan data Mata Pelajaran Khusus UKK
+-- 6. Memasukkan data Mata Pelajaran Khusus UKK / PKK
 INSERT OR IGNORE INTO subjects (id, code, name, category, status, transcript_group, sequence)
-VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 'UKK', 27);
+VALUES ('32ecf5fa-2195-46f9-bcbf-f1a23da05553', 'UKK', 'Uji Kompetensi Keahlian', 'Kelompok Kejuruan', 'active', 'PKK', 27);
 
 -- 7. Memetakan Mata Pelajaran ke Kurikulum Angkatan 2024
 INSERT OR IGNORE INTO curriculum_subjects (id, major_id, batch_id, semester_id, subject_id)
