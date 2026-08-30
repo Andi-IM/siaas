@@ -100,10 +100,13 @@ describe("StudentTranscriptView", () => {
     expect(within(dtmRow).getByText("75.00")).toBeInTheDocument();
 
     const kkRow = within(tableContainer as HTMLElement).getByText("Konsentrasi Keahlian").closest("tr")!;
-    expect(within(kkRow).getByText("88.75")).toBeInTheDocument();
+    expect(within(kkRow).getByText("86.67")).toBeInTheDocument();
+
+    const kikRow = within(tableContainer as HTMLElement).getByText("KIK").closest("tr")!;
+    expect(within(kikRow).getByText("95.00")).toBeInTheDocument();
   });
 
-  it("hides KIK from 3-Year transcript while aggregating it into Konsentrasi Keahlian", async () => {
+  it("renders KIK in 3-Year transcript and in Transkrip Nilai as a standalone subject", async () => {
     (getStudentByNis as any).mockResolvedValue({
       nis: "11111", nisn: "000111", nama: "Alice Smith",
       kompetensi: "Teknik Pemesinan", tempatLahir: "Padang", tanggalLahir: "2008-01-01",
@@ -116,15 +119,24 @@ describe("StudentTranscriptView", () => {
     ]);
     (getGradesByStudent as any).mockResolvedValue([
       { subject_id: "sub-1", semester_sequence: 1, grade: 80, category: "Kelompok Umum" },
-      { subject_id: "sub-kik", semester_sequence: 99, grade: 90, category: "Kelompok Kejuruan" },
+      { subject_id: "sub-kik", semester_sequence: 6, grade: 90, category: "Kelompok Kejuruan" },
     ]);
 
     const { container } = render(<StudentTranscriptView nis="11111" />);
     await waitFor(() => expect(screen.getByText(/Alice Smith/)).toBeInTheDocument());
 
-    const tableContainer = container.querySelector(".table-container.no-print")!;
-    // KIK subject must NOT be rendered in 3-Year transcript table
-    expect(within(tableContainer as HTMLElement).queryByText("Kreativitas, Inovasi, dan Kewirausahaan")).not.toBeInTheDocument();
+    const table3Year = container.querySelector(".table-container.no-print")!;
+    // KIK subject MUST be rendered in 3-Year transcript table
+    expect(within(table3Year as HTMLElement).getByText("Kreativitas, Inovasi, dan Kewirausahaan")).toBeInTheDocument();
+
+    // In Transkrip Nilai, KIK must also be rendered as standalone subject
+    const supplementBtn = screen.getByRole("button", { name: "Transkrip Nilai" });
+    await userEvent.click(supplementBtn);
+
+    const tableSupplement = container.querySelector(".table-container.no-print")!;
+    expect(within(tableSupplement as HTMLElement).getByText("Kreativitas, Inovasi, dan Kewirausahaan")).toBeInTheDocument();
+    const kikRow = within(tableSupplement as HTMLElement).getByText("Kreativitas, Inovasi, dan Kewirausahaan").closest("tr")!;
+    expect(within(kikRow).getByText("90.00")).toBeInTheDocument();
   });
 
   it("displays PILIHAN subject with actual name in 3-Year mode and as 'Mata Pelajaran Pilihan' in Transkrip Nilai mode", async () => {

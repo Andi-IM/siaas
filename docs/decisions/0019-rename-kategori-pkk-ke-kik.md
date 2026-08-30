@@ -26,11 +26,12 @@ Pada ADR-0018, kategori ujian kejuruan/keahlian diklasifikasikan dengan nama `PK
 3. **Frontend & Logika Transkrip**:
    - Opsi pada dropdown Manajemen Kurikulum ditampilkan sebagai:
      `KIK (Kreativitas, Inovasi, dan Kewirausahaan)`
-   - Aturan agregasi nilai Konsentrasi Keahlian pada Transkrip Nilai tetap memperhitungkan nilai KIK:
+   - **Transkrip 3 Tahun**: Mata pelajaran KIK **muncul** sebagai baris mata pelajaran dengan nilai per semester 1–6.
+   - **Transkrip Nilai (Ijazah)**: Mata pelajaran KIK **muncul sebagai baris mandiri** tersendiri di Kelompok Kejuruan dengan nilai rata-ratanya.
+   - **Konsentrasi Keahlian**: Terpisah dari KIK dan dihitung murni dari rata-rata semester mata pelajaran kejuruan konsentrasi:
      ```
-     Nilai Konsentrasi Keahlian = (Avg S3 + Avg S4 + Avg S6 + Nilai KIK) / 4
+     Nilai Konsentrasi Keahlian = (Avg S3 + Avg S4 + Avg S6) / 3
      ```
-   - Mata pelajaran KIK tetap disembunyikan dari baris Transkrip 3 Tahun (karena telah diagregasi ke dalam Konsentrasi Keahlian).
 
 4. **Seed Data**:
    File `scripts/seed_academic_core.sql` diselaraskan menggunakan `transcript_group = 'KIK'`.

@@ -216,13 +216,12 @@ async fn validate_konsentrasi_keahlian_formula() {
         .await
         .unwrap();
 
-    // Manual calculation
+    // Manual calculation (Konsentrasi Keahlian is calculated across S3, S4, and S6, separate from KIK)
     let avg_smt3 = smt3_grades.iter().sum::<f64>() / smt3_grades.len() as f64;
     let avg_smt4 = smt4_grades.iter().sum::<f64>() / smt4_grades.len() as f64;
     let avg_smt6 = smt6_grades.iter().sum::<f64>() / smt6_grades.len() as f64;
-    let ukk_score = 85.0;
 
-    let expected_konsentrasi = (avg_smt3 + avg_smt4 + avg_smt6 + ukk_score) / 4.0;
+    let expected_konsentrasi = (avg_smt3 + avg_smt4 + avg_smt6) / 3.0;
 
     println!("\n=== KONSENTRASI KEAHLIAN FORMULA VALIDATION ===\n");
     println!("Semester 3 grades: {:?}", smt3_grades);
@@ -234,17 +233,12 @@ async fn validate_konsentrasi_keahlian_formula() {
     println!("Semester 6 grades: {:?}", smt6_grades);
     println!("Semester 6 average: {:.2}", avg_smt6);
     println!();
-    println!("UKK score: {:.2}", ukk_score);
-    println!();
-    println!("Formula: (avg_smt3 + avg_smt4 + avg_smt6 + ukk_score) / 4");
+    println!("Formula: (avg_smt3 + avg_smt4 + avg_smt6) / 3");
     println!(
-        "       = ({:.2} + {:.2} + {:.2} + {:.2}) / 4",
-        avg_smt3, avg_smt4, avg_smt6, ukk_score
+        "       = ({:.2} + {:.2} + {:.2}) / 3",
+        avg_smt3, avg_smt4, avg_smt6
     );
-    println!(
-        "       = {:.2} / 4",
-        avg_smt3 + avg_smt4 + avg_smt6 + ukk_score
-    );
+    println!("       = {:.2} / 3", avg_smt3 + avg_smt4 + avg_smt6);
     println!("       = {:.2}", expected_konsentrasi);
     println!();
     println!(
@@ -266,8 +260,8 @@ async fn validate_konsentrasi_keahlian_formula() {
         "Smt 6 average should be 92.4"
     );
     assert!(
-        (expected_konsentrasi - 89.05).abs() < 0.01,
-        "Konsentrasi Keahlian should be 89.05"
+        (expected_konsentrasi - 90.40).abs() < 0.01,
+        "Konsentrasi Keahlian should be 90.40"
     );
 
     println!("\n✓ Formula validation passed!\n");

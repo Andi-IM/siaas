@@ -83,9 +83,8 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
     "Kelompok Kejuruan": {}
   };
 
-  // 1. Initialize with all subjects (exclude KIK / PKK / UKK — it's aggregated into Konsentrasi Keahlian)
+  // 1. Initialize with all subjects
   subjects.forEach(s => {
-    if (s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK") return;
     const cat = s.kategori === "Kelompok Umum" ? "Kelompok Umum" : "Kelompok Kejuruan";
     categoryMap[cat][s.id] = {
       no: s.sequence,
@@ -160,9 +159,8 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       return scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
     };
 
-    // Compute Konsentrasi Keahlian aggregated row
+    // Compute Konsentrasi Keahlian aggregated row (separate from KIK)
     const konsentrasiIds = subjects.filter(s => s.transcriptGroup === "KEJURUAN_KONSENTRASI").map(s => s.id);
-    const kikId = subjects.find(s => s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK")?.id;
 
     let konsentrasiScore = 0;
     if (konsentrasiIds.length > 0) {
@@ -175,15 +173,16 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
         if (g?.has(4)) s4Scores.push(g.get(4)!);
         if (g?.has(6)) s6Scores.push(g.get(6)!);
       });
-      const avgS3 = s3Scores.length > 0 ? s3Scores.reduce((a, b) => a + b, 0) / s3Scores.length : 0;
-      const avgS4 = s4Scores.length > 0 ? s4Scores.reduce((a, b) => a + b, 0) / s4Scores.length : 0;
-      const avgS6 = s6Scores.length > 0 ? s6Scores.reduce((a, b) => a + b, 0) / s6Scores.length : 0;
-      const kikScore = kikId ? (subjectGradeMap[kikId]?.grades.get(99) ?? 0) : 0;
-      konsentrasiScore = (avgS3 + avgS4 + avgS6 + kikScore) / 4;
+      const semAverages: number[] = [];
+      if (s3Scores.length > 0) semAverages.push(s3Scores.reduce((a, b) => a + b, 0) / s3Scores.length);
+      if (s4Scores.length > 0) semAverages.push(s4Scores.reduce((a, b) => a + b, 0) / s4Scores.length);
+      if (s6Scores.length > 0) semAverages.push(s6Scores.reduce((a, b) => a + b, 0) / s6Scores.length);
+
+      konsentrasiScore = semAverages.length > 0 ? semAverages.reduce((a, b) => a + b, 0) / semAverages.length : 0;
     }
 
     // Categorize: UMUM subjects → Kelompok Umum
-    // KEJURUAN_*, PKL, PILIHAN → Kelompok Kejuruan
+    // KEJURUAN_*, KIK, PKL, PILIHAN → Kelompok Kejuruan
     const umumSubjects: PendampingSubject[] = [];
     const kejuruanSubjects: PendampingSubject[] = [];
 
@@ -197,7 +196,6 @@ export default function StudentTranscriptView({ nis }: { nis: string }) {
       })
       .forEach(s => {
         if (s.transcriptGroup === "KEJURUAN_KONSENTRASI") return;
-        if (s.transcriptGroup === "KIK" || (s.transcriptGroup as string) === "PKK" || (s.transcriptGroup as string) === "UKK") return; // already included in Konsentrasi Keahlian formula
 
         let nilai: number;
         if (s.transcriptGroup === "KEJURUAN_DASAR") {
