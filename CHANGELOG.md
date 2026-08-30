@@ -1,3 +1,10 @@
+## [1.5.1](https://github.com/Andi-IM/siaas/compare/v1.5.0...v1.5.1) (2026-08-30)
+
+
+### Bug Fixes
+
+* **ci:** fix linker flag config and clean release asset patterns ([c0d1488](https://github.com/Andi-IM/siaas/commit/c0d148899c0e53e2edb8622f33d4317c8d9d8c9a))
+
 # [1.5.0](https://github.com/Andi-IM/siaas/compare/v1.4.0...v1.5.0) (2026-08-30)
 
 
