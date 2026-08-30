@@ -1,3 +1,15 @@
+# [1.4.0](https://github.com/Andi-IM/siaas/compare/v1.3.0...v1.4.0) (2026-08-30)
+
+
+### Bug Fixes
+
+* **ci:** convert bump script to ESM and bypass husky in CI ([31ed327](https://github.com/Andi-IM/siaas/commit/31ed327f1305b1b7bce30a752fdf4eb5fa22a708))
+
+
+### Features
+
+* **core:** implement ADR-0018 transcript group revision and display rules ([4f8ca30](https://github.com/Andi-IM/siaas/commit/4f8ca305ed8c3231e280f3570429d4c49033cc50))
+
 # [1.3.0](https://github.com/Andi-IM/siaas/compare/v1.2.0...v1.3.0) (2026-06-18)
 
 
