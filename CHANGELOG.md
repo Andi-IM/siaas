@@ -1,3 +1,15 @@
+# [1.6.0](https://github.com/Andi-IM/siaas/compare/v1.5.1...v1.6.0) (2026-08-30)
+
+
+### Bug Fixes
+
+* **ci:** provide tauri v2 signing env vars and include update archive asset ([8f27ff9](https://github.com/Andi-IM/siaas/commit/8f27ff9ac01056094380dbd085346e3b89dc1953))
+
+
+### Features
+
+* **release:** enable updater artifact generation to sign bundles ([0b0fb25](https://github.com/Andi-IM/siaas/commit/0b0fb251c24e2089365f344e2c3e06fdae63b5be))
+
 ## [1.5.1](https://github.com/Andi-IM/siaas/compare/v1.5.0...v1.5.1) (2026-08-30)
 
 
