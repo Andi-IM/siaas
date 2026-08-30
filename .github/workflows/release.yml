@@ -52,6 +52,15 @@ jobs:
           cache-targets: true
           shared-key: ${{ runner.os }}
 
+      - name: Next.js Cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-${{ hashFiles('src/**/*.{js,jsx,ts,tsx}', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}-
+            ${{ runner.os }}-nextjs-
+
       - name: Run Semantic Release
         run: npx semantic-release
         env:
@@ -59,6 +68,7 @@ jobs:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
           NEXT_PUBLIC_SIAAS_APP_TOKEN: ${{ secrets.SIAAS_APP_TOKEN }}
+          NEXT_TELEMETRY_DISABLED: "1"
           RUSTC_WRAPPER: sccache
           SCCACHE_GHA_ENABLED: "true"
 
