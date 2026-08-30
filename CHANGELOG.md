@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/Andi-IM/siaas/compare/v1.7.0...v1.8.0) (2026-08-30)
+
+
+### Features
+
+* **core:** rename transcript category pkk to kik ([8610314](https://github.com/Andi-IM/siaas/commit/8610314428cfb131c9ad914084cbbfb8f5b6ac24))
+
 # [1.7.0](https://github.com/Andi-IM/siaas/compare/v1.6.0...v1.7.0) (2026-08-30)
 
 
