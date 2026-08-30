@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Bypass hooks in CI environments or when HUSKY=0
+if [ "$CI" = "true" ] || [ "$HUSKY" = "0" ]; then
+  exit 0
+fi
+
 # Ambil daftar file yang di-stage
 STAGED_FILES=$(git diff --cached --name-only)
 
