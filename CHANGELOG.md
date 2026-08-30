@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/Andi-IM/siaas/compare/v1.8.0...v1.9.0) (2026-08-30)
+
+
+### Features
+
+* **ui:** display kik as standalone subject and decouple from concentration calculation ([1b79b17](https://github.com/Andi-IM/siaas/commit/1b79b170d3d01679fbecad7924304d30cba68ab7))
+
 # [1.8.0](https://github.com/Andi-IM/siaas/compare/v1.7.0...v1.8.0) (2026-08-30)
 
 
