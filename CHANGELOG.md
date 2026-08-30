@@ -1,3 +1,10 @@
+# [1.7.0](https://github.com/Andi-IM/siaas/compare/v1.6.0...v1.7.0) (2026-08-30)
+
+
+### Features
+
+* **ui:** add in-app update checker and install prompt ui ([60d013b](https://github.com/Andi-IM/siaas/commit/60d013b601a8edd981a64de65173856496c581f9))
+
 # [1.6.0](https://github.com/Andi-IM/siaas/compare/v1.5.1...v1.6.0) (2026-08-30)
 
 
