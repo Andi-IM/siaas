@@ -193,6 +193,7 @@ async fn save_file_dialog(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .setup(|app| {
             // Initialize logging in both debug and release to enable diagnostics
             app.handle().plugin(

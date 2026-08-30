@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { BugReportModal } from "@/components/BugReportModal";
-import { Database, Bug, AlertTriangle, RefreshCw, Download, Upload } from "lucide-react";
+import { Database, Bug, AlertTriangle, RefreshCw, Download, Upload, ArrowUpCircle, Sparkles, CheckCircle2, Loader2 } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { filePicker } from "@/lib/dialog-utils";
 
@@ -16,6 +16,13 @@ const safeInvoke = async <T,>(cmd: string, args?: any): Promise<T> => {
   return invoke<T>(cmd);
 };
 
+interface AvailableUpdate {
+  version: string;
+  body?: string;
+  downloadAndInstall: () => Promise<void>;
+  isDevMock?: boolean;
+}
+
 export default function PengaturanView() {
   const [appVersion, setAppVersion] = useState("Memuat...");
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
@@ -24,6 +31,12 @@ export default function PengaturanView() {
   const [loadingImport, setLoadingImport] = useState(false);
   const [resetConfirm, setResetConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Updater States
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [installingUpdate, setInstallingUpdate] = useState(false);
+  const [availableUpdate, setAvailableUpdate] = useState<AvailableUpdate | null>(null);
+  const [updateChecked, setUpdateChecked] = useState(false);
 
   useEffect(() => {
     const fetchVersion = async () => {
@@ -41,6 +54,69 @@ export default function PengaturanView() {
     };
     fetchVersion();
   }, []);
+
+  const handleCheckUpdate = async () => {
+    setCheckingUpdate(true);
+    setUpdateChecked(false);
+    setAvailableUpdate(null);
+    setStatusMsg(null);
+    try {
+      if (typeof window !== "undefined" && (window as any).__TAURI_INTERNALS__) {
+        const { check } = await import("@tauri-apps/plugin-updater");
+        const update = await check();
+        if (update) {
+          setAvailableUpdate({
+            version: update.version,
+            body: update.body || "Pembaruan versi terbaru sistem SIAAS.",
+            downloadAndInstall: async () => {
+              await update.downloadAndInstall();
+              const { relaunch } = await import("@tauri-apps/plugin-process");
+              await relaunch();
+            }
+          });
+        } else {
+          setUpdateChecked(true);
+        }
+      } else {
+        // Fallback for development browser or tests
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setUpdateChecked(true);
+      }
+    } catch (err: any) {
+      console.error("Gagal memeriksa pembaruan:", err);
+      setStatusMsg({
+        type: "error",
+        text: `Gagal memeriksa pembaruan: ${err.message || err}. Pastikan komputer terhubung ke internet.`
+      });
+    } finally {
+      setCheckingUpdate(false);
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    if (!availableUpdate) return;
+    setInstallingUpdate(true);
+    try {
+      if (availableUpdate.isDevMock) {
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        setStatusMsg({
+          type: "success",
+          text: "[DEV MODE] Pembaruan disimulasikan berhasil diunduh dan dipasang."
+        });
+        setAvailableUpdate(null);
+      } else {
+        await availableUpdate.downloadAndInstall();
+      }
+    } catch (err: any) {
+      console.error("Gagal memasang pembaruan:", err);
+      setStatusMsg({
+        type: "error",
+        text: `Gagal memasang pembaruan: ${err.message || err}`
+      });
+    } finally {
+      setInstallingUpdate(false);
+    }
+  };
 
   const handleExportDatabase = async () => {
     setLoadingExport(true);
@@ -157,7 +233,7 @@ export default function PengaturanView() {
         <div>
           <h1 style={{ fontSize: "24px", fontWeight: 600, color: "var(--color-fg)" }}>Pengaturan Sistem</h1>
           <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", marginTop: "4px" }}>
-            Kelola basis data lokal dan lakukan pelaporan diagnostik kendala sistem.
+            Kelola basis data lokal, pembaruan aplikasi, dan pelaporan kendala sistem.
           </p>
         </div>
         <div 
@@ -195,6 +271,146 @@ export default function PengaturanView() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+        {/* Application Update Card */}
+        <section 
+          style={{
+            border: "1px solid var(--color-border)",
+            borderRadius: "4px",
+            padding: "1.5rem",
+            backgroundColor: "var(--color-bg-card, #ffffff)"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "1rem" }}>
+            <ArrowUpCircle size={22} style={{ color: "var(--color-primary, #0f172a)" }} />
+            <h2 style={{ fontSize: "18px", fontWeight: 600, color: "var(--color-fg)" }}>Pembaruan Aplikasi</h2>
+          </div>
+
+          <p style={{ color: "var(--color-fg-muted)", fontSize: "14px", lineHeight: "1.5", marginBottom: "1.5rem" }}>
+            SIAAS menyediakan pembaruan otomatis yang terverifikasi dengan tanda tangan kriptografis untuk memastikan integritas dan keamanan aplikasi.
+          </p>
+
+          {availableUpdate ? (
+            <div 
+              data-testid="update-available-card"
+              style={{
+                backgroundColor: "#eff6ff",
+                border: "1px solid #bfdbfe",
+                borderRadius: "6px",
+                padding: "16px",
+                marginBottom: "1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Sparkles size={18} style={{ color: "#2563eb" }} />
+                <h3 style={{ fontSize: "14px", fontWeight: 600, color: "#1e40af" }}>
+                  Versi Baru Tersedia: v{availableUpdate.version}
+                </h3>
+              </div>
+              <p style={{ fontSize: "13px", color: "#1e3a8a", whiteSpace: "pre-line", lineHeight: "1.4" }}>
+                {availableUpdate.body}
+              </p>
+              <div style={{ display: "flex", gap: "10px", marginTop: "4px" }}>
+                <button
+                  onClick={handleInstallUpdate}
+                  disabled={installingUpdate}
+                  data-testid="install-update-button"
+                  style={{
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    border: "none",
+                    borderRadius: "4px",
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    transition: "all 0.2s"
+                  }}
+                  onMouseEnter={(e) => { if (!installingUpdate) e.currentTarget.style.backgroundColor = "#1d4ed8"; }}
+                  onMouseLeave={(e) => { if (!installingUpdate) e.currentTarget.style.backgroundColor = "#2563eb"; }}
+                >
+                  {installingUpdate ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Memasang Pembaruan...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} />
+                      Unduh & Pasang Sekarang
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={() => setAvailableUpdate(null)}
+                  disabled={installingUpdate}
+                  style={{
+                    backgroundColor: "#ffffff",
+                    color: "#475569",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "4px",
+                    padding: "8px 16px",
+                    fontSize: "13px",
+                    fontWeight: 500,
+                    cursor: "pointer"
+                  }}
+                >
+                  Nanti Saja
+                </button>
+              </div>
+            </div>
+          ) : updateChecked ? (
+            <div 
+              data-testid="update-latest-notice"
+              style={{
+                backgroundColor: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                borderRadius: "4px",
+                padding: "10px 14px",
+                marginBottom: "1.5rem",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                fontSize: "13px",
+                color: "#166534"
+              }}
+            >
+              <CheckCircle2 size={16} />
+              Aplikasi SIAAS Anda sudah menggunakan versi terbaru ({appVersion}).
+            </div>
+          ) : null}
+
+          <button
+            onClick={handleCheckUpdate}
+            disabled={checkingUpdate || installingUpdate}
+            data-testid="check-update-button"
+            style={{
+              backgroundColor: "#ffffff",
+              color: "var(--color-fg)",
+              border: "1px solid var(--color-border)",
+              borderRadius: "4px",
+              padding: "8px 16px",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={(e) => { if (!checkingUpdate) e.currentTarget.style.backgroundColor = "var(--color-bg-hover, #f1f5f9)"; }}
+            onMouseLeave={(e) => { if (!checkingUpdate) e.currentTarget.style.backgroundColor = "#ffffff"; }}
+          >
+            <RefreshCw size={14} className={checkingUpdate ? "animate-spin" : ""} />
+            {checkingUpdate ? "Memeriksa Pembaruan..." : "Periksa Pembaruan"}
+          </button>
+        </section>
+
         {/* Database Management Card */}
         <section 
           style={{

@@ -6,9 +6,19 @@ import PengaturanView from "@/app/pengaturan/PengaturanView";
 
 // Mock invoke function
 const mockInvoke = vi.fn();
+const mockCheck = vi.fn();
+const mockRelaunch = vi.fn();
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: any[]) => mockInvoke(...args),
+}));
+
+vi.mock("@tauri-apps/plugin-updater", () => ({
+  check: () => mockCheck(),
+}));
+
+vi.mock("@tauri-apps/plugin-process", () => ({
+  relaunch: () => mockRelaunch(),
 }));
 
 const originalSetTimeout = global.setTimeout;
@@ -444,5 +454,47 @@ describe("PengaturanView", () => {
     await userEvent.click(cancelBtn);
 
     expect(screen.queryByText("Laporkan Bug / Kendala")).not.toBeInTheDocument();
+  });
+
+  it("handles check update in dev mode and shows up-to-date notice", async () => {
+    render(<PengaturanView />);
+
+    const checkBtn = screen.getByTestId("check-update-button");
+    expect(checkBtn).toBeInTheDocument();
+    await userEvent.click(checkBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("update-latest-notice")).toBeInTheDocument();
+    });
+  });
+
+  it("shows available update and handles install in Tauri environment", async () => {
+    (window as any).__TAURI_INTERNALS__ = {};
+    const mockDownload = vi.fn().mockResolvedValue(undefined);
+    
+    mockCheck.mockResolvedValue({
+      version: "2.0.0",
+      body: "New features release",
+      downloadAndInstall: mockDownload,
+    });
+    mockRelaunch.mockResolvedValue(undefined);
+
+    render(<PengaturanView />);
+
+    const checkBtn = screen.getByTestId("check-update-button");
+    await userEvent.click(checkBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("update-available-card")).toBeInTheDocument();
+      expect(screen.getByText("Versi Baru Tersedia: v2.0.0")).toBeInTheDocument();
+    });
+
+    const installBtn = screen.getByTestId("install-update-button");
+    await userEvent.click(installBtn);
+
+    await waitFor(() => {
+      expect(mockDownload).toHaveBeenCalled();
+      expect(mockRelaunch).toHaveBeenCalled();
+    });
   });
 });
